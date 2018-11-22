@@ -1,1 +1,1 @@
-# gitsbeModelAnalysis
+# gitsbe-model-analysis
