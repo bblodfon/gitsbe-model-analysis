@@ -1,81 +1,64 @@
-read.observed.synergies.file = 
-  function(observed.synergies.file, drug.combinations.tested) {
-  print(paste("Reading observed synergies file:", observed.synergies.file))
-  
-  lines = readLines(observed.synergies.file)
-  synergy.observations.data = gsub("~", "-", lines)
-  
-  print(paste("Number of synergies observed: ", 
-              length(synergy.observations.data)))
-  
-  check.data.validity(synergy.observations.data, drug.combinations.tested)
-  
-  return(synergy.observations.data)
-}
-
 read.model.predictions.file = function(model.predictions.file) {
   print(paste("Reading model predictions file:", model.predictions.file))
-  
+
   lines = readLines(model.predictions.file)
   lines[1] = sub("ModelName\t|#ModelName\t", "", lines[1])
   tmp.file = "model_predictions.tab"
   writeLines(lines, tmp.file)
   model.data = read.table("model_predictions.tab",  check.names = F)
-  
+
   if (file.exists(tmp.file)) invisible(file.remove(tmp.file))
   for (i in 1:length(colnames(model.data))) {
     colnames(model.data)[i] = gsub("\\[|\\]", "", colnames(model.data)[i])
   }
-  
+
   return(model.data)
+}
+
+read.observed.synergies.file =
+  function(observed.synergies.file, drug.combinations.tested) {
+  print(paste("Reading observed synergies file:", observed.synergies.file))
+
+  lines = readLines(observed.synergies.file)
+  synergy.observations.data = gsub("~", "-", lines)
+
+  print(paste("Number of synergies observed: ",
+              length(synergy.observations.data)))
+
+  check.data.validity(synergy.observations.data, drug.combinations.tested)
+
+  return(synergy.observations.data)
 }
 
 get.stableState.from.models.dir = function(models.dir) {
   files = list.files(models.dir)
   model.stable.states = character(length(files))
-  
+
   node.names = get.node.names(models.dir)
-  
+
   i = 0
   for (file in files) {
     i = i + 1
     lines = readLines(paste(models.dir, "/", file, sep = ""))
     model.stable.states[i] = gsub("stablestate: ", "", lines[4])
   }
-  
+
   models.stable.state = data.frame(model.stable.states, row.names = files)
-  df = apply(models.stable.state, 1, function(x) { 
-    as.numeric(strsplit(as.character(x[1]), "")[[1]]) 
+  df = apply(models.stable.state, 1, function(x) {
+    as.numeric(strsplit(as.character(x[1]), "")[[1]])
   })
   rownames(df) = node.names
-  
-  return(t(df))
-}
 
-get.fitness.from.models.dir = function(models.dir) {
-  files = list.files(models.dir)
-  model.fitness = character(length(files))
-  
-  i = 0
-  for (file in files) {
-    i = i + 1
-    lines = readLines(paste(models.dir, "/", file, sep = ""))
-    model.fitness[i] = gsub("fitness: ", "", lines[3])
-  }
-  
-  model.fitness = as.numeric(model.fitness)
-  names(model.fitness) = files
-  
-  return(model.fitness)
+  return(t(df))
 }
 
 get.equations.from.models.dir = function(models.dir,
                                          removeEquationsHavingLinkOperator) {
   files = list.files(models.dir)
   node.names = get.node.names(models.dir)
-  
+
   datalist = list(length(files))
-  
+
   # get the equations
   i=0
   for (file in files) {
@@ -86,31 +69,48 @@ get.equations.from.models.dir = function(models.dir,
       assign.value.to.equation(equation)})
     datalist[[i]] = values
   }
-  
+
   df = do.call(rbind, datalist)
-  
+
   rownames(df) = files
   colnames(df) = node.names
-  
+
   if (removeEquationsHavingLinkOperator) {
     # keep only the equations (columns) that
-    # have the "and not" or "or not" link 
+    # have the "and not" or "or not" link
     # operator, i.e. those that can change in
     # the "link" mutations
-    df = df[, colSums(is.na(df)) < nrow(df)]  
+    df = df[, colSums(is.na(df)) < nrow(df)]
   } else {
     # keep all equations and put a value of 0.5
     # for those that don't have a link operator
     df[is.na(df)] = 0.5
   }
-  
+
   return(df)
 }
 
+get.fitness.from.models.dir = function(models.dir) {
+  files = list.files(models.dir)
+  model.fitness = character(length(files))
+
+  i = 0
+  for (file in files) {
+    i = i + 1
+    lines = readLines(paste(models.dir, "/", file, sep = ""))
+    model.fitness[i] = gsub("fitness: ", "", lines[3])
+  }
+
+  model.fitness = as.numeric(model.fitness)
+  names(model.fitness) = files
+
+  return(model.fitness)
+}
+
 get.node.names = function(models.dir) {
-  file.lines = readLines(paste(models.dir, "/", 
+  file.lines = readLines(paste(models.dir, "/",
                                list.files(models.dir)[1], sep = ""))
-  node.names = gsub("mapping: (.*) =.*", "\\1", 
+  node.names = gsub("mapping: (.*) =.*", "\\1",
                     grep("mapping:", file.lines, value = TRUE))
   return(node.names)
 }
@@ -125,15 +125,15 @@ assign.value.to.equation = function(equation) {
 }
 
 is.correct.synergy = function(drug.comb, synergy.observations.data) {
-  return(is.element(drug.comb, synergy.observations.data) | 
+  return(is.element(drug.comb, synergy.observations.data) |
            is.element(get.alt.drugname(drug.comb), synergy.observations.data))
 }
 
 check.data.validity = function(synergy.observations.data, drug.comb.tested) {
   for (drug.comb in synergy.observations.data) {
-    if (!is.element(drug.comb, drug.comb.tested) & 
+    if (!is.element(drug.comb, drug.comb.tested) &
         !is.element(get.alt.drugname(drug.comb), drug.comb.tested)) {
-      stop(paste("Drug Combination: ", drug.comb, 
+      stop(paste("Drug Combination: ", drug.comb,
                  "is not listed in the model predictions file"), call. = F)
     }
   }
