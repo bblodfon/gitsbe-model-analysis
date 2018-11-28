@@ -30,10 +30,10 @@ and the relavant helper functions:
 
 ```{r}
 setwd(".")
-source("input_functions.R")
-source("output_functions.R")
-source("analysis_functions.R")
-#source("plot_functions.R")
+source("Rscripts/input_functions.R")
+source("Rscripts/output_functions.R")
+source("Rscripts/analysis_functions.R")
+#source("Rscripts/plot_functions.R")
 ```
 
 ## Input
@@ -60,7 +60,7 @@ later generations)
 
 ```{r}
 cell.line = "AGS"
-data.dir = paste(getwd(), "/", cell.line, "/", sep = "")
+data.dir = paste(getwd(), "/cell_lines_res_500/", cell.line, "/", sep = "")
 results.dir = paste(data.dir, "results", sep = "")
 dir.create(results.dir, showWarnings = FALSE)
 model.predictions.file = paste(data.dir, "model_predictions", sep = "")
