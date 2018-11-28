@@ -5,7 +5,7 @@ source("analysis_functions.R")
 # Run: test_file("test_analysis_functions.R")
 
 # get.average.over.unique.values
-test_that("unique value in vec1", {
+test_that("it returns proper results when there is a unique value in vec1", {
   vec1 = c(rep(1,10))
   vec2 = c(rep(2,10))
   names.vec = c(seq(1,10))
@@ -19,7 +19,7 @@ test_that("unique value in vec1", {
   expect_equal(res, expected.res)
 })
 
-test_that("2 unique values in vec1", {
+test_that("it returns proper results when there are 2 unique values in vec1", {
   vec1 = c(rep(c(1,2),5))
   vec2 = c(rep(2,5), rep(3,5))
   names.vec = c(seq(1,10))
@@ -33,7 +33,8 @@ test_that("2 unique values in vec1", {
   expect_equal(res, expected.res, tolerance = .0000001)
 })
 
-test_that("3 unique values out of 4 in vec1", {
+test_that(paste("it returns proper results when there are ",
+                "3 unique values out of 4 in vec1", sep = ""), {
   vec1 = c(1, 2, 3, 2)
   vec2 = c(20, 2, 2.5, 8)
   names.vec = c(seq(1,4))
@@ -48,8 +49,7 @@ test_that("3 unique values out of 4 in vec1", {
 })
 
 # get.percentage.of.matches
-
-test_that("returns proper results", {
+test_that("it returns proper results", {
   a = c(1,1,1,1)
   b = c(1,0,1,1)
   c = c(0,0,1,1)

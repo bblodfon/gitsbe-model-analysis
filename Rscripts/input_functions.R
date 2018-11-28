@@ -1,4 +1,4 @@
-read.model.predictions.file = function(model.predictions.file) {
+get.model.predictions = function(model.predictions.file) {
   print(paste("Reading model predictions file:", model.predictions.file))
 
   lines = readLines(model.predictions.file)
@@ -15,7 +15,7 @@ read.model.predictions.file = function(model.predictions.file) {
   return(model.data)
 }
 
-read.observed.synergies.file =
+get.observed.synergies =
   function(observed.synergies.file, drug.combinations.tested) {
   print(paste("Reading observed synergies file:", observed.synergies.file))
 
@@ -25,12 +25,49 @@ read.observed.synergies.file =
   print(paste("Number of synergies observed: ",
               length(synergy.observations.data)))
 
-  check.data.validity(synergy.observations.data, drug.combinations.tested)
+  check.observations.data.validity(synergy.observations.data,
+                                   drug.combinations.tested)
 
   return(synergy.observations.data)
 }
 
-get.stableState.from.models.dir = function(models.dir) {
+get.consensus.steady.state = function(steady.state.file) {
+  print(paste("Reading consensus steady state file:", steady.state.file))
+
+  lines = readLines(steady.state.file)
+  lines = remove.commented.and.empty.lines(lines)
+  consensus.steady.state = build.consensus.steady.state.vector(lines)
+
+  return(consensus.steady.state)
+}
+
+remove.commented.and.empty.lines = function(lines) {
+  commented.or.empty.lines = character(0)
+  for (line in lines) {
+    if (startsWith(line, "#") || trimws(line) == "") {
+      commented.or.empty.lines = c(commented.or.empty.lines, line)
+    }
+  }
+  pruned.lines = lines[!lines %in% commented.or.empty.lines]
+  return(pruned.lines)
+}
+
+build.consensus.steady.state.vector = function(lines) {
+  node.names = character(0)
+  activity.states = character(0)
+  for (line in lines) {
+    values = strsplit(line, "\t")[[1]]
+    node.names = c(node.names, values[1])
+    activity.states = c(activity.states, values[2])
+  }
+  activity.states = as.numeric(activity.states)
+  stopifnot(length(activity.states) == length(node.names))
+
+  names(activity.states) = node.names
+  return(activity.states)
+}
+
+get.stable.state.from.models.dir = function(models.dir) {
   files = list.files(models.dir)
   model.stable.states = character(length(files))
 
@@ -119,7 +156,7 @@ get.model.names = function(models.dir) {
   return(list.files(models.dir))
 }
 
-# or not -> 1, and not -> 0, else -> NA
+# 'or not' -> 1, 'and not' -> 0, else -> NA
 assign.value.to.equation = function(equation) {
   if (grepl(".*or not.*", equation)) {
     return(1)
@@ -133,7 +170,8 @@ is.correct.synergy = function(drug.comb, synergy.observations.data) {
            is.element(get.alt.drugname(drug.comb), synergy.observations.data))
 }
 
-check.data.validity = function(synergy.observations.data, drug.comb.tested) {
+check.observations.data.validity =
+  function(synergy.observations.data, drug.comb.tested) {
   for (drug.comb in synergy.observations.data) {
     if (!is.element(drug.comb, drug.comb.tested) &
         !is.element(get.alt.drugname(drug.comb), drug.comb.tested)) {

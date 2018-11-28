@@ -70,7 +70,7 @@ models.dir = paste(data.dir, "models", sep = "")
 Now, we parse the data into proper R objects. First the synergy predictions 
 per model:
 ```{r}
-model.data = read.model.predictions.file(model.predictions.file)
+model.data = get.model.predictions(model.predictions.file)
 head(model.data)
 ```
 So, we can see that our dataset has the models as rows and each column is a 
@@ -86,13 +86,13 @@ print(paste("Drug combinations tested: ", drug.comb.number, ",",
 ```
  The synergies observed are:
 ```{r}
-synergy.observations.data = read.observed.synergies.file(
+synergy.observations.data = get.observed.synergies(
   observed.synergies.file, drug.combinations.tested)
 synergy.observations.data
 ```
 Next, we get the full stable state, the equations and fitness value per model:
 ```{r}
-models.stable.state = get.stableState.from.models.dir(models.dir)
+models.stable.state = get.stable.state.from.models.dir(models.dir)
 models.stable.state = models.stable.state[models,]
 head(as.data.frame(models.stable.state))
 ```
