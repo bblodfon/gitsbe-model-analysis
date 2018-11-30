@@ -67,6 +67,18 @@ build.consensus.steady.state.vector = function(lines) {
   return(activity.states)
 }
 
+prune.to.common.nodes.and.reorder = function(consensus.steady.state, nodes) {
+  pruned.consensus.steady.state = consensus.steady.state[
+    names(consensus.steady.state) %in% nodes
+  ]
+  reordered.consensus.steady.state = pruned.consensus.steady.state[
+    order(match(names(pruned.consensus.steady.state), nodes))
+  ]
+  stopifnot(names(reordered.consensus.steady.state) == nodes)
+
+  return(reordered.consensus.steady.state)
+}
+
 get.stable.state.from.models.dir = function(models.dir) {
   files = list.files(models.dir)
   model.stable.states = character(length(files))
