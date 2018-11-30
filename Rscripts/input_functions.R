@@ -157,6 +157,7 @@ get.fitness.from.models.dir = function(models.dir) {
 }
 
 get.node.names = function(models.dir) {
+  # use the first .gitsbe model file to derive the node names
   file.lines = readLines(paste(models.dir, "/",
                                list.files(models.dir)[1], sep = ""))
   node.names = gsub("mapping: (.*) =.*", "\\1",
