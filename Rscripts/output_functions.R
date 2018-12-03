@@ -4,19 +4,19 @@ print.empty.line = function() {
 
 output.diff.to.file = function(cell.line, string, diff) {
   drug.comb = string
-  output.file = paste(getwd(), "/", cell.line, "/", cell.line, "_", drug.comb,
-                      "_diff", sep = "")
+  output.file = paste0(getwd(), "/", cell.line, "/", cell.line, "_", drug.comb,
+                      "_diff")
   write.table(diff, file = output.file, quote = FALSE, col.names = FALSE)
 }
 
 output.vector.to.file = function(cell.line, string, vec, with.row.names) {
-  output.file = paste(getwd(), "/", cell.line, "/", string, ".txt", sep = "")
+  output.file = paste0(getwd(), "/", cell.line, "/", string, ".txt")
   write.table(vec, file = output.file, quote = FALSE, col.names = FALSE,
               row.names = with.row.names, sep = "\t")
 }
 
 output.data.to.file = function(dir.to.save, filename, data, with.col.names) {
-  output.file = paste(dir.to.save, "/", filename, sep = "")
+  output.file = paste0(dir.to.save, "/", filename)
   write.table(data, output.file, append = FALSE, sep = "\t", dec = ".",
               col.names = with.col.names, quote = FALSE)
 }

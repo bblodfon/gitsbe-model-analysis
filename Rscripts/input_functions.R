@@ -88,7 +88,7 @@ get.stable.state.from.models.dir = function(models.dir) {
   i = 0
   for (file in files) {
     i = i + 1
-    lines = readLines(paste(models.dir, "/", file, sep = ""))
+    lines = readLines(paste0(models.dir, "/", file))
     model.stable.states[i] = gsub("stablestate: ", "", lines[4])
   }
 
@@ -112,7 +112,7 @@ get.equations.from.models.dir = function(models.dir,
   i=0
   for (file in files) {
     i=i+1
-    lines = readLines(paste(models.dir, "/", file, sep = ""))
+    lines = readLines(paste0(models.dir, "/", file))
     equations = grep("equation:", lines, value = TRUE)
     values = sapply(equations, function(equation) {
       assign.value.to.equation(equation)})
@@ -146,7 +146,7 @@ get.fitness.from.models.dir = function(models.dir) {
   i = 0
   for (file in files) {
     i = i + 1
-    lines = readLines(paste(models.dir, "/", file, sep = ""))
+    lines = readLines(paste0(models.dir, "/", file))
     model.fitness[i] = gsub("fitness: ", "", lines[3])
   }
 
@@ -158,8 +158,7 @@ get.fitness.from.models.dir = function(models.dir) {
 
 get.node.names = function(models.dir) {
   # use the first .gitsbe model file to derive the node names
-  file.lines = readLines(paste(models.dir, "/",
-                               list.files(models.dir)[1], sep = ""))
+  file.lines = readLines(paste0(models.dir, "/", list.files(models.dir)[1]))
   node.names = gsub("mapping: (.*) =.*", "\\1",
                     grep("mapping:", file.lines, value = TRUE))
   return(node.names)
@@ -196,6 +195,6 @@ check.observations.data.validity =
 
 get.alt.drugname = function(drug.comb) {
   drug.list = unlist(strsplit(drug.comb,"-"))
-  drug.comb.alt = paste(drug.list[2], "-", drug.list[1], sep = "")
+  drug.comb.alt = paste0(drug.list[2], "-", drug.list[1])
   return(drug.comb.alt)
 }
