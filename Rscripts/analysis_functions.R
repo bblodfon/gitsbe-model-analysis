@@ -54,14 +54,14 @@ get.diff.synergies.predicted =
 }
 
 get.diff.specific.synergy =
-  function(drugComb, modelData, models.stable.state) {
-  bad.models  = rownames(modelData)[
-    modelData[, drugComb] == 0 & !is.na(modelData[, drugComb])
+  function(drug.comb, model.data, models.stable.state) {
+  bad.models  = rownames(model.data)[
+    model.data[, drug.comb] == 0 && !is.na(model.data[, drug.comb])
   ]
-  good.models = rownames(modelData)[
-    modelData[, drugComb] == 1 & !is.na(modelData[, drugComb])
+  good.models = rownames(model.data)[
+    model.data[, drug.comb] == 1 && !is.na(model.data[, drug.comb])
   ]
-  # na.models = rownames(modelData)[is.na(modelData[, drugComb])]
+  # na.models = rownames(model.data)[is.na(model.data[, drug.comb])]
 
   bad.average = apply(models.stable.state[bad.models, ], 2, mean)
   good.average = apply(models.stable.state[good.models, ], 2, mean)
@@ -79,10 +79,10 @@ get.diff.from.models.predicting.diff.synergy.sets =
   synergy.set.2 = unlist(set2)
 
   models.set.1 = rownames(model.data)[
-    apply(model.data[, synergy.set.1], 1, function(x) all(x == 1 & !is.na(x)))
+    apply(model.data[, synergy.set.1], 1, function(x) all(x == 1 && !is.na(x)))
   ]
   models.set.2 = rownames(model.data)[
-    apply(model.data[, synergy.set.2], 1, function(x) all(x == 1 & !is.na(x)))
+    apply(model.data[, synergy.set.2], 1, function(x) all(x == 1 && !is.na(x)))
   ]
 
   # have the first set of models as the largest
@@ -104,7 +104,7 @@ get.diff.from.models.predicting.diff.synergy.sets =
   return(good.average - bad.average)
 }
 
-count.models.that.predict.subset.of.synergies =
+count.models.that.predict.synergy.set =
   function(synergy.subset, model.data) {
   synergy.vector = unlist(synergy.subset)
   if (length(synergy.vector) == 0) {

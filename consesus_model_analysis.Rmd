@@ -20,7 +20,7 @@ The R version used for this analysis is: **3.4.4 (Someone to Lean On)**.
 
 ## Prerequisites
 
-Firstly, we load the relavant helper functions:
+Firstly, we load the relevant helper functions:
 ```{r Helper functions}
 # Set the working directory to the gitsbe-model-analysis folder: 
 # setwd("pathTo/gitsbe-model-analysis")
@@ -50,7 +50,7 @@ through a genetic evolution algorithm in `Gitsbe` and so in the end, only those
 with 1 stable state have higher fitness values and remain in the later 
 generations. Higher fitness here means a better match of a model's stable state
 to the consensus steady state (a perfect match would result in a fitness of 1)
-```{r Input}
+```{r Input: files}
 consensus.dir = "consensus-2500"
 data.dir = paste0(getwd(), "/", consensus.dir, "/")
 steady.state.file = paste0(data.dir, "consensus_steady_state")
@@ -58,7 +58,7 @@ models.dir = paste0(data.dir, "models")
 ```
 Now, we parse the data into proper R objects. First, we get the full stable 
 state per model:
-```{r Reading models\' stable states}
+```{r Input: models stable states}
 models = get.model.names(models.dir)
 nodes  = get.node.names(models.dir)
 models.stable.state = get.stable.state.from.models.dir(models.dir)
@@ -78,7 +78,7 @@ nodes that are present in the consensus steady state vector (but not in our
 network) and so they need to be discarded. Also, we reorder the columns of the 
 consensus vector so as to match the order of nodes as they are in the 
 `models.stable.state` object.
-```{r Reading consensus steady state}
+```{r Input: consensus steady state}
 consensus.steady.state = get.consensus.steady.state(steady.state.file)
 consensus.steady.state = 
   prune.to.common.nodes.and.reorder(consensus.steady.state, nodes)

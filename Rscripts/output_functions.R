@@ -1,7 +1,3 @@
-print.empty.line = function() {
-  cat("\n")
-}
-
 output.diff.to.file = function(cell.line, string, diff) {
   drug.comb = string
   output.file = paste0(getwd(), "/", cell.line, "/", cell.line, "_", drug.comb,

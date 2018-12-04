@@ -20,15 +20,11 @@ get.observed.synergies =
   print(paste("Reading observed synergies file:", observed.synergies.file))
 
   lines = readLines(observed.synergies.file)
-  synergy.observations.data = gsub("~", "-", lines)
+  observed.synergies = gsub("~", "-", lines)
 
-  print(paste("Number of synergies observed: ",
-              length(synergy.observations.data)))
+  validate.observed.synergies.data(observed.synergies, drug.combinations.tested)
 
-  check.observations.data.validity(synergy.observations.data,
-                                   drug.combinations.tested)
-
-  return(synergy.observations.data)
+  return(observed.synergies)
 }
 
 get.consensus.steady.state = function(steady.state.file) {
@@ -101,8 +97,8 @@ get.stable.state.from.models.dir = function(models.dir) {
   return(t(df))
 }
 
-get.equations.from.models.dir = function(models.dir,
-                                         removeEquationsHavingLinkOperator) {
+get.equations.from.models.dir =
+  function(models.dir, remove.equations.with.link.operator) {
   files = list.files(models.dir)
   node.names = get.node.names(models.dir)
 
@@ -124,15 +120,13 @@ get.equations.from.models.dir = function(models.dir,
   rownames(df) = files
   colnames(df) = node.names
 
-  if (removeEquationsHavingLinkOperator) {
-    # keep only the equations (columns) that
-    # have the "and not" or "or not" link
-    # operator, i.e. those that can change in
-    # the "link" mutations
+  if (remove.equations.with.link.operator) {
+    # keep only the equations (columns) that have the 'and not' or 'or not' link
+    # operator, i.e. those that can change in the 'link' mutations
     df = df[, colSums(is.na(df)) < nrow(df)]
   } else {
-    # keep all equations and put a value of 0.5
-    # for those that don't have a link operator
+    # keep all equations and put a value of 0.5 for those that don't have a
+    # link operator
     df[is.na(df)] = 0.5
   }
 
@@ -177,16 +171,16 @@ assign.value.to.equation = function(equation) {
   } else return(NA)
 }
 
-is.correct.synergy = function(drug.comb, synergy.observations.data) {
-  return(is.element(drug.comb, synergy.observations.data) |
-           is.element(get.alt.drugname(drug.comb), synergy.observations.data))
+is.correct.synergy = function(drug.comb, observed.synergies) {
+  return(is.element(drug.comb, observed.synergies) ||
+           is.element(get.alt.drugname(drug.comb), observed.synergies))
 }
 
-check.observations.data.validity =
-  function(synergy.observations.data, drug.comb.tested) {
-  for (drug.comb in synergy.observations.data) {
-    if (!is.element(drug.comb, drug.comb.tested) &
-        !is.element(get.alt.drugname(drug.comb), drug.comb.tested)) {
+validate.observed.synergies.data =
+  function(observed.synergies, drug.combinations.tested) {
+  for (drug.comb in observed.synergies) {
+    if (!is.element(drug.comb, drug.combinations.tested) &&
+        !is.element(get.alt.drugname(drug.comb), drug.combinations.tested)) {
       stop(paste("Drug Combination: ", drug.comb,
                  "is not listed in the model predictions file"), call. = F)
     }
