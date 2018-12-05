@@ -172,7 +172,7 @@ assign.value.to.equation = function(equation) {
 }
 
 is.correct.synergy = function(drug.comb, observed.synergies) {
-  return(is.element(drug.comb, observed.synergies) ||
+  return(is.element(drug.comb, observed.synergies) |
            is.element(get.alt.drugname(drug.comb), observed.synergies))
 }
 

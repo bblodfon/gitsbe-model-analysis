@@ -56,10 +56,10 @@ get.diff.synergies.predicted =
 get.diff.specific.synergy =
   function(drug.comb, model.data, models.stable.state) {
   bad.models  = rownames(model.data)[
-    model.data[, drug.comb] == 0 && !is.na(model.data[, drug.comb])
+    model.data[, drug.comb] == 0 & !is.na(model.data[, drug.comb])
   ]
   good.models = rownames(model.data)[
-    model.data[, drug.comb] == 1 && !is.na(model.data[, drug.comb])
+    model.data[, drug.comb] == 1 & !is.na(model.data[, drug.comb])
   ]
   # na.models = rownames(model.data)[is.na(model.data[, drug.comb])]
 
@@ -79,10 +79,10 @@ get.diff.from.models.predicting.diff.synergy.sets =
   synergy.set.2 = unlist(set2)
 
   models.set.1 = rownames(model.data)[
-    apply(model.data[, synergy.set.1], 1, function(x) all(x == 1 && !is.na(x)))
+    apply(model.data[, synergy.set.1], 1, function(x) all(x == 1 & !is.na(x)))
   ]
   models.set.2 = rownames(model.data)[
-    apply(model.data[, synergy.set.2], 1, function(x) all(x == 1 && !is.na(x)))
+    apply(model.data[, synergy.set.2], 1, function(x) all(x == 1 & !is.na(x)))
   ]
 
   # have the first set of models as the largest
@@ -105,14 +105,16 @@ get.diff.from.models.predicting.diff.synergy.sets =
 }
 
 count.models.that.predict.synergy.set =
-  function(synergy.subset, model.data) {
+  function(synergy.subset, model.predictions) {
   synergy.vector = unlist(synergy.subset)
   if (length(synergy.vector) == 0) {
-    count = sum(apply(model.data, 1, function(x) { all(x != 1, na.rm = T) }))
+    count = sum(apply(model.predictions, 1, function(x) {
+      all(x != 1, na.rm = T)
+    }))
   } else if (length(synergy.vector) == 1) {
-    count = sum(model.data[, synergy.vector], na.rm = T)
+    count = sum(model.predictions[, synergy.vector], na.rm = T)
   } else {
-    count = sum(apply(model.data[, synergy.vector], 1,
+    count = sum(apply(model.predictions[, synergy.vector], 1,
                     function(x) all(x == 1)), na.rm = T)
   }
 
