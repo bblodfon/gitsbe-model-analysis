@@ -177,17 +177,21 @@ number.of.models.per.observed.synergy =
   apply(observed.model.predictions, 2, sum, na.rm = T)
 predicted.synergies = names(number.of.models.per.observed.synergy)[
                             number.of.models.per.observed.synergy > 0]
+
 number.of.models.per.observed.synergy
 predicted.synergies
+predicted.synergies.percentage = 100 * length(predicted.synergies) /
+                    number.of.observed.synergies
 print(paste0("Percentage of predicted synergies (by at least one model): ", 
-      100 * length(predicted.synergies)/number.of.observed.synergies, "%"))
+             specify.decimal(predicted.synergies.percentage, 2), "%"))
 ```
 So, for the `A498` cell line, there were indeed synergies that no model could 
-predict. Next, we want to know the maximum number of possible predicted 
-synergies by one model alone - can one model by itself predict all the above 
-predicted synergies? To do that, we go even further and **count the number of 
-models that predict a specific set of synergies** for every possible combination 
-subset of the predicted synergy set found above:
+predict (only 5 out of 17 were actually found by at least one model). Next, we 
+want to know the maximum number of observed synergies predicted by one model 
+alone - can one model by itself predict all the 5 synergies or do we need many 
+models to capture this diverse synergy landscape? To do that, we go even further 
+and **count the number of models that predict a specific set of synergies** for 
+every possible combination subset of the predicted synergy set found above:
 ```{r Synergy stats 2}
 # Find the number of predictive models for every synergy subset
 predicted.synergies.powerset = powerSet(predicted.synergies)
@@ -204,73 +208,68 @@ synergy.subset.stats =
     count.models.that.predict.synergy.set(drug.comb.set, observed.model.predictions) 
 })
 
-# output.vector.to.file(cell.line = "A498", "synergy_subsets", synergy.subset.stats, with.row.names = TRUE)
+# Bar plot of number of models vs every possible observed synergy combination
+# Tweak the threshold.for.subset.removal and bottom.margin as desired
+make.barplot.on.synergy.subset.stats(synergy.subset.stats,
+                                     threshold.for.subset.removal = 1, 
+                                     bottom.margin = 9, cell.line)
 ```
 
-
-
-## Statistical Analysis - TODO
+As can be seen from the figure above (where we excluded sets of synergies that 
+were predicted by no model by setting the `threshold.for.subset.removal` value 
+to 1), **almost half of the models predict no synergies**, while the `PI-D1` 
+synergy is predicted by almost all of the rest of the models. Next we calculate 
+the maximum number of correctly predicted synergies (TP - True Positives) per 
+model:
 ```{r}
 # Count the predictions of the observed synergies per model (TP)
 models.synergies.tp = apply(observed.model.predictions, 1, sum, na.rm = T)
-model.synergies.stats = table(models.synergies.tp)
+models.synergies.tp.stats = table(models.synergies.tp)
 
-# Count the false negatives (FN)
-models.synergies.fn = apply(observed.model.data, 1, function(x) {
-  sum( x == 0 | is.na(x) )
-})
-
-# P = TP + FN (Positives)
-positives = ncol(observed.model.data)
-models.synergies.p = models.synergies.tp + models.synergies.fn
-stopifnot(sum(models.synergies.p == positives) == length(models.synergies.p))
-
-# Count the predictions of the non-observed synergies per model (FP)
-models.synergies.fp = apply(unobserved.model.data, 1, sum, na.rm = T)
-
-# Count the True Negatives (TN)
-models.synergies.tn = apply(unobserved.model.data, 1, function(x) {
-  sum( x == 0 | is.na(x))
-})
-
-# N = FP + TN (Negatives)
-negatives = ncol(unobserved.model.data)
-models.synergies.n = models.synergies.fp + models.synergies.tn
-stopifnot(sum(models.synergies.n == negatives) == length(models.synergies.n))
-
-# Calculate the Sensitivity/Recall (TPR), Specificity (TNR), 
-# Precision (PPV) and False Positive Rate (FPR)
-models.sensitivity = models.synergies.tp / models.synergies.p
-models.specificity = models.synergies.tn / models.synergies.n
-models.precision   = models.synergies.tp / 
-  (models.synergies.tp + models.synergies.fp)
-models.fpr         = models.synergies.fp / models.synergies.n
-
-# save stats all together in one file
-measure.stats = cbind(models.fitness, models.synergies.tp, 
-                      models.synergies.fp, models.synergies.tn, 
-                      models.synergies.fn, models.sensitivity, 
-                      models.specificity, models.precision, models.fpr)
-output.data.to.file(results.dir, 
-                    paste("statistical_measures_", cell.line, ".txt", sep = ""),
-                    measure.stats, with.col.names = TRUE)
+# Bar plot of number of models vs correctly predicted synergies
+make.barplot.on.model.stats(models.synergies.tp.stats, cell.line)
 ```
 
-```{r}
-# ROC curve
-roc = get.average.over.unique.values(models.fpr, models.sensitivity)
-roc = rbind(c(0,0,0), roc, c(1,1,0))
-plot(roc, xlim = c(0,1), ylim = c(0,1), type = "o", main = "ROC curve")
-```
+So, there were indeed **only 2 models that predicted 3 synergies (the set 
+`BI-PD,PD-PI,PI-D1`)**, whereas no model could predict all 5 of the observed 
+synergies. The power of the ensemble model approach lies in the fact that (as we
+saw from the above figures) we do not have individual *super models* that can 
+predict many observed drug combinations, but on the other hand we have many that
+predict *at least one* and which will all be used by the drug response analysis 
+module (`Drabme`) to better infer the synergistic drug combinations.
 
-```{r}
-# Next plot makes more sense:
-fitness.vs.avg.fp = 
-  get.average.over.unique.values(models.fitness, models.synergies.fp)
-x = fitness.vs.avg.fp[,1]
-avg = fitness.vs.avg.fp[,2]
-sdev = fitness.vs.avg.fp[,3]
-plot(fitness.vs.avg.fp, ylim=range(c(avg-sdev, avg+sdev)))
-arrows(x, avg-sdev, x, avg+sdev, length=0.05, angle=90, code=3)
-```
 
+
+Two synergies of interest in A498 cell line `AK-PD`, `PD-PI`
+ways to find out what makes the models predict these synergies with regards to 
+their stable state characteristics and boolean equation link operator mutations
+
+```{r eval=FALSE, include=FALSE}
+### Good vs Bad models ###
+
+# Good vs Bad models based on the number of models that
+# correctly predicted synergies
+diff.on.synergies.predicted = get.diff.synergies.predicted(models, models_synergies_tp, models_stable_state)
+output.diff.to.file(cell_line, "synergies_predicted", diff.on.synergies.predicted)
+
+# Good vs Bad models based on the number of the models
+# that predicted a specific synergy
+predicted.synergies = synergy_observations_data
+for (drugComb in synergy_observations_data) {
+  diff_specific = get.diff.specific.synergy(drugComb, observed.modelData, models_stable_state)
+  if (sum(is.na(diff_specific)) == length((diff_specific))) {
+    print(paste("No models predicted the ", drugComb, " synergy", sep = ""))
+    predicted.synergies = predicted.synergies[! predicted.synergies %in% drugComb]
+  } else {
+    #output.diff.to.file(cell_line, drugComb, diff_specific)
+  }
+}
+non.predicted.synergies = synergy_observations_data[!synergy_observations_data %in% predicted.synergies]
+
+# Good vs Bad models when comparing models that predicted diferrent synergy sets
+# Usually good models predicted: (A-B, C-D, K-L) and bad (A-B, C-D) - just to see
+# what the good models have that allows them to predict the K-L synergy also
+diff.on.synergy.sets = get.diff.from.models.predicting.diff.synergy.sets(all.synergy.subsets["AK-D1,BI-D1,PK-ST"],
+                                                                         all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"],
+                                                                         observed.modelData, models_stable_state)
+```
