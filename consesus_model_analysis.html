@@ -134,7 +134,7 @@ $(document).ready(function () {
 </div>
 <div id="prerequisites" class="section level2">
 <h2>Prerequisites</h2>
-<p>Firstly, we load the relavant helper functions:</p>
+<p>Firstly, we load the relevant helper functions:</p>
 <pre class="r"><code># Set the working directory to the gitsbe-model-analysis folder: 
 # setwd(&quot;pathTo/gitsbe-model-analysis&quot;)
 source(&quot;Rscripts/input_functions.R&quot;)
@@ -223,7 +223,7 @@ print(paste(&quot;Unique fitness values:&quot;,
 <pre><code>## [1] &quot;Unique fitness values: 17  Unique stable states found by the models: 1330&quot;</code></pre>
 <pre class="r"><code>y.axis.values = pretty(model.count.per.fitness)
 plot(names(model.count.per.fitness), model.count.per.fitness, 
-     type = &quot;b&quot;,  yaxt=&quot;n&quot;,
+     type = &quot;b&quot;,  yaxt = &quot;n&quot;,
      xlab = &quot;Fitness&quot;,
      ylab = &quot;Number of models&quot;,
      main = &quot;Distribution of fitness among models&quot;)

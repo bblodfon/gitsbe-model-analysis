@@ -142,7 +142,7 @@ print(paste("Unique fitness values:",
 
 y.axis.values = pretty(model.count.per.fitness)
 plot(names(model.count.per.fitness), model.count.per.fitness, 
-     type = "b",  yaxt="n",
+     type = "b",  yaxt = "n",
      xlab = "Fitness",
      ylab = "Number of models",
      main = "Distribution of fitness among models")
