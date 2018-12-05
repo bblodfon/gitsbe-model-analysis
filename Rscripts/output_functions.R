@@ -17,6 +17,10 @@ output.data.to.file = function(dir.to.save, filename, data, with.col.names) {
               col.names = with.col.names, quote = FALSE)
 }
 
+specify.decimal = function(number, digits.to.keep) {
+  trimws(format(round(number, digits.to.keep), nsmall = digits.to.keep))
+}
+
 plot.pdf = function(file, plot.string) {
   pdf(file);
   eval(parse(text = plot.string));
