@@ -1,4 +1,4 @@
-models.fitness	models.synergies.tp	models.synergies.fp	models.synergies.tn	models.synergies.fn	models.sensitivity	models.specificity	models.precision	models.fpr
+models_fitness	models_synergies_tp	models_synergies_fp	models_synergies_tn	models_synergies_fn	models_sensitivity	models_specificity	models_precision	models_fpr
 topology.sif_run_0__G19_M2.gitsbe	0.7058824	2	4	143	4	0.333333333333333	0.972789115646258	0.333333333333333	0.0272108843537415
 topology.sif_run_322__G19_M3.gitsbe	0.6911765	2	4	143	4	0.333333333333333	0.972789115646258	0.333333333333333	0.0272108843537415
 topology.sif_run_208__G19_M6.gitsbe	0.6838235	4	4	143	2	0.666666666666667	0.972789115646258	0.5	0.0272108843537415
