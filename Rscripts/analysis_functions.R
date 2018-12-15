@@ -4,7 +4,7 @@
 #   2) a second vector with the average values for each unique
 #       value of the first (the matching is done by column name)
 get.average.over.unique.values = function(vec1, vec2) {
-  stopifnot(sum(names(vec1) == names(vec2)) == length(vec1))
+  stopifnot(names(vec1) == names(vec2))
 
   vec1.sorted = sort(vec1)
   vec1.sorted.unique = sort(unique(vec1))
@@ -14,10 +14,12 @@ get.average.over.unique.values = function(vec1, vec2) {
   index = 0
   for (value in vec1.sorted.unique) {
     index = index + 1
-    vec2.avg.values[index] =
-      mean(vec2[(names(vec1.sorted[vec1.sorted == value]))])
-    sd.values[index]       =
-      sd(vec2[(names(vec1.sorted[vec1.sorted == value]))])
+    vec2.avg.values[index] = mean(vec2[
+      (names(vec1.sorted[vec1.sorted == value]))
+    ])
+    sd.values[index] = sd(vec2[
+      (names(vec1.sorted[vec1.sorted == value]))
+    ])
   }
 
   # In case of NA elements in sd calculation
@@ -42,31 +44,55 @@ get.percentage.of.matches = function(num.vec.1, num.vec.2) {
   return(matches.percentage)
 }
 
-get.diff.synergies.predicted =
-  function(models, model.synergies, models.stable.state) {
-  bad.models = models[model.synergies == 0]
-  good.models = models[model.synergies == max(model.synergies)]
+count.models.that.predict.synergy.set =
+  function(drug.comb.set, model.predictions) {
+    synergy.vector = unlist(drug.comb.set)
+    if (length(synergy.vector) == 0) {
+      count = sum(apply(model.predictions, 1, function(x) {
+        all(x != 1, na.rm = T)
+      }))
+    } else if (length(synergy.vector) == 1) {
+      count = sum(model.predictions[, synergy.vector], na.rm = T)
+    } else {
+      count = sum(apply(model.predictions[, synergy.vector], 1,
+                        function(x) all(x == 1)), na.rm = T)
+    }
 
-  bad.average = apply(models.stable.state[bad.models, ], 2, mean)
-  good.average = apply(models.stable.state[good.models, ], 2, mean)
+    return(count)
+}
 
-  return(good.average - bad.average)
+# num.low is the number of true positives for the 'bad' models
+# num.high is the number of true positives for the 'good' models
+# So, num.low < num.high
+get.avg.activity.diff.based.on.tp.predictions =
+  function(models, models.synergies.tp, models.stable.state, num.low, num.high) {
+    if (num.low >= num.high) {
+      stop("num.low needs to be smaller than num.high")
+    }
+
+    good.models = models[models.synergies.tp == num.low]
+    bad.models  = models[models.synergies.tp == num.high]
+
+    good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
+    bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+
+    return(good.avg.activity - bad.avg.activity)
 }
 
 get.diff.specific.synergy =
   function(drug.comb, model.data, models.stable.state) {
-  bad.models  = rownames(model.data)[
-    model.data[, drug.comb] == 0 & !is.na(model.data[, drug.comb])
-  ]
-  good.models = rownames(model.data)[
-    model.data[, drug.comb] == 1 & !is.na(model.data[, drug.comb])
-  ]
-  # na.models = rownames(model.data)[is.na(model.data[, drug.comb])]
+    bad.models  = rownames(model.data)[
+      model.data[, drug.comb] == 0 & !is.na(model.data[, drug.comb])
+    ]
+    good.models = rownames(model.data)[
+      model.data[, drug.comb] == 1 & !is.na(model.data[, drug.comb])
+    ]
+    # na.models = rownames(model.data)[is.na(model.data[, drug.comb])]
 
-  bad.average = apply(models.stable.state[bad.models, ], 2, mean)
-  good.average = apply(models.stable.state[good.models, ], 2, mean)
+    bad.average = apply(models.stable.state[bad.models, ], 2, mean)
+    good.average = apply(models.stable.state[good.models, ], 2, mean)
 
-  return(good.average - bad.average)
+    return(good.average - bad.average)
 }
 
 # Example (to get meaningful results)
@@ -74,49 +100,32 @@ get.diff.specific.synergy =
 # set2 = all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"]
 get.diff.from.models.predicting.diff.synergy.sets =
   function(set1, set2, model.data, models.stable.state) {
-  # length(set1), length(set2) >= 2
-  synergy.set.1 = unlist(set1)
-  synergy.set.2 = unlist(set2)
+    # length(set1), length(set2) >= 2
+    synergy.set.1 = unlist(set1)
+    synergy.set.2 = unlist(set2)
 
-  models.set.1 = rownames(model.data)[
-    apply(model.data[, synergy.set.1], 1, function(x) all(x == 1 & !is.na(x)))
-  ]
-  models.set.2 = rownames(model.data)[
-    apply(model.data[, synergy.set.2], 1, function(x) all(x == 1 & !is.na(x)))
-  ]
+    models.set.1 = rownames(model.data)[
+      apply(model.data[, synergy.set.1], 1, function(x) all(x == 1 & !is.na(x)))
+    ]
+    models.set.2 = rownames(model.data)[
+      apply(model.data[, synergy.set.2], 1, function(x) all(x == 1 & !is.na(x)))
+    ]
 
-  # have the first set of models as the largest
-  if (length(models.set.1) < length(models.set.2)) {
-    models.set.3 = models.set.1
-    models.set.1 = models.set.2
-    models.set.2 = models.set.3
-  }
+    # have the first set of models as the largest
+    if (length(models.set.1) < length(models.set.2)) {
+      models.set.3 = models.set.1
+      models.set.1 = models.set.2
+      models.set.2 = models.set.3
+    }
 
-  models.set.1.not.in.set.2 = models.set.1[! models.set.1 %in% models.set.2]
-  common.models = models.set.1[models.set.1 %in% models.set.2]
+    models.set.1.not.in.set.2 = models.set.1[! models.set.1 %in% models.set.2]
+    common.models = models.set.1[models.set.1 %in% models.set.2]
 
-  bad.models  = models.set.1.not.in.set.2
-  good.models = common.models
+    bad.models  = models.set.1.not.in.set.2
+    good.models = common.models
 
-  bad.average = apply(models.stable.state[bad.models, ], 2, mean)
-  good.average = apply(models.stable.state[good.models, ], 2, mean)
+    bad.average = apply(models.stable.state[bad.models, ], 2, mean)
+    good.average = apply(models.stable.state[good.models, ], 2, mean)
 
-  return(good.average - bad.average)
-}
-
-count.models.that.predict.synergy.set =
-  function(synergy.subset, model.predictions) {
-  synergy.vector = unlist(synergy.subset)
-  if (length(synergy.vector) == 0) {
-    count = sum(apply(model.predictions, 1, function(x) {
-      all(x != 1, na.rm = T)
-    }))
-  } else if (length(synergy.vector) == 1) {
-    count = sum(model.predictions[, synergy.vector], na.rm = T)
-  } else {
-    count = sum(apply(model.predictions[, synergy.vector], 1,
-                    function(x) all(x == 1)), na.rm = T)
-  }
-
-  return(count)
+    return(good.average - bad.average)
 }

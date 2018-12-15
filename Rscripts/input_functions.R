@@ -17,14 +17,14 @@ get.model.predictions = function(model.predictions.file) {
 
 get.observed.synergies =
   function(observed.synergies.file, drug.combinations.tested) {
-  print(paste("Reading observed synergies file:", observed.synergies.file))
+    print(paste("Reading observed synergies file:", observed.synergies.file))
 
-  lines = readLines(observed.synergies.file)
-  observed.synergies = gsub("~", "-", lines)
+    lines = readLines(observed.synergies.file)
+    observed.synergies = gsub("~", "-", lines)
 
-  validate.observed.synergies.data(observed.synergies, drug.combinations.tested)
+    validate.observed.synergies.data(observed.synergies, drug.combinations.tested)
 
-  return(observed.synergies)
+    return(observed.synergies)
 }
 
 get.consensus.steady.state = function(steady.state.file) {
@@ -99,38 +99,38 @@ get.stable.state.from.models.dir = function(models.dir) {
 
 get.equations.from.models.dir =
   function(models.dir, remove.equations.with.link.operator) {
-  files = list.files(models.dir)
-  node.names = get.node.names(models.dir)
+    files = list.files(models.dir)
+    node.names = get.node.names(models.dir)
 
-  datalist = list(length(files))
+    datalist = list(length(files))
 
-  # get the equations
-  i=0
-  for (file in files) {
-    i=i+1
-    lines = readLines(paste0(models.dir, "/", file))
-    equations = grep("equation:", lines, value = TRUE)
-    values = sapply(equations, function(equation) {
-      assign.value.to.equation(equation)})
-    datalist[[i]] = values
-  }
+    # get the equations
+    i=0
+    for (file in files) {
+      i=i+1
+      lines = readLines(paste0(models.dir, "/", file))
+      equations = grep("equation:", lines, value = TRUE)
+      values = sapply(equations, function(equation) {
+        assign.value.to.equation(equation)})
+      datalist[[i]] = values
+    }
 
-  df = do.call(rbind, datalist)
+    df = do.call(rbind, datalist)
 
-  rownames(df) = files
-  colnames(df) = node.names
+    rownames(df) = files
+    colnames(df) = node.names
 
-  if (remove.equations.with.link.operator) {
-    # keep only the equations (columns) that have the 'and not' or 'or not' link
-    # operator, i.e. those that can change in the 'link' mutations
-    df = df[, colSums(is.na(df)) < nrow(df)]
-  } else {
-    # keep all equations and put a value of 0.5 for those that don't have a
-    # link operator
-    df[is.na(df)] = 0.5
-  }
+    if (remove.equations.with.link.operator) {
+      # keep only the equations (columns) that have the 'and not' or 'or not'
+      # link operator, i.e. those that can change in the 'link' mutations
+      df = df[, colSums(is.na(df)) < nrow(df)]
+    } else {
+      # keep all equations and put a value of 0.5 for those that don't have a
+      # link operator
+      df[is.na(df)] = 0.5
+    }
 
-  return(df)
+    return(df)
 }
 
 get.fitness.from.models.dir = function(models.dir) {
@@ -178,13 +178,13 @@ is.correct.synergy = function(drug.comb, observed.synergies) {
 
 validate.observed.synergies.data =
   function(observed.synergies, drug.combinations.tested) {
-  for (drug.comb in observed.synergies) {
-    if (!is.element(drug.comb, drug.combinations.tested) &&
-        !is.element(get.alt.drugname(drug.comb), drug.combinations.tested)) {
-      stop(paste("Drug Combination: ", drug.comb,
-                 "is not listed in the model predictions file"), call. = F)
+    for (drug.comb in observed.synergies) {
+      if (!is.element(drug.comb, drug.combinations.tested) &&
+          !is.element(get.alt.drugname(drug.comb), drug.combinations.tested)) {
+        stop(paste("Drug Combination: ", drug.comb,
+                   "is not listed in the model predictions file"), call. = F)
+      }
     }
-  }
 }
 
 get.alt.drugname = function(drug.comb) {
