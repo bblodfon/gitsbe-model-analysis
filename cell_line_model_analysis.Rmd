@@ -58,7 +58,7 @@ print(paste("Cell line:", cell.line))
 **Three inputs** are used in this analysis:
 
 - The **model_predictions** file which has for each model the prediction for 
-each drug combination tested (either *0* = no synergy predicted, *1* = synergy 
+each drug combination tested (*0* = no synergy predicted, *1* = synergy 
 predicted, *NA* = couldn't find stable states in either the drug combination 
 inhibited model or in any of the two single-drug inhibited models)
 - The **observed_synergies** file which lists the drug combinations that were 
@@ -130,12 +130,12 @@ The difference between the models' boolean equations is the *link operator*
 process of the genetic algorithm in `Gitsbe`. For example, if a model has for 
 the column `ERK_f` a value of 1, the correspoding equation is: 
 ERK_f \*= (MEK_f) **OR NOT** ((DUSP6) OR PPP1CA). A value of 0 would correspond 
-to **AND NOT** in that case. Note that the equations that do not have link 
-operators (meaning that they are *the same for every model*) are discarded 
-(so less columns in this dataset) since we want to see the change/difference 
-between the models.
+to the same equation but having **AND NOT**. Note that the equations that do not
+have link operators (meaning that they are *the same for every model*) are 
+discarded (so less columns in this dataset) since we want to see the 
+change/difference between the models.
 
-We, also keep track of each model fitness to the steady state (a value closer 
+We also keep track of each model fitness to the steady state (a value closer 
 to 1 corresponds to a better fit to the steady state profile):
 ```{r Input: models fitness}
 models.fitness = get.fitness.from.models.dir(models.dir)
@@ -204,11 +204,11 @@ names(predicted.synergies.powerset) =
   })
 
 synergy.subset.stats = 
-  sapply(predicted.synergies.powerset, function(drug.comb.set) { 
+  sapply(predicted.synergies.powerset, function(drug.comb.set) {
     count.models.that.predict.synergy.set(drug.comb.set, observed.model.predictions) 
 })
 
-# Bar plot of number of models vs every possible observed synergy combination
+# Bar plot of the number of models for every possible observed synergy combination set
 # Tweak the threshold.for.subset.removal and bottom.margin as desired
 make.barplot.on.synergy.subset.stats(synergy.subset.stats,
                                      threshold.for.subset.removal = 1, 
@@ -221,7 +221,7 @@ to 1), **almost half of the models predict no synergies**, while the `PI-D1`
 synergy is predicted by almost all of the rest of the models. Next we calculate 
 the maximum number of correctly predicted synergies (TP - True Positives) per 
 model:
-```{r}
+```{r TP Stats}
 # Count the predictions of the observed synergies per model (TP)
 models.synergies.tp = apply(observed.model.predictions, 1, sum, na.rm = T)
 models.synergies.tp.stats = table(models.synergies.tp)
@@ -230,13 +230,76 @@ models.synergies.tp.stats = table(models.synergies.tp)
 make.barplot.on.model.stats(models.synergies.tp.stats, cell.line)
 ```
 
-So, there were indeed **only 2 models that predicted 3 synergies (the set 
-`BI-PD,PD-PI,PI-D1`)**, whereas no model could predict all 5 of the observed 
+So, there were indeed **only 2 models that predicted 3 synergies** (the set 
+`BI-PD,PD-PI,PI-D1`), whereas no model could predict all 5 of the observed 
 synergies. The power of the ensemble model approach lies in the fact that (as we
-saw from the above figures) we do not have individual *super models* that can 
-predict many observed drug combinations, but on the other hand we have many that
-predict *at least one* and which will all be used by the drug response analysis 
-module (`Drabme`) to better infer the synergistic drug combinations.
+saw from the above figures) we do not have *individual super models* that can 
+predict many observed drug combinations, but many that predict *at least one* 
+and which will be used by the drug response analysis module (`Drabme`) to 
+better infer the synergistic drug combinations. It goes without saying though, 
+that the existance of models that could predict more than a handful of synergies 
+would be beneficial for any approach that performs drug response analysis on a 
+multitude of models.
+
+Now, we want to investigate and find possible important nodes - **biomarkers** -
+whose activity state either distinguishes good performance models from less 
+performant ones (in terms of maximum true positives predicted) or makes some 
+models predict a specific synergy (or set of synergies) compared to others that 
+can't (but can predict different ones). So, we devised *two strategies* to split 
+the models in our disposal to *good* and *bad* ones (but not necessarily all of 
+them), the demarcation line being either a performance metric (number of TP) or 
+the prediction or not of a specific synergy (or set of synergies). Then, for 
+each group of models (labeled as either *good* or *bad*) we find the average 
+activity state of every node in the network (value between 0 and 1) and then we 
+compute the average difference for each node: 
+$\forall i\in nodes,mean(state_i)_{good} - mean(state_i)_{bad}$. 
+Our hypothesis is that if the absolute value of these average differences are 
+larger than a user-defined threshold (e.g. 0.7) for a small number of nodes (the 
+less the better) while for the rest of the nodes they remain close to zero, then 
+the former nodes are considered **the most important** since they 
+define the difference between the *average bad model* and the *average good* one. 
+We will also use a coloring method to visualize these average differences on the
+network nodes.
+
+Using our first strategy, **we will split the models based on the number of true 
+positive predictions**. For example, the bad models will be the ones that 
+predicted 0 TP synergies whereas the good models will be the ones that predicted 
+2 TP (we will denote the grouping as (0,2)). This particular classification 
+strategy will be used for every possible combination of the number of TP as 
+given by the `models.synergies.tp.stats` object and the density estimation of the
+average node state differences in each case will be ploted in a common graph:
+```{r Good vs Bad models based on the number of TPs}
+tp.values = as.numeric(names(models.synergies.tp.stats))
+tp.values.comb = t(combn(tp.values, 2))
+
+diff.tp.results = apply(tp.values.comb, 1, function(comb) {
+  return(get.avg.activity.diff.based.on.tp.predictions(
+    models, models.synergies.tp, models.stable.state, 
+    num.low = comb[1], num.high = comb[2]))
+})
+
+tp.comb.names = apply(tp.values.comb, 1, function(row) {
+  return(paste0("(", paste(row, collapse = ","), ")")) 
+})
+colnames(diff.tp.results) = tp.comb.names
+diff.tp.results = t(diff.tp.results)
+
+densities = apply(abs(diff.tp.results), 1, density)
+make.multiple.density.plot(densities)
+```
+
+What we are actually looking for is density plots that are *largely skewed to 
+the right* (so the average absolute differences of these nodes are close to zero)
+while there are a few areas of non-zero densities which are as close to 1 as 
+possible. So, from the above graph, the density plots that fit this description 
+are the oens marked as (2,3) and the even better (1,3). Next we will visualize 
+this differences in a network graph, where 
+
+- build the network (igraph?), decide layout, arrow heads
+- coloring of the nodes represents the diff value: [-1, 0, 1]
+- size of node represents the abs(diff) value: [0, 1], where 0: normal size, 1: a max size?
+
+
 
 
 
@@ -245,13 +308,6 @@ ways to find out what makes the models predict these synergies with regards to
 their stable state characteristics and boolean equation link operator mutations
 
 ```{r eval=FALSE, include=FALSE}
-### Good vs Bad models ###
-
-# Good vs Bad models based on the number of models that
-# correctly predicted synergies
-diff.on.synergies.predicted = get.diff.synergies.predicted(models, models_synergies_tp, models_stable_state)
-output.diff.to.file(cell_line, "synergies_predicted", diff.on.synergies.predicted)
-
 # Good vs Bad models based on the number of the models
 # that predicted a specific synergy
 predicted.synergies = synergy_observations_data
@@ -269,7 +325,6 @@ non.predicted.synergies = synergy_observations_data[!synergy_observations_data %
 # Good vs Bad models when comparing models that predicted diferrent synergy sets
 # Usually good models predicted: (A-B, C-D, K-L) and bad (A-B, C-D) - just to see
 # what the good models have that allows them to predict the K-L synergy also
-diff.on.synergy.sets = get.diff.from.models.predicting.diff.synergy.sets(all.synergy.subsets["AK-D1,BI-D1,PK-ST"],
-                                                                         all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"],
-                                                                         observed.modelData, models_stable_state)
+diff.on.synergy.sets = 
+  get.diff.from.models.predicting.diff.synergy.sets(all.synergy.subsets["AK-D1,BI-D1,PK-ST"], all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"], observed.modelData, models_stable_state)
 ```
