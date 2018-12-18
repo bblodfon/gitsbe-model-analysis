@@ -1,6 +1,7 @@
-make.color.bar.plot = function(color.vector, number.vector, title, xlab) {
+# Don't use it to visualize more than 50 colors
+make.color.bar.plot = function(color.vector, number.vector, title, xlab = "") {
   bp = barplot(rep(1,length(color.vector)), col = color.vector,
-               axes = FALSE, xlab = xlab, main = title)
+               axes = FALSE, xlab = xlab, main = title, border = NA)
   axis(1, bp, number.vector)
 }
 
@@ -54,11 +55,47 @@ add.numbers.above.the.bars = function(table.stats, bp, color) {
 
 make.multiple.density.plot = function(densities, xlab) {
   plot(NA, xlim = range(sapply(densities, "[", "x")),
-       ylim = range(sapply(dens, "[", "y")),
+       ylim = range(sapply(densities, "[", "y")),
        main = "Density Estimation for the Average State Difference",
        xlab = "Activity state (absolute difference value)",
        ylab = "Density")
   mapply(lines, densities, col = 1:length(densities))
 
   legend("topright", legend = names(densities), fill = 1:length(densities))
+}
+
+plot.network = function(net, diff, layout) {
+  num.of.intervals = 2000
+  colors = c("tomato", "grey", "gold")
+
+  # make the color of each node match the corresponding diff value
+  color.palette = colorRampPalette(colors, interpolate = "spline")
+  color.values = color.palette(num.of.intervals)
+  # check the colors
+  # plot(x = 1:2000, y = 1:2000, cex = 10, pch = 20, col = color.values)
+
+  diff.extra = c(diff, -1, 1)
+
+  # 2000 equal-sized intervals for values between [-1,1]
+  # for significance up to the 3rd decimal
+  interval.ids.extra = as.numeric(
+    cut(diff.extra, breaks = num.of.intervals, include.lowest = TRUE)
+  )
+
+  # remove the last two values
+  interval.ids = interval.ids.extra[1:(length(interval.ids.extra) - 2)]
+  diff.colors = color.values[interval.ids]
+  names(diff.colors) = names(diff)
+
+  # re-order based on the net object's node sequence
+  node.names = V(net)$name
+  V(net)$color = diff.colors[node.names]
+
+  # plot the network
+  par(mar = c(0, 0, 0, 0))
+  plot(net, asp = 0, layout = layout)
+  legend(x = -1.1, y = -0.7, pch = 21, col = "#777777",
+        legend = c("More inhibited","No difference", "More activated"),
+        title = expression(bold("Good model activity state")),
+        pt.bg = colors, pt.cex = 2, cex = 0.8, bty = "n", ncol = 1)
 }

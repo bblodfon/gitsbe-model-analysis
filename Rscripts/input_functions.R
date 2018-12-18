@@ -192,3 +192,61 @@ get.alt.drugname = function(drug.comb) {
   drug.comb.alt = paste0(drug.list[2], "-", drug.list[1])
   return(drug.comb.alt)
 }
+
+get.parent.dir = function(dir) {
+  parts = unlist(strsplit(dir, "/"))
+  parent.dir = do.call(file.path, as.list(parts[1:length(parts) - 1]))
+  return(parent.dir)
+}
+
+contruct.network = function(topology.file, models.dir) {
+  edges = get.edges.from.topology.file(topology.file)
+
+  net = graph_from_data_frame(edges, directed = TRUE)
+
+  # check the vertices/node names
+  vertices = V(net)$name
+  nodes = get.node.names(models.dir)
+  stopifnot(nodes %in% vertices)
+
+  # set visualization graph properties
+  E(net)$width = 1.5
+  E(net)$arrow.size = 0.4
+  E(net)$curved = 0.4
+  V(net)$label.cex = 0.6
+  V(net)$size = 10
+
+  graph_attr(net, "layout") = layout_randomly
+
+  return(net)
+}
+
+get.edges.from.topology.file = function(topology.file) {
+  print(paste("Reading topology file:", topology.file))
+
+  edges = read.table(topology.file)
+
+  # reorder&rename columns
+  edges = as.matrix(edges[,c(1,3,2)])
+  colnames(edges) = c("source", "target", "regulation.effect")
+
+  # change arrow symbols for activation and inhibition to proper name strings
+  regulation.effects = edges[,"regulation.effect"]
+  regulation.effects = sapply(regulation.effects, function(arrow.symbol) {
+    if (arrow.symbol == "->") return("activation")
+    else return("inhibition")
+  }, USE.NAMES = FALSE)
+
+  edges[,"regulation.effect"] = regulation.effects
+
+  # Set edge.color plotting parameter (igraph) according to regulation effect
+  color = sapply(regulation.effects, function(effect) {
+    if (effect == "activation") return("green")
+    else return("red")
+  })
+  names(color) = NULL
+
+  edges = cbind(edges, color)
+
+  return(edges)
+}
