@@ -173,8 +173,8 @@ unique.fitness.values = as.numeric(names(model.count.per.fitness))
 
 title = "Color Palette"
 xlab  = "Fitness score"
-make.color.bar.plot(unique.fitness.colors, 
-                    round(unique.fitness.values, digits = 3), 
+make.color.bar.plot(color.vector = unique.fitness.colors, 
+                    number.vector = round(unique.fitness.values, digits = 3), 
                     title, xlab)
 ```
 
