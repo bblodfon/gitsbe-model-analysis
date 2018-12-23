@@ -69,3 +69,27 @@ test_that("it returns proper results", {
 
   expect_equal(res, expected.res)
 })
+
+# is.between
+test_that("it returns proper results", {
+  low.thres = -0.23456
+  high.thres = 1.26346
+
+  res.1 = is.between(value = 0, low.thres, high.thres)
+  res.2 = is.between(value = -1, low.thres, high.thres)
+  res.3 = is.between(value = 1, low.thres, high.thres)
+  res.4 = is.between(value = low.thres, low.thres, high.thres)
+  res.5 = is.between(value = low.thres, low.thres, high.thres,
+                     include.high.value = TRUE)
+  res.6 = is.between(value = high.thres, low.thres, high.thres)
+  res.7 = is.between(value = high.thres, low.thres, high.thres,
+                     include.high.value = TRUE)
+
+  expect_true(res.1)
+  expect_false(res.2)
+  expect_true(res.3)
+  expect_true(res.4)
+  expect_true(res.5)
+  expect_false(res.6)
+  expect_true(res.7)
+})
