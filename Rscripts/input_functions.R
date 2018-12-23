@@ -98,16 +98,16 @@ get.stable.state.from.models.dir = function(models.dir) {
 }
 
 get.equations.from.models.dir =
-  function(models.dir, remove.equations.with.link.operator) {
+  function(models.dir, remove.equations.without.link.operator) {
     files = list.files(models.dir)
     node.names = get.node.names(models.dir)
 
     datalist = list(length(files))
 
     # get the equations
-    i=0
+    i = 0
     for (file in files) {
-      i=i+1
+      i = i+1
       lines = readLines(paste0(models.dir, "/", file))
       equations = grep("equation:", lines, value = TRUE)
       values = sapply(equations, function(equation) {
@@ -120,9 +120,9 @@ get.equations.from.models.dir =
     rownames(df) = files
     colnames(df) = node.names
 
-    if (remove.equations.with.link.operator) {
+    if (remove.equations.without.link.operator) {
       # keep only the equations (columns) that have the 'and not' or 'or not'
-      # link operator, i.e. those that can change in the 'link' mutations
+      # link operator, i.e. those that can change in the 'link mutations'
       df = df[, colSums(is.na(df)) < nrow(df)]
     } else {
       # keep all equations and put a value of 0.5 for those that don't have a
@@ -162,7 +162,6 @@ get.model.names = function(models.dir) {
   return(list.files(models.dir))
 }
 
-# 'or not' -> 1, 'and not' -> 0, else -> NA
 assign.value.to.equation = function(equation) {
   if (grepl(".*or not.*", equation)) {
     return(1)
@@ -215,8 +214,6 @@ contruct.network = function(topology.file, models.dir) {
   E(net)$curved = 0.4
   V(net)$label.cex = 0.6
   V(net)$size = 10
-
-  graph_attr(net, "layout") = layout_randomly
 
   return(net)
 }

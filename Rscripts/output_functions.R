@@ -1,3 +1,17 @@
+specify.decimal = function(number, digits.to.keep) {
+  trimws(format(round(number, digits.to.keep), nsmall = digits.to.keep))
+}
+
+print.mcc.classification.info = function(mcc.classes) {
+  number.of.mcc.classes = length(mcc.classes)
+  print(paste0("MCC values are split into ",
+               number.of.mcc.classes, " classes:"))
+
+  for (i in 1:number.of.mcc.classes) {
+    print(paste0(i, ". ", mcc.classes[i]))
+  }
+}
+
 output.diff.to.file = function(cell.line, string, diff) {
   drug.comb = string
   output.file = paste0(getwd(), "/", cell.line, "/", cell.line, "_", drug.comb,
@@ -15,10 +29,6 @@ output.data.to.file = function(dir.to.save, filename, data, with.col.names) {
   output.file = paste0(dir.to.save, "/", filename)
   write.table(data, output.file, append = FALSE, sep = "\t", dec = ".",
               col.names = with.col.names, quote = FALSE)
-}
-
-specify.decimal = function(number, digits.to.keep) {
-  trimws(format(round(number, digits.to.keep), nsmall = digits.to.keep))
 }
 
 plot.pdf = function(file, plot.string) {
