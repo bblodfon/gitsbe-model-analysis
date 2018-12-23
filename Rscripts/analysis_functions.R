@@ -32,9 +32,9 @@ get.average.over.unique.values = function(vec1, vec2) {
   return(res)
 }
 
+# input are vectors with 1 and 0's with same `names` attribute
 get.percentage.of.matches = function(num.vec.1, num.vec.2) {
-  # check that all columns (node names) are equal
-  stopifnot(all.equal(names(num.vec.1), names(num.vec.2)))
+  stopifnot(names(num.vec.1) == names(num.vec.2))
 
   total = length(num.vec.1)
   diff = num.vec.1 - num.vec.2
@@ -54,30 +54,92 @@ count.models.that.predict.synergy.set =
     } else if (length(synergy.vector) == 1) {
       count = sum(model.predictions[, synergy.vector], na.rm = T)
     } else {
-      count = sum(apply(model.predictions[, synergy.vector], 1,
-                        function(x) all(x == 1)), na.rm = T)
+      count = sum(apply(model.predictions[, synergy.vector], 1, function(x) {
+        all(x == 1)
+      }), na.rm = T)
     }
 
     return(count)
 }
 
-# num.low is the number of true positives for the 'bad' models
-# num.high is the number of true positives for the 'good' models
-# So, num.low < num.high
+# `num.low` is the number of true positives for the 'bad' models
+# `num.high` is the number of true positives for the 'good' models
 get.avg.activity.diff.based.on.tp.predictions =
   function(models, models.synergies.tp, models.stable.state, num.low, num.high) {
     if (num.low >= num.high) {
-      stop("num.low needs to be smaller than num.high")
+      stop("`num.low` needs to be smaller than `num.high`")
     }
 
-    good.models = models[models.synergies.tp == num.low]
-    bad.models  = models[models.synergies.tp == num.high]
+    good.models = models[models.synergies.tp == num.high]
+    bad.models  = models[models.synergies.tp == num.low]
+
+    # `good.models` != `bad.models` (disjoing sets of models)
+    stopifnot(!(good.models %in% bad.models))
 
     good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
     bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
 
     return(good.avg.activity - bad.avg.activity)
 }
+
+# `class.id.low` is the `mcc.interval` id for the 'bad' models
+# `class.id.high` is the `mcc.interval` id for the 'good' models
+get.avg.activity.diff.based.on.mcc.classification =
+  function(models, models.mcc, mcc.intervals, models.stable.state,
+           class.id.low, class.id.high) {
+    if (class.id.low >= class.id.high) {
+      stop("`class.id.low` needs to be smaller than `class.id.high`")
+    }
+
+    mcc.interval.low = mcc.intervals[class.id.low, ]
+    mcc.interval.high = mcc.intervals[class.id.high, ]
+
+    # find the 'good' models
+    max.value = max(mcc.intervals, na.rm = TRUE)
+    if (mcc.interval.high[2] == max.value) {
+      good.models =
+        get.models.based.on.mcc.interval(models, models.mcc, mcc.interval.high,
+                                         include.high.value = TRUE)
+    } else {
+      good.models =
+        get.models.based.on.mcc.interval(models, models.mcc, mcc.interval.high)
+    }
+
+    # find the 'bad' models
+    if (is.na(mcc.interval.low[1])) {
+      # the `NaN` MCC scored models (can only be 'bad' ones)
+      bad.models = models[is.na(models.mcc)]
+    } else {
+      bad.models =
+        get.models.based.on.mcc.interval(models, models.mcc, mcc.interval.low)
+    }
+
+    # `good.models` != `bad.models` (disjoing sets of models)
+    stopifnot(!(good.models %in% bad.models))
+
+    good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
+    bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+
+    return(good.avg.activity - bad.avg.activity)
+}
+
+get.models.based.on.mcc.interval =
+  function(models, models.mcc, mcc.interval, include.high.value = FALSE) {
+    res = sapply(models.mcc, is.between, low.thres = mcc.interval[1],
+                 high.thres = mcc.interval[2], include.high.value)
+    # exclude the NA values
+    res.pruned = res[!is.na(res)]
+    models.pruned = models[!is.na(res)]
+
+    return(models.pruned[res.pruned])
+}
+
+# checks if `value` is in [low.thres,high.thres) (standard behaviour) or [a,b]
+is.between = function(value, low.thres, high.thres, include.high.value = FALSE) {
+  if (include.high.value) return(value >= low.thres & value <= high.thres)
+  else return(value >= low.thres & value < high.thres)
+}
+
 
 get.diff.specific.synergy =
   function(drug.comb, model.data, models.stable.state) {
@@ -128,4 +190,46 @@ get.diff.from.models.predicting.diff.synergy.sets =
     good.average = apply(models.stable.state[good.models, ], 2, mean)
 
     return(good.average - bad.average)
+}
+
+# inputs are vectors of same size
+calculate.mcc = function(tp, tn, fp, fn, p, n) {
+  return(
+    (tp * tn - fp * fn) / sqrt((tp + fp) * p * n * (tn + fn))
+  )
+}
+
+get.mcc.intervals = function(mcc.values, interval.size) {
+  min.mcc = min(mcc.values, na.rm = TRUE)
+  max.mcc = max(mcc.values, na.rm = TRUE)
+  mcc.points = seq(-1.0, 1.0, interval.size)
+  mcc.points.pruned = mcc.points[min.mcc < (mcc.points + interval.size) &
+                                 mcc.points < (max.mcc + interval.size)]
+
+  mcc.intervals =
+    matrix(numeric(), nrow = length(mcc.points.pruned) - 1, ncol = 2)
+  for (i in 1:nrow(mcc.intervals)) {
+    mcc.intervals[i, 1] = mcc.points.pruned[i]
+    mcc.intervals[i, 2] = mcc.points.pruned[i + 1]
+  }
+
+  return(mcc.intervals)
+}
+
+get.mcc.classes = function(mcc.intervals) {
+  number.of.intervals = nrow(mcc.intervals)
+  mcc.classes = character(number.of.intervals)
+
+  for (i in 1:number.of.intervals) {
+    mcc.interval = mcc.intervals[i,]
+    low.value = mcc.interval[1]
+    high.value = mcc.interval[2]
+    if (is.na(low.value)) mcc.classes[i] = "NaN"
+    else if (i != number.of.intervals)
+      mcc.classes[i] = paste0("[", low.value, ", " , high.value, ")")
+    else
+      mcc.classes[i] = paste0("[", low.value, ", " , high.value, "]")
+  }
+
+  return(mcc.classes)
 }
