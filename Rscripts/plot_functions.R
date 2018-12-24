@@ -104,20 +104,68 @@ make.multiple.density.plot = function(densities, legend.title) {
          title = legend.title)
 }
 
+# plot network using the `visNetwork` library
+plot.network.vis = function(net, diff, layout, title) {
+  data = toVisNetworkData(net)
+  nodes = data$nodes
+  edges = data$edges
+
+  # colors for nodes (to be interpolated) matching one-to-one the diff values
+  col = c("tomato", "grey", "gold")
+  nodes$color = get.node.colors(net, diff, col)
+
+  # set visualization graph attributes
+  nodes$size = 30
+  nodes$physics = FALSE
+  nodes$shape = "dot"
+  scale.factor = 60
+  nodes$x = layout[,2] * scale.factor
+  nodes$y = layout[,1] * scale.factor
+
+  edges$smooth = FALSE
+  edges$physics = FALSE
+  edges$arrows = "to"
+
+  # set legend properties
+  legend.nodes = data.frame(
+    label = c("More inhibited","No difference", "More activated"), color = col
+  )
+
+  # plot the network
+  visNetwork(nodes, edges, main = title, width = "100%") %>%
+    visLegend(addNodes = legend.nodes, useGroups = FALSE,
+              main = "Good model activity state", zoom = FALSE)
+}
+
+# plot network using the `igraph` library
 plot.network = function(net, diff, layout, title) {
+  # colors for nodes (to be interpolated) matching one-to-one the diff values
+  col = c("tomato", "grey", "gold")
+  V(net)$color = get.node.colors(net, diff, col)
+
+  # plot the network
+  par(mar = c(0, 0, 1, 0)) # c(bottom, left, top, right)
+  plot(net, asp = 0, layout = layout, main = title)
+  legend(x = -1.1, y = -0.7, pch = 21, col = "#777777",
+        legend = c("More inhibited","No difference", "More activated"),
+        title = expression(bold("Good model activity state")),
+        pt.bg = col, pt.cex = 2, cex = 0.8, bty = "n", ncol = 1)
+}
+
+# `net` is an igraph network object with node labels as: `V(net)$name`
+get.node.colors = function(net, diff, col) {
+  # 2000 equal-sized intervals for values between [-1,1]
+  # for significance up to the 3rd decimal
   num.of.intervals = 2000
-  colors = c("tomato", "grey", "gold")
 
   # make the color of each node match the corresponding diff value
-  color.palette = colorRampPalette(colors, interpolate = "spline")
+  color.palette = colorRampPalette(col, interpolate = "spline")
   color.values = color.palette(num.of.intervals)
   # check the colors
   # plot(x = 1:2000, y = 1:2000, cex = 10, pch = 20, col = color.values)
 
   diff.extra = c(diff, -1, 1)
 
-  # 2000 equal-sized intervals for values between [-1,1]
-  # for significance up to the 3rd decimal
   interval.ids.extra = as.numeric(
     cut(diff.extra, breaks = num.of.intervals, include.lowest = TRUE)
   )
@@ -129,13 +177,5 @@ plot.network = function(net, diff, layout, title) {
 
   # re-order based on the net object's node sequence
   node.names = V(net)$name
-  V(net)$color = diff.colors[node.names]
-
-  # plot the network
-  par(mar = c(0, 0, 1, 0)) # c(bottom, left, top, right)
-  plot(net, asp = 0, layout = layout, main = title)
-  legend(x = -1.1, y = -0.7, pch = 21, col = "#777777",
-        legend = c("More inhibited","No difference", "More activated"),
-        title = expression(bold("Good model activity state")),
-        pt.bg = colors, pt.cex = 2, cex = 0.8, bty = "n", ncol = 1)
+  return(diff.colors[node.names])
 }
