@@ -104,6 +104,19 @@ make.multiple.density.plot = function(densities, legend.title) {
          title = legend.title)
 }
 
+# plot network using the `threejs` library
+plot.network.3d = function(net, diff) {
+
+  # colors for nodes (to be interpolated) matching one-to-one the diff values
+  col = c("tomato", "grey", "gold")
+  vertex.color = get.node.colors(net, diff, col)
+  V(net)$label = names(vertex.color)
+  names(vertex.color) = NULL
+
+  net = delete_edge_attr(net, "width")
+  graphjs(net, vertex.color = vertex.color, width = "100%")
+}
+
 # plot network using the `visNetwork` library
 plot.network.vis = function(net, diff, layout, title) {
   data = toVisNetworkData(net)

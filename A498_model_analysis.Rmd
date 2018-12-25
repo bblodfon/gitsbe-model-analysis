@@ -28,8 +28,8 @@ have them):
 ```{r Load libraries, message = FALSE}
 # require(RColorBrewer)
 # require(gplots)
-library("rje") # version: 1.9
-library("igraph") # version: 1.2.2, see (Csardi, 2006)
+library("rje") # version 1.9
+library("igraph") # version 1.2.2, see (Csardi, 2006)
 ```
 and the relevant helper functions:
 ```{r Helper functions}
@@ -507,21 +507,21 @@ We also list the common nodes that have to be in a more *inhibited* state:
 print.common.nodes(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
+## TO BE REMOVED
 
-- threejs
-- networkD3
-?igraph_to_networkD3
-```{r Comparison of network visualization libraries}
-library("visNetwork")
-
-# ([0, 0.2), [0.2, 0.4])
-diff.mcc.3.4 = diff.mcc.results[6,]
+### Comparison of network visualization libraries: igraph, visNetwork, threejs, D3
+```{r}
+# igraph
 plot.network(net, diff.mcc.3.4, layout = nice.layout,
              title = "Bad models, MCC: [0, 0.2) vs Good models, MCC: [0.2, 0.4]")
+
+library("visNetwork") # version 2.0.5
 plot.network.vis(net, diff.mcc.3.4, layout = nice.layout,
              title = "Bad models, MCC: [0, 0.2) vs Good models, MCC: [0.2, 0.4]")
-```
 
+library("threejs") # version 0.3.1
+plot.network.3d(net, diff.mcc.3.4)
+```
 
 
 
