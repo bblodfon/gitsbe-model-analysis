@@ -1,5 +1,5 @@
 get.model.predictions = function(model.predictions.file) {
-  print(paste("Reading model predictions file:", model.predictions.file))
+  #print(paste("Reading model predictions file:", model.predictions.file))
 
   lines = readLines(model.predictions.file)
   lines[1] = sub("ModelName\t|#ModelName\t", "", lines[1])
@@ -17,7 +17,7 @@ get.model.predictions = function(model.predictions.file) {
 
 get.observed.synergies =
   function(observed.synergies.file, drug.combinations.tested) {
-    print(paste("Reading observed synergies file:", observed.synergies.file))
+    #print(paste("Reading observed synergies file:", observed.synergies.file))
 
     lines = readLines(observed.synergies.file)
     observed.synergies = gsub("~", "-", lines)
@@ -28,7 +28,7 @@ get.observed.synergies =
 }
 
 get.consensus.steady.state = function(steady.state.file) {
-  print(paste("Reading consensus steady state file:", steady.state.file))
+  #print(paste("Reading consensus steady state file:", steady.state.file))
 
   lines = readLines(steady.state.file)
   lines = remove.commented.and.empty.lines(lines)
@@ -219,7 +219,7 @@ contruct.network = function(topology.file, models.dir) {
 }
 
 get.edges.from.topology.file = function(topology.file) {
-  print(paste("Reading topology file:", topology.file))
+  #print(paste("Reading topology file:", topology.file))
 
   edges = read.table(topology.file)
 
