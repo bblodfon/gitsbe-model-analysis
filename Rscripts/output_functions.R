@@ -2,6 +2,12 @@ specify.decimal = function(number, digits.to.keep) {
   trimws(format(round(number, digits.to.keep), nsmall = digits.to.keep))
 }
 
+print.model.and.drug.stats = function(drug.combs, models, nodes) {
+  print(paste("Drug combinations tested:", drug.combs,
+              "Number of models:", models,
+              "Number of nodes:", nodes))
+}
+
 print.mcc.classification.info = function(mcc.classes) {
   number.of.mcc.classes = length(mcc.classes)
   print(paste0("MCC values are split into ",
@@ -11,6 +17,24 @@ print.mcc.classification.info = function(mcc.classes) {
     print(paste0(i, ". ", mcc.classes[i]))
   }
 }
+
+pretty.print.vector.names = function(vector) {
+  print(paste0(length(vector), " nodes: ", paste0(names(vector), collapse = ",")))
+}
+
+print.common.nodes = function(vec1, vec2) {
+  common.nodes = intersect(names(vec1), names(vec2))
+  common.nodes.number = length(common.nodes)
+
+  if (common.nodes.number == 0) print("No common nodes")
+  else print(paste0(common.nodes.number, " nodes: ",
+             paste0(common.nodes, collapse = ",")))
+}
+
+print.empty.line = function() {
+  cat("\n")
+}
+
 
 output.diff.to.file = function(cell.line, string, diff) {
   drug.comb = string
