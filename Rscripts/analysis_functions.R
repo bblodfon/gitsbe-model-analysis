@@ -140,37 +140,38 @@ is.between = function(value, low.thres, high.thres, include.high.value = FALSE) 
   else return(value >= low.thres & value < high.thres)
 }
 
-
-get.diff.specific.synergy =
-  function(drug.comb, model.data, models.stable.state) {
-    bad.models  = rownames(model.data)[
-      model.data[, drug.comb] == 0 & !is.na(model.data[, drug.comb])
+# Example use: `drug.comb` = "AK-PD"
+get.avg.activity.diff.based.on.specific.synergy.prediction =
+  function(model.predictions, models.stable.state, drug.comb) {
+    good.models = rownames(model.predictions)[
+      model.predictions[, drug.comb] == 1 & !is.na(model.predictions[, drug.comb])
     ]
-    good.models = rownames(model.data)[
-      model.data[, drug.comb] == 1 & !is.na(model.data[, drug.comb])
-    ]
-    # na.models = rownames(model.data)[is.na(model.data[, drug.comb])]
+    bad.models  = rownames(model.predictions)[
+      model.predictions[, drug.comb] == 0 & !is.na(model.predictions[, drug.comb])
+      ]
+    # na.models = rownames(model.predictions)[is.na(model.predictions[, drug.comb])]
 
-    bad.average = apply(models.stable.state[bad.models, ], 2, mean)
-    good.average = apply(models.stable.state[good.models, ], 2, mean)
+    good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
+    bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
 
-    return(good.average - bad.average)
+    return(good.avg.activity - bad.avg.activity)
 }
 
-# Example (to get meaningful results)
-# set1 = all.synergy.subsets["AK-BI,BI-D1,PK-ST"]
-# set2 = all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"]
-get.diff.from.models.predicting.diff.synergy.sets =
-  function(set1, set2, model.data, models.stable.state) {
+# To get meaningful results, one set must be a subset of the other
+# Example use :
+# set1 = "AK-BI,BI-D1,PK-ST"
+# set2 = "AK-BI,AK-D1,BI-D1,PK-ST"
+get.avg.activity.diff.based.on.diff.synergy.set.prediction =
+  function(set1, set2, model.predictions, models.stable.state) {
     # length(set1), length(set2) >= 2
     synergy.set.1 = unlist(set1)
     synergy.set.2 = unlist(set2)
 
-    models.set.1 = rownames(model.data)[
-      apply(model.data[, synergy.set.1], 1, function(x) all(x == 1 & !is.na(x)))
+    models.set.1 = rownames(model.predictions)[
+      apply(model.predictions[, synergy.set.1], 1, function(x) all(x == 1 & !is.na(x)))
     ]
-    models.set.2 = rownames(model.data)[
-      apply(model.data[, synergy.set.2], 1, function(x) all(x == 1 & !is.na(x)))
+    models.set.2 = rownames(model.predictions)[
+      apply(model.predictions[, synergy.set.2], 1, function(x) all(x == 1 & !is.na(x)))
     ]
 
     # have the first set of models as the largest
@@ -192,7 +193,7 @@ get.diff.from.models.predicting.diff.synergy.sets =
     return(good.average - bad.average)
 }
 
-# inputs are vectors of same size
+# inputs are vectors of same size and one-to-one value correspondence
 calculate.mcc = function(tp, tn, fp, fn, p, n) {
   return(
     (tp * tn - fp * fn) / sqrt((tp + fp) * p * n * (tn + fn))
