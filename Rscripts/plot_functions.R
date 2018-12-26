@@ -192,3 +192,18 @@ get.node.colors = function(net, diff, col) {
   node.names = V(net)$name
   return(diff.colors[node.names])
 }
+
+# `file.format` can be one of: {pdf, svg, png, tiff}
+plot.string.to.file = function(file, file.format, plot.string){
+  if (file.format == "pdf")
+    pdf(file)
+  else if (file.format == "svg")
+    svg(file, width = 7, height = 7)
+  else if (file.format == "png")
+    png(file, width = 7, height = 7, units = 'in', res = 300)
+  else if (file.format == "tiff")
+    tiff(file, width = 7, height = 7, units = 'in', res = 300)
+
+  eval(parse(text = plot.string))
+  dev.off()
+}
