@@ -240,18 +240,18 @@ whose activity state either distinguishes good performance models from less
 performant ones (in terms of a performance metric - e.g. maximum true positives 
 predicted) or makes some models predict a specific synergy (or set of synergies) 
 compared to others that can't (but could predict different ones). So, we devised 
-*two strategies* to split the models in our disposal to *good* and *bad* ones 
+**two strategies** to split the models in our disposal to *good* and *bad* ones 
 (but not necessarily all of them), the demarcation line being either a performance 
-metric (number of TP or Matthews Correlation Coefficient score) or 
+metric (the number of $TP$ or the Matthews Correlation Coefficient score) or 
 the prediction or not of a specific synergy (or set of synergies). Then, for 
 each group of models (labeled as either *good* or *bad*) we find the average 
 activity state of every node in the network (value between 0 and 1) and then we 
 compute the average difference for each node between the two groups:
 $\forall i\in nodes,mean(state_i)_{good} - mean(state_i)_{bad}$. 
 Our hypothesis is that if the absolute value of these average differences are 
-larger than a user-defined threshold (e.g. 0.7) for a small number of nodes (the 
-less the better) while for the rest of the nodes they remain close to zero, then 
-the former nodes are considered **the most important** since they 
+larger than a **user-defined threshold (e.g. 0.7)** for a small number of nodes 
+(the less the better) while for the rest of the nodes they remain close to zero, 
+then the former nodes are considered **the most important** since they 
 define the difference between the *average bad model* and the *average good one*
 in that particular case study. We will also deploy a network visualizing method 
 to observe these average differences.
@@ -260,8 +260,8 @@ to observe these average differences.
 
 Using our first strategy, **we will split the models based on the number of true 
 positive predictions**. For example, the bad models will be the ones that 
-predicted $0 TP$ synergies whereas the good models will be the ones that predicted 
-$2 TP$ (we will denote the grouping as $(0,2)$). This particular classification 
+predicted 0 $TP$ synergies whereas the good models will be the ones that predicted 
+2 $TP$ (we will denote the grouping as $(0,2)$). This particular classification 
 strategy will be used for every possible combination of the number of TP as 
 given by the `models.synergies.tp.stats` object and the density estimation of the
 average node state differences in each case will be ploted in a common graph:
@@ -291,8 +291,8 @@ while there are a few areas of non-zero densities which are as close to 1 as
 possible. So, from the above graph, the density plots that fit this description 
 are the ones marked as $(1,3)$ and $(2,3)$. So, we can now visualize the 
 average state differences in a network graph, where the color of each node will 
-denote how much more inhibited or activated is the average good model vs the 
-average bad one. The color of the edge will denote activation (green) or 
+denote how much more inhibited or active that node is, in the average good model 
+vs the average bad one. The color of the edge will denote activation (green) or 
 inhibition (red). We first build the network from the node topology (edge list):
 ```{r Input: topology}
 parent.dir = get.parent.dir(data.dir)
@@ -324,14 +324,18 @@ plot.network(net, diff.tp.2.3, layout = nice.layout,
 
 We will now **list the important nodes** that affect the models' prediction 
 performance **with regards to the number of true positive synergies** that they 
-predict. First, the nodes that have to be in a more *activated* state:
-```{r}
+predict. Comparing the graphs above, we observe that there exist common nodes 
+that maintain the same significant influence in all of them. Setting the 
+**threshold for the absolute significance level in average state differences** 
+to $0.7$ and taking the middle case scenario as the representative one (1 $TP$ vs 
+3 $TP$) we find the nodes that have to be in a more *active* state:
+```{r TP biomarkers (active)}
 threshold = 0.7
-biomarkers.tp.activated = diff.tp.1.3[diff.tp.1.3 > threshold]
-pretty.print.vector.names(biomarkers.tp.activated)
+biomarkers.tp.active = diff.tp.1.3[diff.tp.1.3 > threshold]
+pretty.print.vector.names(biomarkers.tp.active)
 ```
-Secondly, the nodes that have to be in a more *inhibited* state:
-```{r}
+Also, the nodes that have to be in a more *inhibited* state are:
+```{r TP biomarkers (inhibited)}
 biomarkers.tp.inhibited = diff.tp.1.3[diff.tp.1.3 < -threshold]
 pretty.print.vector.names(biomarkers.tp.inhibited)
 ```
@@ -448,15 +452,15 @@ mcc.classes.comb.names = apply(mcc.class.id.comb, 1, function(comb) {
 colnames(diff.mcc.results) = mcc.classes.comb.names
 diff.mcc.results = t(diff.mcc.results)
 
-densities = apply(abs(diff.mcc.results), 1, density)
-make.multiple.density.plot(densities, legend.title = "MCC classes")
+mcc.densities = apply(abs(diff.mcc.results), 1, density)
+make.multiple.density.plot(mcc.densities, legend.title = "MCC classes")
 ```
 
 From the above graph we notice that the `NaN` MCC class has almost the same 
 density distribution of the absolute average state differences when compared to
 all the other MCC classes, meaning that this truly represents a (bad) class
 of models which are fundamentally different from all other models that have at 
-least one TP or FP prediction. The density plots of interest here are the ones 
+least one $TP$ or $FP$ prediction. The density plots of interest here are the ones 
 that compare the **2nd vs 4th class** $([-0.2, 0), [0.2, 0.4])$ and the **3rd vs 
 4th class** $([0, 0.2), [0.2, 0.4])$. Next, we visualize the average state 
 differences with our network coloring method, in order to identify the important 
@@ -475,41 +479,97 @@ plot.network(net, diff.mcc.3.4, layout = nice.layout,
 ```
 
 We will now **list the important nodes** that affect the models' prediction 
-performance **with regards to their MCC classification**. First, the nodes that 
-have to be in a more *activated* state:
-```{r}
-biomarkers.mcc.activated = diff.mcc.2.4[diff.mcc.2.4 > threshold]
-pretty.print.vector.names(biomarkers.mcc.activated)
+performance **with regards to their MCC classification**, using the average state 
+difference results from comparing the 2nd to the 4th MCC class. First, the 
+nodes that have to be in a more *active* state:
+```{r MCC biomarkers (active)}
+biomarkers.mcc.active = diff.mcc.2.4[diff.mcc.2.4 > threshold]
+pretty.print.vector.names(biomarkers.mcc.active)
 ```
 Secondly, the nodes that have to be in a more *inhibited* state:
-```{r}
+```{r MCC biomarkers (inhibited)}
 biomarkers.mcc.inhibited = diff.mcc.2.4[diff.mcc.2.4 < -threshold]
 pretty.print.vector.names(biomarkers.mcc.inhibited)
 ```
 
 Comparing the two methods we used for the classification of the models' prediction
 performance (TP and MCC), we observe that there exist **common biomarkers** in 
-both activated and inhibited states. Also we note that there weren't any common 
-nodes reported as significantly activated in one method which were significantly 
+both active and inhibited state cases. Also we note that there weren't any common 
+nodes reported as significantly active in one method which were significantly 
 inhibited in the other, showing that the two methods' results correlate well:
-```{r}
-print.common.nodes(biomarkers.mcc.activated, biomarkers.tp.inhibited)
-print.common.nodes(biomarkers.mcc.inhibited, biomarkers.tp.activated)
+```{r Common biomarkers (mixed)}
+common.biomarkers.mixed.1 = 
+  get.common.names(biomarkers.mcc.active, biomarkers.tp.inhibited)
+common.biomarkers.mixed.2 = 
+  get.common.names(biomarkers.mcc.inhibited, biomarkers.tp.active)
 ```
 
-To sum up, we list the common biomarkers that need to be in a more *activated* 
+To sum up, we list the common biomarkers that need to be in a more *active* 
 state:
-```{r}
-print.common.nodes(biomarkers.mcc.activated, biomarkers.tp.activated)
+```{r Common biomarkers (active)}
+common.biomarkers.active = 
+  get.common.names(biomarkers.mcc.active, biomarkers.tp.active)
 ```
 We also list the common nodes that have to be in a more *inhibited* state:
-```{r}
-print.common.nodes(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
+```{r Common biomarkers (inhibited)}
+common.biomarkers.inhibited =
+  get.common.names(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
+
+#### Synergy-prediction based analysis
+
+We will now use the second strategy to split the models, based on whether 
+they predict a specific synergy (or set of synergies) or not. This will allow us
+to **find important biomarkers that affect the prediction of a specific synergy or 
+set of synergies**. For example, the good models could be the ones that predicted 
+the synergy `PD-PI` while the bad models all the rest that couldn't predict it. 
+In another case scenario, the good models could be those that predicted the 
+triple synergy set `BI-PD,PD-PI,PI-D1`, while the bad models could be either ones 
+that predicted the double synergy subsets `BI-PD,PI-D1` or `PD-PI,PI-D1`, in 
+which cases we want to find out which nodes are responsible for making the good 
+models predict the extra synergy (demonstrating thus better performance).
+
+```{r Good vs Bad models based on a specific synergy prediction}
+diff.predicted.synergies.results = 
+  sapply(predicted.synergies, function(drug.comb) {
+    get.avg.activity.diff.based.on.specific.synergy.prediction(
+      model.predictions, models.stable.state, drug.comb)
+  })
+diff.predicted.synergies.results = t(diff.predicted.synergies.results)
+
+densities = apply(abs(diff.predicted.synergies.results), 1, density)
+make.multiple.density.plot(densities, legend.title = "Predicted Synergies")
+```
+
+```{r Graphs: Good vs Bad models based on a specific synergy prediction}
+for (drug.comb in predicted.synergies) {
+  title.text = paste0("Prediction of ", drug.comb, 
+                      " synergy: Good models vs Bad Models")
+  diff = diff.predicted.synergies.results[drug.comb, ]
+  plot.network(net, diff, layout = nice.layout, title = title.text)
+  biomarkers.active = diff[diff > threshold]
+  biomarkers.inhibited = diff[diff < -threshold]
+  print.biomarkers.for.specific.synergy(drug.comb, biomarkers.active, 
+                                                   biomarkers.inhibited)
+}
+```
+
+```{r eval=FALSE, include=FALSE}
+# Good vs Bad models when comparing models that predicted different synergy sets
+# Usually good models predicted: (A-B, C-D, K-L) and bad (A-B, C-D) - just to see
+# what the good models have that allows them to predict the K-L synergy also
+diff.on.synergy.sets = 
+  get.diff.from.models.predicting.diff.synergy.sets(all.synergy.subsets["AK-D1,BI-D1,PK-ST"], all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"], observed.modelData, models_stable_state)
+```
+
+- Biomarkers (which ones?) relation to the link operator in the boolean equations: 
+heatmap with models' equations sorted based on TP performance for example and 
+telling something like that this node as a target should have OR NOT in the 
+equation.
 
 ## TO BE REMOVED
 
-### Comparison of network visualization libraries: igraph, visNetwork, threejs, D3
+### Comparison of network visualization libraries: igraph, visNetwork, threejs
 ```{r}
 # igraph
 plot.network(net, diff.mcc.3.4, layout = nice.layout,
@@ -523,52 +583,7 @@ library("threejs") # version 0.3.1
 plot.network.3d(net, diff.mcc.3.4)
 ```
 
-
-
-#### Synergy-prediction based analysis
-
-We will now use the second strategy to split the models, namely based on whether 
-they predict a specific synergy or not. 
-Two synergies of interest in A498 cell line `AK-PD`, `PD-PI`
-
-
-Fix the two functions:
-- One synergy predicted vs rest of the models who can't predict it
-- Common model stuff, multiple set comparison
-
-
-
-```{r eval=FALSE, include=FALSE}
-# Good vs Bad models based on the number of the models
-# that predicted a specific synergy
-predicted.synergies = synergy_observations_data
-for (drugComb in synergy_observations_data) {
-  diff_specific = get.diff.specific.synergy(drugComb, observed.modelData, models_stable_state)
-  if (sum(is.na(diff_specific)) == length((diff_specific))) {
-    print(paste("No models predicted the ", drugComb, " synergy", sep = ""))
-    predicted.synergies = predicted.synergies[! predicted.synergies %in% drugComb]
-  } else {
-    #output.diff.to.file(cell_line, drugComb, diff_specific)
-  }
-}
-non.predicted.synergies = synergy_observations_data[!synergy_observations_data %in% predicted.synergies]
-
-# Good vs Bad models when comparing models that predicted diferrent synergy sets
-# Usually good models predicted: (A-B, C-D, K-L) and bad (A-B, C-D) - just to see
-# what the good models have that allows them to predict the K-L synergy also
-diff.on.synergy.sets = 
-  get.diff.from.models.predicting.diff.synergy.sets(all.synergy.subsets["AK-D1,BI-D1,PK-ST"], all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"], observed.modelData, models_stable_state)
-```
-
-
-
-
-
-
-
-
-
-# References
+## References
 
 1. Csardi G, Nepusz T (2006) The igraph software package for complex network research, InterJournal, Complex Systems 1695. [http://igraph.org](http://igraph.org)
 2. Ognyanova, K. (2018) Network visualization with R. Retrieved from [www.kateto.net/network-visualization](http://www.kateto.net/network-visualization)
