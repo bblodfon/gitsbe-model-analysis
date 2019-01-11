@@ -301,7 +301,8 @@ topology.file = paste0(parent.dir, "/topology")
 net = contruct.network(topology.file, models.dir)
 
 # a static layout for plotting the same network always (igraph)
-nice.layout = layout_nicely(net)
+# nice.layout = layout_nicely(net)
+nice.layout = as.matrix(read.table(file = "network_xy_coordinates.txt"))
 ```
 In the next colored graphs we can identify the important nodes whose activity
 state can influence the true positive prediction performance (from 0 true 
@@ -310,15 +311,15 @@ positive synergies to a total of 3):
 # useful tutorial about network visualization in R: (Ognyanova, 2008)
 
 diff.tp.0.3 = diff.tp.results[3,]
-plot.network(net, diff.tp.0.3, layout = nice.layout, 
+plot.network(net, diff.tp.0.3, layout = nice.layout,
              title = "Bad models (0 TP) vs Good models (3 TP)")
 
 diff.tp.1.3 = diff.tp.results[5,]
-plot.network(net, diff.tp.1.3, layout = nice.layout, 
+plot.network(net, diff.tp.1.3, layout = nice.layout,
              title = "Bad models (1 TP) vs Good models (3 TP)")
 
 diff.tp.2.3 = diff.tp.results[6,]
-plot.network(net, diff.tp.2.3, layout = nice.layout, 
+plot.network(net, diff.tp.2.3, layout = nice.layout,
              title = "Bad models (2 TP) vs Good models (3 TP)")
 ```
 
