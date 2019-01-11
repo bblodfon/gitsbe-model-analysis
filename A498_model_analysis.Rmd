@@ -302,7 +302,7 @@ net = contruct.network(topology.file, models.dir)
 
 # a static layout for plotting the same network always (igraph)
 # nice.layout = layout_nicely(net)
-nice.layout = as.matrix(read.table(file = "network_xy_coordinates.txt"))
+nice.layout = as.matrix(read.table(file = "network_xy_coordinates"))
 ```
 In the next colored graphs we can identify the important nodes whose activity
 state can influence the true positive prediction performance (from 0 true 
@@ -517,6 +517,16 @@ common.biomarkers.inhibited =
   get.common.names(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
+Lastly, we will save these common biomarkers for further comparison between the 
+results of different cell lines:
+```{r Save common performance biomarkers}
+biomarkers.dir = paste0(data.dir, "biomarkers/")
+save.vector.to.file(vector = common.biomarkers.active, 
+                    file = paste0(biomarkers.dir, "biomarkers_active.txt"))
+save.vector.to.file(vector = common.biomarkers.inhibited, 
+                    file = paste0(biomarkers.dir, "biomarkers_inhibited.txt"))
+```
+
 #### Synergy-prediction based analysis
 
 We will now use the second strategy to split the models, based on whether 
@@ -530,6 +540,9 @@ that predicted the double synergy subsets `BI-PD,PI-D1` or `PD-PI,PI-D1`, in
 which cases we want to find out which nodes are responsible for making the good 
 models predict the extra synergy (demonstrating thus better performance).
 
+We first generate the density distribution of the absolute average state 
+differences between the good and bad models for each predicted synergy:
+
 ```{r Good vs Bad models based on a specific synergy prediction}
 diff.predicted.synergies.results = 
   sapply(predicted.synergies, function(drug.comb) {
@@ -542,6 +555,11 @@ densities = apply(abs(diff.predicted.synergies.results), 1, density)
 make.multiple.density.plot(densities, legend.title = "Predicted Synergies")
 ```
 
+Next, we will plot the biomarkers with the network visualization method (for all
+predicted synergies) and output the respective biomarker names in each case. 
+The biomarker results for each predicted synergy will be stored for further 
+comparison with results from the other cell lines.
+
 ```{r Graphs: Good vs Bad models based on a specific synergy prediction}
 for (drug.comb in predicted.synergies) {
   title.text = paste0("Prediction of ", drug.comb, 
@@ -552,6 +570,10 @@ for (drug.comb in predicted.synergies) {
   biomarkers.inhibited = diff[diff < -threshold]
   print.biomarkers.for.specific.synergy(drug.comb, biomarkers.active, 
                                                    biomarkers.inhibited)
+  save.vector.to.file(vector = biomarkers.active, file = paste0(
+    biomarkers.dir, drug.comb, "_biomarkers_active.txt"), with.row.names = TRUE)
+  save.vector.to.file(vector = biomarkers.inhibited, file = paste0(
+    biomarkers.dir, drug.comb, "_biomarkers_inhibited.txt"), with.row.names = TRUE)
 }
 ```
 

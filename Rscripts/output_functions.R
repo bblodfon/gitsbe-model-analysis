@@ -61,9 +61,8 @@ print.empty.line = function() {
   cat("\n")
 }
 
-output.vector.to.file = function(cell.line, string, vec, with.row.names) {
-  output.file = paste0(getwd(), "/", cell.line, "/", string, ".txt")
-  write.table(vec, file = output.file, quote = FALSE, col.names = FALSE,
+save.vector.to.file = function(vector, file, with.row.names = FALSE) {
+  write.table(vector, file = file, quote = FALSE, col.names = FALSE,
               row.names = with.row.names, sep = "\t")
 }
 
