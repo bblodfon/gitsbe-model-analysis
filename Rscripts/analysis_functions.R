@@ -158,39 +158,64 @@ get.avg.activity.diff.based.on.specific.synergy.prediction =
 }
 
 # To get meaningful results, one set must be a subset of the other
-# Example use :
-# set1 = "AK-BI,BI-D1,PK-ST"
-# set2 = "AK-BI,AK-D1,BI-D1,PK-ST"
+# Example use:
+# synergy.set.str = "A-B,A-D,B-D,P-S"
+# synergy.subset.str = "A-B,B-D,P-S"
 get.avg.activity.diff.based.on.diff.synergy.set.prediction =
-  function(set1, set2, model.predictions, models.stable.state) {
-    # length(set1), length(set2) >= 2
-    synergy.set.1 = unlist(set1)
-    synergy.set.2 = unlist(set2)
+  function(synergy.set.str, synergy.subset.str, model.predictions,
+           models.stable.state) {
 
-    models.set.1 = rownames(model.predictions)[
-      apply(model.predictions[, synergy.set.1], 1, function(x) all(x == 1 & !is.na(x)))
-    ]
-    models.set.2 = rownames(model.predictions)[
-      apply(model.predictions[, synergy.set.2], 1, function(x) all(x == 1 & !is.na(x)))
-    ]
+    synergy.set = unlist(strsplit(synergy.set.str, split = ","))
+    synergy.subset = unlist(strsplit(synergy.subset.str, split = ","))
 
-    # have the first set of models as the largest
-    if (length(models.set.1) < length(models.set.2)) {
-      models.set.3 = models.set.1
-      models.set.1 = models.set.2
-      models.set.2 = models.set.3
+    # some checks
+    stopifnot(length(synergy.subset) > 0,
+              length(synergy.set) > length(synergy.subset))
+    stopifnot(all(synergy.subset %in% synergy.set))
+
+    # find models that predict the `synergy.set`
+    if (length(synergy.set) == 1) {
+      models.synergy.set = rownames(model.predictions)[
+        model.predictions[, synergy.set] == 1 &
+        !is.na(model.predictions[, synergy.set])]
+    } else {
+      models.synergy.set = rownames(model.predictions)[
+        apply(model.predictions[, synergy.set], 1,
+              function(x) all(x == 1 & !is.na(x)))]
     }
 
-    models.set.1.not.in.set.2 = models.set.1[! models.set.1 %in% models.set.2]
-    common.models = models.set.1[models.set.1 %in% models.set.2]
+    # find models that predict the `synergy.subset`
+    if (length(synergy.subset) == 1) {
+      models.synergy.subset = rownames(model.predictions)[
+        model.predictions[, synergy.subset] == 1 &
+        !is.na(model.predictions[, synergy.subset])]
+    } else {
+      models.synergy.subset = rownames(model.predictions)[
+        apply(model.predictions[, synergy.subset], 1,
+              function(x) all(x == 1 & !is.na(x)))]
+    }
 
-    bad.models  = models.set.1.not.in.set.2
+    common.models = intersect(models.synergy.set, models.synergy.subset)
+
+    # print(paste0(length(models.synergy.set), " models predicted the synergy set ",
+    #       synergy.set.str, ", ", length(models.synergy.subset),
+    #       " models predicted the synergy subset ", synergy.subset.str, " and ",
+    #       length(common.models), " models are common"))
+
     good.models = common.models
+    bad.models  = outersect(models.synergy.set, models.synergy.subset)
 
-    bad.average = apply(models.stable.state[bad.models, ], 2, mean)
-    good.average = apply(models.stable.state[good.models, ], 2, mean)
+    stopifnot(all(!(good.models %in% bad.models)))
 
-    return(good.average - bad.average)
+    good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
+    bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+
+    return(good.avg.activity - bad.avg.activity)
+}
+
+# The opposite of `intersect` function {base}
+outersect = function(x, y) {
+  sort(c(setdiff(x, y), setdiff(y, x)))
 }
 
 # inputs are vectors of same size and one-to-one value correspondence
