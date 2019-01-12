@@ -681,7 +681,7 @@ We will sort the models based on the number of true positive predictions and
 illustrate the heatmap of the `models.equations` object:
 ```{r True Positives Coloring}
 number.of.unique.tp.values = length(tp.values)
-rbPal = colorRampPalette(c("green", "black", "red"))
+rbPal = colorRampPalette(c("red", "black", "green"))
 tp.colors = rbPal(number.of.unique.tp.values)
 models.synergies.tp.colors = tp.colors[
   as.numeric(cut(models.synergies.tp, breaks = number.of.unique.tp.values))
