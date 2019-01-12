@@ -123,10 +123,10 @@ The difference between the models' boolean equations is the *link operator*
 process of the genetic algorithm in `Gitsbe`. For example, if a model has for 
 the column `ERK_f` a value of 1, the correspoding equation is: 
 ERK_f \*= (MEK_f) **OR NOT** ((DUSP6) OR PPP1CA). A value of 0 would correspond 
-to the same equation but having **AND NOT**. Note that the equations that do not
-have link operators (meaning that they are *the same for every model*) are 
-discarded (so less columns in this dataset) since we want to see the 
-change/difference between the models.
+to the same equation but having **AND NOT** as the link operator. Note that the 
+equations that do not have link operators (meaning that they are *the same for 
+every model*) are discarded (so less columns in this dataset) since we want to 
+see the change/difference between the models.
 
 Lastly, the synergies observed for this particular cell line are:
 ```{r Input: observed synergies}
@@ -140,7 +140,7 @@ observed.synergies
 
 ## Analysis
 
-### Synergy-based performance analysis
+### Performance Statistics
 
 It will be interesting to know the percentage of the above observed synergies 
 that were actually predicted by at least one of the models (there might be 
@@ -235,15 +235,17 @@ response analysis on a multitude of models.
 
 ### Biomarker analysis
 
+#### Intro-Methods
+
 Now, we want to investigate and find possible important nodes - **biomarkers** -
 whose activity state either distinguishes good performance models from less 
 performant ones (in terms of a performance metric - e.g. maximum true positives 
-predicted) or makes some models predict a specific synergy (or set of synergies) 
+predicted) or makes some models predict a specific synergy
 compared to others that can't (but could predict different ones). So, we devised 
 **two strategies** to split the models in our disposal to *good* and *bad* ones 
 (but not necessarily all of them), the demarcation line being either a performance 
 metric (the number of $TP$ or the Matthews Correlation Coefficient score) or 
-the prediction or not of a specific synergy (or set of synergies). Then, for 
+the prediction or not of a specific synergy. Then, for 
 each group of models (labeled as either *good* or *bad*) we find the average 
 activity state of every node in the network (value between 0 and 1) and then we 
 compute the average difference for each node between the two groups:
@@ -253,7 +255,7 @@ larger than a **user-defined threshold (e.g. 0.7)** for a small number of nodes
 (the less the better) while for the rest of the nodes they remain close to zero, 
 then the former nodes are considered **the most important** since they 
 define the difference between the *average bad model* and the *average good one*
-in that particular case study. We will also deploy a network visualizing method 
+in that particular case study. We will also deploy a network visualization method 
 to observe these average differences.
 
 #### True Positives-based analysis
@@ -297,12 +299,13 @@ inhibition (red). We first build the network from the node topology (edge list):
 ```{r Input: topology}
 parent.dir = get.parent.dir(data.dir)
 topology.file = paste0(parent.dir, "/topology")
+coordinates.file = paste0(parent.dir, "/network_xy_coordinates")
 
 net = contruct.network(topology.file, models.dir)
 
 # a static layout for plotting the same network always (igraph)
 # nice.layout = layout_nicely(net)
-nice.layout = as.matrix(read.table(file = "network_xy_coordinates"))
+nice.layout = as.matrix(read.table(coordinates.file))
 ```
 In the next colored graphs we can identify the important nodes whose activity
 state can influence the true positive prediction performance (from 0 true 
@@ -530,19 +533,30 @@ save.vector.to.file(vector = common.biomarkers.inhibited,
 #### Synergy-prediction based analysis
 
 We will now use the second strategy to split the models, based on whether 
-they predict a specific synergy (or set of synergies) or not. This will allow us
-to **find important biomarkers that affect the prediction of a specific synergy or 
-set of synergies**. For example, the good models could be the ones that predicted 
-the synergy `PD-PI` while the bad models all the rest that couldn't predict it. 
-In another case scenario, the good models could be those that predicted the 
-triple synergy set `BI-PD,PD-PI,PI-D1`, while the bad models could be either ones 
-that predicted the double synergy subsets `BI-PD,PI-D1` or `PD-PI,PI-D1`, in 
-which cases we want to find out which nodes are responsible for making the good 
-models predict the extra synergy (demonstrating thus better performance).
+they predict a specific synergy or not. This will allow us
+to **find biomarkers that affect the prediction of a specific synergy**. 
+For example, the good models could be the ones that predicted the hypothetical
+synergy `A-B` while the bad models all the rest that identified the particular 
+combination as non-synergistic.
+In another case scenario, the good models could be those that predicted a 
+triple synergy set `A-B,C-D,A-C`, while the bad models could be the ones 
+that predicted the double synergy subset `A-B,C-D` (excluding the common models
+that predicted both the triple synergy set and subsequently its given subset). 
+In such a case scenario, we want to find out which nodes are responsible for making 
+the good models **predict the extra synergy** - in this hypothetical case the 
+synergy `A-C` - demonstrating thus better model performance. Note that the models 
+selected in each case as good or bad, could have predicted other synergies as well 
+(correctly as $TP$ or wrongly as $FP$) which means that the biomarker selection 
+method could be somewhat innacurate, since we can't really know the prediction of 
+which extra synergy or synergies the biomarkers' state affected. To account for 
+this, we label as good models those that predict large synergy sets (so fewer 
+models) which capture almost all the true positive predictions and also minimize 
+the possible extra different synergies predicted by models of the same classification 
+category.
 
-We first generate the density distribution of the absolute average state 
-differences between the good and bad models for each predicted synergy:
-
+Starting with the first model classification method (prediction vs non-prediction 
+of a particular synergy), we generate the density distribution of the absolute 
+average state differences between the good and bad models for each predicted synergy:
 ```{r Good vs Bad models based on a specific synergy prediction}
 diff.predicted.synergies.results = 
   sapply(predicted.synergies, function(drug.comb) {
@@ -556,9 +570,9 @@ make.multiple.density.plot(densities, legend.title = "Predicted Synergies")
 ```
 
 Next, we will plot the biomarkers with the network visualization method (for all
-predicted synergies) and output the respective biomarker names in each case. 
+predicted synergies) and output the respective biomarkers in each case. 
 The biomarker results for each predicted synergy will be stored for further 
-comparison with results from the other cell lines.
+comparison with the results from the other cell lines.
 
 ```{r Graphs: Good vs Bad models based on a specific synergy prediction}
 for (drug.comb in predicted.synergies) {
@@ -577,18 +591,125 @@ for (drug.comb in predicted.synergies) {
 }
 ```
 
-```{r eval=FALSE, include=FALSE}
-# Good vs Bad models when comparing models that predicted different synergy sets
-# Usually good models predicted: (A-B, C-D, K-L) and bad (A-B, C-D) - just to see
-# what the good models have that allows them to predict the K-L synergy also
-diff.on.synergy.sets = 
-  get.diff.from.models.predicting.diff.synergy.sets(all.synergy.subsets["AK-D1,BI-D1,PK-ST"], all.synergy.subsets["AK-BI,AK-D1,BI-D1,PK-ST"], observed.modelData, models_stable_state)
+We notice that for some predicted synergies the identification of possible biomarkers 
+is difficult using the above classification method. We will now study cases where 
+the main goal is the better identification and/or refinement of the biomarkers 
+responsible for allowing the models to predict one extra synergy from a specific 
+synergy set. 
+The cases studied will cover the predicted synergies `PD-PI` and `BI-PD`.
+
+The first use case will contrast the models that predicted the synergy set 
+`BI-PD,PD-PI,PI-D1` vs the models that predicted the double synergy subset 
+`BI-PD,PI-D1`. This will allow us to find important nodes whose state can
+influence the prediction performance of a model and make it predict the extra 
+`PD-PI` synergy:
+```{r Good vs Bad models based on different synergy set prediction (PD-PI)}
+synergy.set.str = "BI-PD,PD-PI,PI-D1"
+synergy.subset.str = "BI-PD,PI-D1"
+diff.PD.PI = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+```
+We now visualize the average state differences:
+```{r Graphs: Good vs Bad models based on different synergy set prediction (PD-PI)}
+title.text = paste0("Good models (", synergy.set.str,
+                    ") vs Bad Models (", synergy.subset.str, ")")
+plot.network(net, diff.PD.PI, layout = nice.layout, title = title.text)
 ```
 
-- Biomarkers (which ones?) relation to the link operator in the boolean equations: 
-heatmap with models' equations sorted based on TP performance for example and 
-telling something like that this node as a target should have OR NOT in the 
-equation.
+and report the active biomarkers found for the `PD-PI` synergy:
+```{r PD-PI biomarkers (active)}
+biomarkers.PD.PI.active = diff.PD.PI[diff.PD.PI > threshold]
+pretty.print.vector.names(biomarkers.PD.PI.active)
+```
+Note that with the previous method of classifying the models (those that 
+predict the `PD-PI` synergy and those that don't), we couldn't identify the 2 
+biomarkers that need to be in an active state for the prediction of this particular
+synergy. The inhibited biomarker is the same one as before:
+```{r PD-PI biomarkers (inhibited)}
+biomarkers.PD.PI.inhibited = diff.PD.PI[diff.PD.PI < -threshold]
+pretty.print.vector.names(biomarkers.PD.PI.inhibited)
+```
+We also update the biomarker files for this synergy:
+```{r Update PD-PI biomarkers}
+
+```
+
+The second use case will contrast the models that predicted the synergy set 
+`BI-PD,PD-PI,PI-D1` vs the models that predicted the double synergy subset 
+`PD-PI,PI-D1`. This will allow us to find important nodes whose state can
+influence the prediction performance of a model and make it predict the extra 
+`BI-PD` synergy:
+```{r Good vs Bad models based on different synergy set prediction (BI-PD)}
+synergy.subset.str = "PD-PI,PI-D1"
+diff.BI.PD = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+```
+We now visualize the average state differences:
+```{r Graphs: Good vs Bad models based on different synergy set prediction (BI-PD)}
+title.text = paste0("Good models (", synergy.set.str,
+                    ") vs Bad Models (", synergy.subset.str, ")")
+plot.network(net, diff.BI.PD, layout = nice.layout, title = title.text)
+```
+
+and report the active biomarkers found for the `BI-PD` synergy:
+```{r BI-PD biomarkers (active)}
+biomarkers.BI.PD.active = diff.BI.PD[diff.BI.PD > threshold]
+pretty.print.vector.names(biomarkers.BI.PD.active)
+```
+Note that these biomarkers are completely different from the ones found with the 
+previous method. Same is true for the single inhibited biomarker:
+```{r BI-PD biomarkers (inhibited)}
+biomarkers.BI.PD.inhibited = diff.BI.PD[diff.BI.PD < -threshold]
+pretty.print.vector.names(biomarkers.BI.PD.inhibited)
+```
+We also update the biomarker files for this synergy:
+```{r Update PD-PI biomarkers}
+
+```
+
+#### Equation-based analysis
+
+It will be interesting to see the different patterns in the form of the boolean 
+equations (regarding the mutation of the *link operator* as mentioned in previous 
+section) when comparing higher performance models vs the low performant ones. We 
+could also check if any of the biomarkers found above relate to a different link 
+operator on average between models with different performance characteristics 
+(e.g. higher predictive models should have the `OR NOT` as the link operator in 
+a boolean equation where a specific biomarker is the regulation target).
+
+We will sort the models based on the number of true positive predictions and 
+illustrate the heatmap of the `models.equations` object:
+```{r True Positives Coloring}
+number.of.unique.tp.values = length(tp.values)
+rbPal = colorRampPalette(c("green", "black", "red"))
+tp.colors = rbPal(number.of.unique.tp.values)
+models.synergies.tp.colors = tp.colors[
+  as.numeric(cut(models.synergies.tp, breaks = number.of.unique.tp.values))
+]
+names(models.synergies.tp.colors) = models
+
+title = "Color Palette"
+xlab  = "Number of True Positives"
+make.color.bar.plot(color.vector = tp.colors, 
+                    number.vector = tp.values, 
+                    title, xlab)
+```
+
+```{r Equation Heatmap, fig.height=7, fig.width=7, dpi = 300}
+# order based on number of true positives
+models.synergies.tp.sorted = sort(models.synergies.tp)
+models.sorted = names(models.synergies.tp.sorted)
+models.equations.sorted = models.equations[models.sorted, ]
+
+models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
+
+heatmap.eq = heatmap(models.equations.sorted,
+                     RowSideColors = models.synergies.tp.colors.sorted,
+                     scale = "none", labRow = NA, Rowv = NA,
+                     margins = c(8,2))
+```
+
+Some text: biomarkers respective equations - some patterns???
 
 ## TO BE REMOVED
 
