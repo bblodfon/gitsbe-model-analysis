@@ -520,14 +520,14 @@ common.biomarkers.inhibited =
   get.common.names(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
-Lastly, we will save these common biomarkers for further comparison between the 
-results of different cell lines:
+Lastly, we will save these common performance-related biomarkers for further 
+analysis and comparison with the results from all the different cell lines:
 ```{r Save common performance biomarkers}
 biomarkers.dir = paste0(data.dir, "biomarkers/")
 save.vector.to.file(vector = common.biomarkers.active, 
-                    file = paste0(biomarkers.dir, "biomarkers_active.txt"))
+                    file = paste0(biomarkers.dir, "biomarkers_active"))
 save.vector.to.file(vector = common.biomarkers.inhibited, 
-                    file = paste0(biomarkers.dir, "biomarkers_inhibited.txt"))
+                    file = paste0(biomarkers.dir, "biomarkers_inhibited"))
 ```
 
 #### Synergy-prediction based analysis
@@ -585,22 +585,21 @@ for (drug.comb in predicted.synergies) {
   print.biomarkers.for.specific.synergy(drug.comb, biomarkers.active, 
                                                    biomarkers.inhibited)
   save.vector.to.file(vector = biomarkers.active, file = paste0(
-    biomarkers.dir, drug.comb, "_biomarkers_active.txt"), with.row.names = TRUE)
+    biomarkers.dir, drug.comb, "_biomarkers_active"), with.row.names = TRUE)
   save.vector.to.file(vector = biomarkers.inhibited, file = paste0(
-    biomarkers.dir, drug.comb, "_biomarkers_inhibited.txt"), with.row.names = TRUE)
+    biomarkers.dir, drug.comb, "_biomarkers_inhibited"), with.row.names = TRUE)
 }
 ```
 
-We notice that for some predicted synergies the identification of possible biomarkers 
-is difficult using the above classification method. We will now study cases where 
-the main goal is the better identification and/or refinement of the biomarkers 
-responsible for allowing the models to predict one extra synergy from a specific 
-synergy set. 
-The cases studied will cover the predicted synergies `PD-PI` and `BI-PD`.
+We notice that for some predicted synergies the above method identified zero 
+biomarkers. We will now study cases where the main goal is the better identification 
+and/or refinement of the biomarkers responsible for allowing the models to 
+predict one extra synergy from a specific synergy set. We will focus on the 
+predicted synergies `PD-PI` and `BI-PD`.
 
 The first use case will contrast the models that predicted the synergy set 
 `BI-PD,PD-PI,PI-D1` vs the models that predicted the double synergy subset 
-`BI-PD,PI-D1`. This will allow us to find important nodes whose state can
+`BI-PD,PI-D1`. This will allow us to find important nodes whose state can 
 influence the prediction performance of a model and make it predict the extra 
 `PD-PI` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (PD-PI)}
@@ -629,9 +628,11 @@ synergy. The inhibited biomarker is the same one as before:
 biomarkers.PD.PI.inhibited = diff.PD.PI[diff.PD.PI < -threshold]
 pretty.print.vector.names(biomarkers.PD.PI.inhibited)
 ```
-We also update the biomarker files for this synergy:
+We also update the biomarker files of this synergy:
 ```{r Update PD-PI biomarkers}
-
+drug.comb = "PD-PI"
+update.biomarkers.files(biomarkers.dir, drug.comb, 
+                        biomarkers.PD.PI.active, biomarkers.PD.PI.inhibited)
 ```
 
 The second use case will contrast the models that predicted the synergy set 
@@ -662,9 +663,11 @@ previous method. Same is true for the single inhibited biomarker:
 biomarkers.BI.PD.inhibited = diff.BI.PD[diff.BI.PD < -threshold]
 pretty.print.vector.names(biomarkers.BI.PD.inhibited)
 ```
-We also update the biomarker files for this synergy:
-```{r Update PD-PI biomarkers}
-
+So, we add the newly found biomarkers in the respective files:
+```{r Update BI-PD biomarkers}
+drug.comb = "BI-PD"
+update.biomarkers.files(biomarkers.dir, drug.comb, 
+                        biomarkers.BI.PD.active, biomarkers.BI.PD.inhibited)
 ```
 
 #### Equation-based analysis

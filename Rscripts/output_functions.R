@@ -70,6 +70,67 @@ save.vector.to.file = function(vector, file, with.row.names = FALSE) {
               row.names = with.row.names, sep = "\t")
 }
 
+update.biomarkers.files =
+  function(biomarkers.dir, drug.comb, biomarkers.active.new, biomarkers.inhibited.new) {
+    # update the active biomarkers
+    active.biomarkers.file =
+      paste0(biomarkers.dir, drug.comb, "_biomarkers_active")
+
+    if (file.size(active.biomarkers.file) == 0) {
+      save.vector.to.file(vector = biomarkers.active.new,
+                          file = active.biomarkers.file, with.row.names = TRUE)
+    } else {
+      biomarkers.active.prev =
+        read.table(active.biomarkers.file, stringsAsFactors = FALSE)
+      biomarkers.active.prev.names = biomarkers.active.prev[,1]
+      biomarkers.active.new.names = names(biomarkers.active.new)
+
+      biomarkers.active.to.add = biomarkers.active.new[
+        !(biomarkers.active.new.names %in% biomarkers.active.prev.names)
+      ]
+
+      biomarkers.active = add.vector.to.data.frame(biomarkers.active.prev,
+                                                   biomarkers.active.to.add)
+      biomarkers.active = transform(biomarkers.active, V2 = as.numeric(V2))
+      save.vector.to.file(vector = biomarkers.active,
+                          file = active.biomarkers.file)
+    }
+
+    # update the inhibited biomarkers
+    inhibited.biomarkers.file =
+      paste0(biomarkers.dir, drug.comb, "_biomarkers_inhibited")
+
+    if (file.size(inhibited.biomarkers.file) == 0) {
+      save.vector.to.file(vector = biomarkers.inhibited.new,
+                          file = inhibited.biomarkers.file, with.row.names = TRUE)
+    } else {
+      biomarkers.inhibited.prev =
+        read.table(inhibited.biomarkers.file, stringsAsFactors = FALSE)
+      biomarkers.inhibited.prev.names = biomarkers.inhibited.prev[,1]
+      biomarkers.inhibited.new.names = names(biomarkers.inhibited.new)
+
+      biomarkers.inhibited.to.add = biomarkers.inhibited.new[
+        !(biomarkers.inhibited.new.names %in% biomarkers.inhibited.prev.names)
+      ]
+
+      biomarkers.inhibited = add.vector.to.data.frame(biomarkers.inhibited.prev,
+                                                      biomarkers.inhibited.to.add)
+      biomarkers.inhibited = transform(biomarkers.inhibited, V2 = as.numeric(V2))
+      save.vector.to.file(vector = biomarkers.inhibited,
+                          file = inhibited.biomarkers.file)
+    }
+}
+
+add.vector.to.data.frame = function(df, vec) {
+  if (length(vec) == 0) return(df)
+  for (i in 1:length(vec)) {
+    value = vec[i]
+    name = names(vec)[i]
+    df = rbind(df, c(name, value))
+  }
+  return(df)
+}
+
 output.data.to.file = function(dir.to.save, filename, data, with.col.names) {
   output.file = paste0(dir.to.save, "/", filename)
   write.table(data, output.file, append = FALSE, sep = "\t", dec = ".",
