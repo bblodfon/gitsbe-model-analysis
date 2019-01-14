@@ -181,8 +181,13 @@ make.color.bar.plot(color.vector = unique.fitness.colors,
 ```{r Heatmap, fig.height=7, fig.width=7, dpi = 300}
 heatmap.ss = heatmap(models.stable.state,
                      RowSideColors = fitness.colors,
+                     main = "Models Stable States",
                      scale = "none", labRow = NA,
                      cexCol = 0.4, margins = c(8,2))
+legend("topright", legend = c("1", "0"),
+    col = c("khaki1", "red"), cex = 0.7,
+    pch = 19 # filled big points
+)
 ```
 
 In the heatmap above, an activity state equal to zero is represented with red 
