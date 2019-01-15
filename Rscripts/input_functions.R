@@ -247,3 +247,45 @@ get.edges.from.topology.file = function(topology.file) {
 
   return(edges)
 }
+
+# returns a data.frame, where the columns represent the network nodes, the rows
+# represent the predicted synergies and the values can either 1 (active biomarker),
+# -1 (inhibited biomarker) or 0 (not a biomarker)
+get.biomarkers.per.synergy =
+  function(predicted.synergies, biomarkers.dir, models.dir) {
+    # initialize res data.frame
+    node.names = get.node.names(models.dir)
+    res = as.data.frame(matrix(0, ncol = length(node.names),
+                                  nrow = length(predicted.synergies)))
+    colnames(res) = node.names
+    rownames(res) = predicted.synergies
+
+    for (drug.comb in predicted.synergies) {
+      # insert the active biomarkers
+      active.biomarkers.file =
+        paste0(biomarkers.dir, drug.comb, "_biomarkers_active")
+
+      if (file.size(active.biomarkers.file) != 0) {
+        biomarkers.active =
+          read.table(active.biomarkers.file, stringsAsFactors = FALSE)
+        biomarkers.active.names = biomarkers.active[,1]
+        # biomarkers.active.values = biomarkers.active[,2]
+
+        res[drug.comb, biomarkers.active.names] = 1
+      }
+
+      # insert the inhibited biomarkers
+      inhibited.biomarkers.file =
+        paste0(biomarkers.dir, drug.comb, "_biomarkers_inhibited")
+      if (file.size(inhibited.biomarkers.file) != 0) {
+        biomarkers.inhibited =
+          read.table(inhibited.biomarkers.file, stringsAsFactors = FALSE)
+        biomarkers.inhibited.names = biomarkers.inhibited[,1]
+        # biomarkers.inhibited.values = biomarkers.inhibited[,2]
+
+        res[drug.comb, biomarkers.inhibited.names] = -1
+      }
+    }
+
+    return(res)
+}

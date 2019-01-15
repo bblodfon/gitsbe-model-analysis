@@ -564,7 +564,7 @@ make.color.bar.plot(color.vector = tp.colors,
 
 So, we will now illustrate the heatmap of the `models.equations` object raw-order 
 by the number of $TP$ predictions:
-```{r Equation Heatmap, fig.height=7, fig.width=7, dpi = 600}
+```{r Equation Heatmap (TP raw-ordered), fig.height=7, fig.width=7, dpi = 600}
 # order based on number of true positives
 models.synergies.tp.sorted = sort(models.synergies.tp)
 models.sorted = names(models.synergies.tp.sorted)
@@ -797,10 +797,53 @@ update.biomarkers.files(biomarkers.dir, drug.comb,
                         biomarkers.BI.PI.active, biomarkers.BI.PI.inhibited)
 ```
 
+#### Biomarker results comparison
+
+In this section, we will compare the biomarkers found per predicted synergy for
+this particular cell line. This will show us if there are common biomarkers that
+are responsible for the prediction of different synergies:
+```{r}
+biomarkers.synergy.res =
+  get.biomarkers.per.synergy(predicted.synergies, biomarkers.dir, models.dir)
+
+# store total biomarker results
+save.df.to.file(biomarkers.synergy.res, file =
+                paste0(biomarkers.dir, "biomarkers_per_synergy"))
+
+# prune nodes which are not found as biomarkers for any predicted synergy
+biomarkers.synergy.res =
+  biomarkers.synergy.res[, colSums(biomarkers.synergy.res != 0) > 0]
+
+superheat(biomarkers.synergy.res, title.alignment = "center",
+          title = paste0("Biomarker results (", cell.line, ")"),
+          row.dendrogram = FALSE, col.dendrogram = FALSE, scale = FALSE,
+          column.title = "Network Nodes", row.title = "Predicted synergies",
+          heat.pal = c("tomato", "grey", "gold"),
+          # grey   = not a biomarker
+          # tomato = inhibited biomarker
+          # gold   = active biomarker
+          grid.hline = FALSE, grid.vline = FALSE,
+          legend.breaks = c(-1, 0, 1),
+          left.label.col = "white", bottom.label.col = "white",
+          bottom.label.text.size = 2, bottom.label.text.angle = 90)
+```
+
+So, in general we observe that:
+- A total of $63$ nodes were found as biomarkers for at least one synergy
+- We could find a lot of biomarkers for some synergies, but very few for some 
+others
+- There exist common biomarkers across different predicted synergies, e.g. `RXRA` 
+is a common inhibited biomarker across 3 synergy combinations
+- The results between the different synergies correlate in the sense that there 
+is no active biomarker for a particular synergy that was found as inhibited in 
+another and vise versa
+- The biomarkers of the `PI-D1` synergy are not shared with any of the other 
+predicted synergies' biomarkers
+
 ## TO BE REMOVED
 
 ### Comparison of network visualization libraries: igraph, visNetwork, threejs
-```{r Compare netowork libraries}
+```{r Compare network libraries}
 # igraph
 plot.network(net, diff.mcc.3.4, layout = nice.layout,
              title = "Bad models, MCC: [0, 0.2) vs Good models, MCC: [0.2, 0.4]")

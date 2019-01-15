@@ -70,6 +70,11 @@ save.vector.to.file = function(vector, file, with.row.names = FALSE) {
               row.names = with.row.names, sep = "\t")
 }
 
+save.df.to.file = function(df, file) {
+  write.table(df, file = file, quote = FALSE, col.names = TRUE,
+              row.names = TRUE, sep = "\t")
+}
+
 update.biomarkers.files =
   function(biomarkers.dir, drug.comb, biomarkers.active.new, biomarkers.inhibited.new) {
     # update the active biomarkers
