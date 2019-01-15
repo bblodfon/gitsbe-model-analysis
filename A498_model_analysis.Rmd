@@ -26,10 +26,9 @@ The R version used for this analysis is: **3.4.4 (Someone to Lean On)**.
 Firstly, we load the required libraries (you need to install them if you don't
 have them):
 ```{r Load libraries, message = FALSE}
-# require(RColorBrewer)
-# require(gplots)
-library("rje") # version 1.9
-library("igraph") # version 1.2.2, see (Csardi, 2006)
+library(rje) # version 1.9
+library(igraph) # version 1.2.2, see (Csardi, 2006)
+library(superheat) # version 1.0.0, see (Barter, 2017)
 ```
 and the relevant helper functions:
 ```{r Helper functions}
@@ -114,19 +113,20 @@ head(as.data.frame(models.equations))
 For the equations, if we look at a specific row (a model so to speak), the 
 columns (node names) correspond to the *targets of regulation* (and the network 
 has been built so that *every node is a target* - i.e. it has other nodes 
-activating or inhibiting it). The general form of a boolean equation is: 
+activating and/or inhibiting it). The general form of a boolean equation is: 
 **Target \*= (Activator OR Activator OR...) AND NOT (Inhibitor OR Inhibitor 
 OR...)**.
 
 The difference between the models' boolean equations is the *link operator* 
 (OR NOT/AND NOT) which has been mutated (changed) through the evolutionary 
 process of the genetic algorithm in `Gitsbe`. For example, if a model has for 
-the column `ERK_f` a value of 1, the correspoding equation is: 
-ERK_f \*= (MEK_f) **OR NOT** ((DUSP6) OR PPP1CA). A value of 0 would correspond 
-to the same equation but having **AND NOT** as the link operator. Note that the 
-equations that do not have link operators (meaning that they are *the same for 
-every model*) are discarded (so less columns in this dataset) since we want to 
-see the change/difference between the models.
+the column `ERK_f` (of the `models.equations` object) a value of 1, the correspoding 
+equation is: ERK_f \*= (MEK_f) **OR NOT** ((DUSP6) OR PPP1CA). A value of 0 would 
+correspond to the same equation but having **AND NOT** as the link operator:
+RK_f \*= (MEK_f) **AND NOT** ((DUSP6) OR PPP1CA). Note that the equations that do 
+not have link operators (meaning that they are *the same for every model*) are 
+discarded (so less columns in this dataset) since in a later section we study only 
+the equations whose link operators differentiate between the models.
 
 Lastly, the synergies observed for this particular cell line are:
 ```{r Input: observed synergies}
@@ -144,7 +144,7 @@ observed.synergies
 
 It will be interesting to know the percentage of the above observed synergies 
 that were actually predicted by at least one of the models (there might be 
-combinations that no model out of the 7500 could predict):
+combinations that no model in our dataset could predict):
 ```{r Synergy stats 1}
 # Subset the model.data to the observed synergies
 observed.model.predictions = 
@@ -170,15 +170,15 @@ number.of.models.per.observed.synergy
 predicted.synergies
 predicted.synergies.percentage = 100 * length(predicted.synergies) /
                     number.of.observed.synergies
-print(paste0("Percentage of total predicted synergies (by at least one model): ", 
+print(paste0("Percentage of True Positive predicted synergies: ", 
              specify.decimal(predicted.synergies.percentage, 2), "%"))
 ```
 So, for the `A498` cell line, there were indeed synergies that no model could 
 predict (e.g. `AK-BI`, `AK-PI`). Next, we would like to know the maximum number 
-of observed synergies predicted by one model alone - can one model by itself 
-predict all the 5 synergies that all the models together can predict or do we 
-need many models to capture this diverse synergy landscape? To do that, we go 
-even further and **count the number of models that predict a specific set of 
+of observed synergies predicted by one model alone - **can one model by itself 
+predict all the true positive synergies predicted by all the models together** or 
+do we need many models to capture this diverse synergy landscape? To do that, we 
+go even further and **count the number of models that predict a specific set of 
 synergies** for every possible combination subset of the predicted synergy set 
 found above:
 ```{r Synergy stats 2}
@@ -206,7 +206,7 @@ make.barplot.on.synergy.subset.stats(synergy.subset.stats,
 As can be seen from the figure above (where we excluded sets of synergies that 
 were predicted by no model by setting the `threshold.for.subset.removal` value 
 to 1), **almost half of the models predict no synergies**, while the `PI-D1` 
-synergy is predicted by almost all of the rest of the models. Next we calculate 
+synergy is predicted by almost all the rest of the models. Next we calculate 
 the maximum number of correctly predicted synergies ($TP$ - True Positives) per 
 model:
 ```{r TP Stats}
@@ -239,16 +239,16 @@ response analysis on a multitude of models.
 
 Now, we want to investigate and find possible important nodes - **biomarkers** -
 whose activity state either distinguishes good performance models from less 
-performant ones (in terms of a performance metric - e.g. maximum true positives 
-predicted) or makes some models predict a specific synergy
-compared to others that can't (but could predict different ones). So, we devised 
+performant ones (in terms of a performance metric - e.g. the true positive 
+synergies predicted) or makes some models predict a specific synergy
+compared to others that can't (but could predict other synergies). So, we devised 
 **two strategies** to split the models in our disposal to *good* and *bad* ones 
 (but not necessarily all of them), the demarcation line being either a performance 
 metric (the number of $TP$ or the Matthews Correlation Coefficient score) or 
 the prediction or not of a specific synergy. Then, for 
 each group of models (labeled as either *good* or *bad*) we find the average 
 activity state of every node in the network (value between 0 and 1) and then we 
-compute the average difference for each node between the two groups:
+compute the average state difference for each node between the two groups:
 $\forall i\in nodes,mean(state_i)_{good} - mean(state_i)_{bad}$. 
 Our hypothesis is that if the absolute value of these average differences are 
 larger than a **user-defined threshold (e.g. 0.7)** for a small number of nodes 
@@ -264,9 +264,9 @@ Using our first strategy, **we will split the models based on the number of true
 positive predictions**. For example, the bad models will be the ones that 
 predicted 0 $TP$ synergies whereas the good models will be the ones that predicted 
 2 $TP$ (we will denote the grouping as $(0,2)$). This particular classification 
-strategy will be used for every possible combination of the number of TP as 
+strategy will be used for every possible combination of the number of $TP$ as 
 given by the `models.synergies.tp.stats` object and the density estimation of the
-average node state differences in each case will be ploted in a common graph:
+nodes' average state differences in each case will be ploted in a common graph:
 ```{r Good vs Bad models based on the number of TPs}
 tp.values = as.numeric(names(models.synergies.tp.stats))
 tp.values.comb = t(combn(tp.values, 2))
@@ -291,10 +291,10 @@ What we are actually looking for is density plots that are *largely skewed to
 the right* (so the average absolute differences of these nodes are close to zero)
 while there are a few areas of non-zero densities which are as close to 1 as 
 possible. So, from the above graph, the density plots that fit this description 
-are the ones marked as $(1,3)$ and $(2,3)$. So, we can now visualize the 
+are the ones marked as $(1,3)$ and $(2,3)$. We will visualize the nodes'
 average state differences in a network graph, where the color of each node will 
 denote how much more inhibited or active that node is, in the average good model 
-vs the average bad one. The color of the edge will denote activation (green) or 
+vs the average bad one. The color of the edges will denote activation (green) or 
 inhibition (red). We first build the network from the node topology (edge list):
 ```{r Input: topology}
 parent.dir = get.parent.dir(data.dir)
@@ -311,7 +311,7 @@ In the next colored graphs we can identify the important nodes whose activity
 state can influence the true positive prediction performance (from 0 true 
 positive synergies to a total of 3):
 ```{r Graphs: Good vs Bad models based on the number of TPs}
-# useful tutorial about network visualization in R: (Ognyanova, 2008)
+# useful tutorial about network visualization in R: (Ognyanova, 2018)
 
 diff.tp.0.3 = diff.tp.results[3,]
 plot.network(net, diff.tp.0.3, layout = nice.layout,
@@ -329,7 +329,7 @@ plot.network(net, diff.tp.2.3, layout = nice.layout,
 We will now **list the important nodes** that affect the models' prediction 
 performance **with regards to the number of true positive synergies** that they 
 predict. Comparing the graphs above, we observe that there exist common nodes 
-that maintain the same significant influence in all of them. Setting the 
+that maintain the same significant influence in all of the graphs. Setting the 
 **threshold for the absolute significance level in average state differences** 
 to $0.7$ and taking the middle case scenario as the representative one (1 $TP$ vs 
 3 $TP$) we find the nodes that have to be in a more *active* state:
@@ -401,14 +401,14 @@ produced `NaN` for the MCC score. Given the MCC formula:
 $MCC = (TP\cdot TN - FP\cdot FN)/\sqrt{(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)}$,
 we can see that this happens because of zero devision. Two of the four values in
 the denominator represent the number of positive $(TP+FN)$ and negative $(TN+FP)$ 
-observations which are non-zero for every model, since they correspond to 
-observed and non-obsered synergies in each case (the same for all models of 
-course). The case where both $TN$ and $FN$ are zero is rare (if non-existent) 
+observations which are non-zero for every model, since they correspond to the
+observed and non-obsered synergies in each case. 
+The case where both $TN$ and $FN$ are zero is rare (if non-existent) 
 because of the imbalanced dataset (large proportion of negatives) and the reason 
 that logical models which report no negatives means that they should find 
 fixpoint attractors for every possible drug combination perturbation which also 
-is unlikely. We can actually see that the `NaN` are produced by models that have
-**both TP and FP equal to zero**:
+is extremely unlikely. We can actually see that the `NaN` are produced by models 
+that have **both TP and FP equal to zero**:
 ```{r NaN MCC score}
 sum(models.synergies.tp + models.synergies.fp == 0)
 ```
@@ -422,7 +422,7 @@ a specific interval:
 ```{r MCC classification}
 mcc.values = as.numeric(names(models.mcc.stats))
 
-# split into classes with a 0.2 value range each
+# split into classes with a 0.2 MCC value range each
 mcc.intervals = get.mcc.intervals(mcc.values, interval.size = 0.2)
 
 # add NaN category (if applicable)
@@ -438,7 +438,7 @@ performance metric score**. For example, the bad models will be the ones that
 had a `NaN` MCC score $(TP+FP = 0)$ whereas the good models will be the ones that 
 had an MCC score between $[-0.2, 0)$. This particular classification strategy will 
 be used for every possible combination of the MCC classes as defined by the 
-`mcc.classes` object and the density estimation of the average node state 
+`mcc.classes` object and the density estimation of the nodes' average state 
 differences in each case will be ploted in a common graph:
 ```{r Good vs Bad models based on the MCC classification}
 mcc.class.id.comb = t(combn(1:length(mcc.classes), 2))
@@ -496,6 +496,8 @@ biomarkers.mcc.inhibited = diff.mcc.2.4[diff.mcc.2.4 < -threshold]
 pretty.print.vector.names(biomarkers.mcc.inhibited)
 ```
 
+#### Common performance-related biomarkers
+
 Comparing the two methods we used for the classification of the models' prediction
 performance (TP and MCC), we observe that there exist **common biomarkers** in 
 both active and inhibited state cases. Also we note that there weren't any common 
@@ -530,10 +532,90 @@ save.vector.to.file(vector = common.biomarkers.inhibited,
                     file = paste0(biomarkers.dir, "biomarkers_inhibited"))
 ```
 
+#### Equation-based analysis
+
+It will be interesting to see the different patterns in the form of the boolean 
+equations (regarding the mutation of the *link operator* as mentioned in the `Input` 
+section) when comparing higher performance models vs the low performant ones. We 
+could also check if any of the biomarkers found above relate to a different link 
+operator on average between models with different performance characteristics 
+(e.g. higher predictive models should have the `OR NOT` as the link operator in 
+a boolean equation where a specific biomarker is the regulation target) or if they 
+constitute targets of exclusively activating nodes or inhibiting ones (an equation
+with no link operator).
+
+The performance metric we will use to sort the models is the number of true positive 
+predictions:
+```{r True Positives Coloring}
+number.of.unique.tp.values = length(tp.values)
+rbPal = colorRampPalette(c("red", "black", "green"))
+tp.colors = rbPal(number.of.unique.tp.values)
+models.synergies.tp.colors = tp.colors[
+  as.numeric(cut(models.synergies.tp, breaks = number.of.unique.tp.values))
+]
+names(models.synergies.tp.colors) = models
+
+title = "Color Palette"
+xlab  = "Number of True Positives"
+make.color.bar.plot(color.vector = tp.colors, 
+                    number.vector = tp.values, 
+                    title, xlab)
+```
+
+So, we will now illustrate the heatmap of the `models.equations` object raw-order 
+by the number of $TP$ predictions:
+```{r Equation Heatmap, fig.height=7, fig.width=7, dpi = 600}
+# order based on number of true positives
+models.synergies.tp.sorted = sort(models.synergies.tp)
+models.sorted = names(models.synergies.tp.sorted)
+
+models.equations.sorted = models.equations[models.sorted, ]
+models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
+
+# color biomarkers names in the heatmap
+bottom.nodes.colors = rep("black", length(colnames(models.equations.sorted)))
+names(bottom.nodes.colors) = colnames(models.equations.sorted)
+bottom.nodes.colors[names(bottom.nodes.colors) %in% 
+                    common.biomarkers.active] = "green"
+bottom.nodes.colors[names(bottom.nodes.colors) %in% 
+                    common.biomarkers.inhibited] = "red"
+
+superheat(models.equations.sorted, title.alignment = "center",
+          title = "Model Equations and Link operators", 
+          row.dendrogram = FALSE, col.dendrogram = TRUE, scale = FALSE,
+          clustering.method = "hierarchical", dist.method = "euclidean",
+          yr = models.synergies.tp.sorted, yr.axis.name = "number of TP",
+          yr.plot.type = "bar", yr.num.ticks = number.of.unique.tp.values,
+          yr.bar.col = models.synergies.tp.colors.sorted,
+          yr.obs.col = models.synergies.tp.colors.sorted,
+          heat.pal = c("red","gold"),
+          legend.breaks = c(0, 1), 
+          grid.hline = FALSE, grid.vline = FALSE,
+          bottom.label.text.size = 3, bottom.label.text.angle = 90, 
+          bottom.label.col = "white", bottom.label.text.col = bottom.nodes.colors)
+```
+
+In the heatmap above, an equation whose link operator is `AND NOT` is represented 
+with red color while an `OR NOT` link operator is represented with gold color.
+The targets whose equations do not have a link operator are not represented.
+The rows are ordered by the number of true positive predictions as can be seen 
+from the barplot to the right of the heatmap. We have colored the names of the 
+network nodes that were also found as biomarkers (green color is used for the 
+active biomarkers and red color for the inhibited biomarkers). We observe that 
+**most of the biomarkers are nodes that do not have both activators and inhibitors**
+and so are absent from the above heatmap. We note also that there exist a lot of 
+target nodes that need to have the `OR NOT` link operator in their respective 
+boolean equation in order for the corresponding logical model to show a higher 
+number of true positive predictions. By assigning the `OR NOT` link operator to 
+a target's boolean regulation equation, we allow more flexibility to the target's 
+output active result state - meaning that the inhibitors play less role and the 
+output state has a higher probability of being active - compared to assigning 
+the `AND NOT` link operator to the equation.
+
 #### Synergy-prediction based analysis
 
 We will now use the second strategy to split the models, based on whether 
-they predict a specific synergy or not. This will allow us
+they predict a specific observed synergy or not. This will allow us
 to **find biomarkers that affect the prediction of a specific synergy**. 
 For example, the good models could be the ones that predicted the hypothetical
 synergy `A-B` while the bad models all the rest that identified the particular 
@@ -552,10 +634,10 @@ which extra synergy or synergies the biomarkers' state affected. To account for
 this, we label as good models those that predict large synergy sets (so fewer 
 models) which capture almost all the true positive predictions and also minimize 
 the possible extra different synergies predicted by models of the same classification 
-category.
+category (e.g. the good models).
 
 Starting with the first model classification method (prediction vs non-prediction 
-of a particular synergy), we generate the density distribution of the absolute 
+of a particular synergy), we generate the density distribution of the nodes' 
 average state differences between the good and bad models for each predicted synergy:
 ```{r Good vs Bad models based on a specific synergy prediction}
 diff.predicted.synergies.results = 
@@ -658,7 +740,7 @@ biomarkers.BI.PD.active = diff.BI.PD[diff.BI.PD > threshold]
 pretty.print.vector.names(biomarkers.BI.PD.active)
 ```
 Note that these biomarkers are completely different from the ones found with the 
-previous method. Same is true for the single inhibited biomarker:
+previous method. Same is true for the single inhibited biomarkers:
 ```{r BI-PD biomarkers (inhibited)}
 biomarkers.BI.PD.inhibited = diff.BI.PD[diff.BI.PD < -threshold]
 pretty.print.vector.names(biomarkers.BI.PD.inhibited)
@@ -670,54 +752,10 @@ update.biomarkers.files(biomarkers.dir, drug.comb,
                         biomarkers.BI.PD.active, biomarkers.BI.PD.inhibited)
 ```
 
-#### Equation-based analysis
-
-It will be interesting to see the different patterns in the form of the boolean 
-equations (regarding the mutation of the *link operator* as mentioned in previous 
-section) when comparing higher performance models vs the low performant ones. We 
-could also check if any of the biomarkers found above relate to a different link 
-operator on average between models with different performance characteristics 
-(e.g. higher predictive models should have the `OR NOT` as the link operator in 
-a boolean equation where a specific biomarker is the regulation target).
-
-We will sort the models based on the number of true positive predictions and 
-illustrate the heatmap of the `models.equations` object:
-```{r True Positives Coloring}
-number.of.unique.tp.values = length(tp.values)
-rbPal = colorRampPalette(c("red", "black", "green"))
-tp.colors = rbPal(number.of.unique.tp.values)
-models.synergies.tp.colors = tp.colors[
-  as.numeric(cut(models.synergies.tp, breaks = number.of.unique.tp.values))
-]
-names(models.synergies.tp.colors) = models
-
-title = "Color Palette"
-xlab  = "Number of True Positives"
-make.color.bar.plot(color.vector = tp.colors, 
-                    number.vector = tp.values, 
-                    title, xlab)
-```
-
-```{r Equation Heatmap, fig.height=7, fig.width=7, dpi = 300}
-# order based on number of true positives
-models.synergies.tp.sorted = sort(models.synergies.tp)
-models.sorted = names(models.synergies.tp.sorted)
-models.equations.sorted = models.equations[models.sorted, ]
-
-models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
-
-heatmap.eq = heatmap(models.equations.sorted,
-                     RowSideColors = models.synergies.tp.colors.sorted,
-                     scale = "none", labRow = NA, Rowv = NA,
-                     margins = c(8,2))
-```
-
-Some text: biomarkers respective equations - some patterns???
-
 ## TO BE REMOVED
 
 ### Comparison of network visualization libraries: igraph, visNetwork, threejs
-```{r}
+```{r Compare netowork libraries}
 # igraph
 plot.network(net, diff.mcc.3.4, layout = nice.layout,
              title = "Bad models, MCC: [0, 0.2) vs Good models, MCC: [0.2, 0.4]")
@@ -734,3 +772,4 @@ plot.network.3d(net, diff.mcc.3.4)
 
 1. Csardi G, Nepusz T (2006) The igraph software package for complex network research, InterJournal, Complex Systems 1695. [http://igraph.org](http://igraph.org)
 2. Ognyanova, K. (2018) Network visualization with R. Retrieved from [www.kateto.net/network-visualization](http://www.kateto.net/network-visualization)
+3. Barter Rebecca, Yu Bin (2017) Superheat: An R package for creating beautiful and extendable heatmaps for visualizing complex data. [https://arxiv.org/abs/1512.01524](https://arxiv.org/abs/1512.01524), [https://rlbarter.github.io/superheat/](https://rlbarter.github.io/superheat/)
