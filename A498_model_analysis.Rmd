@@ -677,7 +677,11 @@ We notice that for some predicted synergies the above method identified zero
 biomarkers. We will now study cases where the main goal is the better identification 
 and/or refinement of the biomarkers responsible for allowing the models to 
 predict one extra synergy from a specific synergy set. We will focus on the 
-predicted synergies `PD-PI` and `BI-PD`.
+predicted synergies `PD-PI`, `BI-PD` and `BI-PI`.
+
+#### Synergy-set prediction based analysis
+
+##### PD-PI synergy
 
 The first use case will contrast the models that predicted the synergy set 
 `BI-PD,PD-PI,PI-D1` vs the models that predicted the double synergy subset 
@@ -685,7 +689,7 @@ The first use case will contrast the models that predicted the synergy set
 influence the prediction performance of a model and make it predict the extra 
 `PD-PI` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (PD-PI)}
-synergy.set.str = "BI-PD,PD-PI,PI-D1"
+synergy.set.str    = "BI-PD,PD-PI,PI-D1"
 synergy.subset.str = "BI-PD,PI-D1"
 diff.PD.PI = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
@@ -697,7 +701,7 @@ title.text = paste0("Good models (", synergy.set.str,
 plot.network(net, diff.PD.PI, layout = nice.layout, title = title.text)
 ```
 
-and report the active biomarkers found for the `PD-PI` synergy:
+and report the active biomarkers found:
 ```{r PD-PI biomarkers (active)}
 biomarkers.PD.PI.active = diff.PD.PI[diff.PD.PI > threshold]
 pretty.print.vector.names(biomarkers.PD.PI.active)
@@ -710,12 +714,14 @@ synergy. The inhibited biomarker is the same one as before:
 biomarkers.PD.PI.inhibited = diff.PD.PI[diff.PD.PI < -threshold]
 pretty.print.vector.names(biomarkers.PD.PI.inhibited)
 ```
-We also update the biomarker files of this synergy:
+Lastly, we add the newly found biomarkers in the respective files:
 ```{r Update PD-PI biomarkers}
 drug.comb = "PD-PI"
 update.biomarkers.files(biomarkers.dir, drug.comb, 
                         biomarkers.PD.PI.active, biomarkers.PD.PI.inhibited)
 ```
+
+##### BI-PD synergy
 
 The second use case will contrast the models that predicted the synergy set 
 `BI-PD,PD-PI,PI-D1` vs the models that predicted the double synergy subset 
@@ -723,6 +729,7 @@ The second use case will contrast the models that predicted the synergy set
 influence the prediction performance of a model and make it predict the extra 
 `BI-PD` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (BI-PD)}
+synergy.set.str    = "BI-PD,PD-PI,PI-D1"
 synergy.subset.str = "PD-PI,PI-D1"
 diff.BI.PD = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
@@ -734,22 +741,60 @@ title.text = paste0("Good models (", synergy.set.str,
 plot.network(net, diff.BI.PD, layout = nice.layout, title = title.text)
 ```
 
-and report the active biomarkers found for the `BI-PD` synergy:
+and report the active biomarkers found:
 ```{r BI-PD biomarkers (active)}
 biomarkers.BI.PD.active = diff.BI.PD[diff.BI.PD > threshold]
 pretty.print.vector.names(biomarkers.BI.PD.active)
 ```
 Note that these biomarkers are completely different from the ones found with the 
-previous method. Same is true for the single inhibited biomarkers:
+previous method. Same is true for the inhibited biomarkers:
 ```{r BI-PD biomarkers (inhibited)}
 biomarkers.BI.PD.inhibited = diff.BI.PD[diff.BI.PD < -threshold]
 pretty.print.vector.names(biomarkers.BI.PD.inhibited)
 ```
-So, we add the newly found biomarkers in the respective files:
+Lastly, we add the newly found biomarkers in the respective files:
 ```{r Update BI-PD biomarkers}
 drug.comb = "BI-PD"
 update.biomarkers.files(biomarkers.dir, drug.comb, 
                         biomarkers.BI.PD.active, biomarkers.BI.PD.inhibited)
+```
+
+##### BI-PI synergy
+
+The third use case will contrast the models that predicted the synergy set 
+`BI-PI,PI-D1` vs the models that predicted the single synergy `PI-D1`. This will
+allow us to find important nodes whose state can influence the prediction 
+performance of a model and make it predict the extra `BI-PI` synergy:
+```{r Good vs Bad models based on different synergy set prediction (BI-PI)}
+synergy.set.str = "BI-PI,PI-D1"
+synergy.subset.str = "PI-D1"
+diff.BI.PI = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+```
+We now visualize the average state differences:
+```{r Graphs: Good vs Bad models based on different synergy set prediction (BI-PI)}
+title.text = paste0("Good models (", synergy.set.str,
+                    ") vs Bad Models (", synergy.subset.str, ")")
+plot.network(net, diff.BI.PI, layout = nice.layout, title = title.text)
+```
+
+and report the active biomarkers found:
+```{r BI-PI biomarkers (active)}
+biomarkers.BI.PI.active = diff.BI.PI[diff.BI.PI > threshold]
+pretty.print.vector.names(biomarkers.BI.PI.active)
+```
+
+We also report the inhibited biomarkers:
+```{r BI-PI biomarkers (inhibited)}
+biomarkers.BI.PI.inhibited = diff.BI.PI[diff.BI.PI < -threshold]
+pretty.print.vector.names(biomarkers.BI.PI.inhibited)
+```
+
+Lastly, we add the newly found biomarkers in the respective files:
+```{r Update BI-PI biomarkers}
+drug.comb = "BI-PI"
+update.biomarkers.files(biomarkers.dir, drug.comb, 
+                        biomarkers.BI.PI.active, biomarkers.BI.PI.inhibited)
 ```
 
 ## TO BE REMOVED
