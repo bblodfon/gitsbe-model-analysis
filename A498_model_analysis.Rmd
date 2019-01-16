@@ -544,8 +544,8 @@ a boolean equation where a specific biomarker is the regulation target) or if th
 constitute targets of exclusively activating nodes or inhibiting ones (an equation
 with no link operator).
 
-The performance metric we will use to sort the models is the number of true positive 
-predictions:
+The performance metric we will first use to sort the models is the number of true 
+positive predictions:
 ```{r True Positives Coloring}
 number.of.unique.tp.values = length(tp.values)
 rbPal = colorRampPalette(c("red", "black", "green"))
@@ -564,7 +564,7 @@ make.color.bar.plot(color.vector = tp.colors,
 
 So, we will now illustrate the heatmap of the `models.equations` object raw-order 
 by the number of $TP$ predictions:
-```{r Equation Heatmap (TP raw-ordered), fig.height=7, fig.width=7, dpi = 600}
+```{r Equation Heatmap (TP raw-ordered), fig.height = 7, fig.width = 7, dpi = 300}
 # order based on number of true positives
 models.synergies.tp.sorted = sort(models.synergies.tp)
 models.sorted = names(models.synergies.tp.sorted)
@@ -581,13 +581,13 @@ bottom.nodes.colors[names(bottom.nodes.colors) %in%
                     common.biomarkers.inhibited] = "red"
 
 superheat(models.equations.sorted, title.alignment = "center",
-          title = "Model Equations and Link operators", 
+          title = "Models link operators (AND/OR NOT)", 
+          row.title = "Models (TP sorted)", smooth.heat = TRUE,
           row.dendrogram = FALSE, col.dendrogram = TRUE, scale = FALSE,
           clustering.method = "hierarchical", dist.method = "euclidean",
-          yr = models.synergies.tp.sorted, yr.axis.name = "number of TP",
-          yr.plot.type = "bar", yr.num.ticks = number.of.unique.tp.values,
-          yr.bar.col = models.synergies.tp.colors.sorted,
-          yr.obs.col = models.synergies.tp.colors.sorted,
+          force.left.label = TRUE, left.label.text.size = 0, 
+          left.label.size = 0.05, 
+          left.label.col = models.synergies.tp.colors.sorted,
           heat.pal = c("red","gold"),
           legend.breaks = c(0, 1), 
           grid.hline = FALSE, grid.vline = FALSE,
@@ -598,19 +598,54 @@ superheat(models.equations.sorted, title.alignment = "center",
 In the heatmap above, an equation whose link operator is `AND NOT` is represented 
 with red color while an `OR NOT` link operator is represented with gold color.
 The targets whose equations do not have a link operator are not represented.
-The rows are ordered by the number of true positive predictions as can be seen 
-from the barplot to the right of the heatmap. We have colored the names of the 
-network nodes that were also found as biomarkers (green color is used for the 
-active biomarkers and red color for the inhibited biomarkers). We observe that 
-**most of the biomarkers are nodes that do not have both activators and inhibitors**
-and so are absent from the above heatmap. We note also that there exist a lot of 
-target nodes that need to have the `OR NOT` link operator in their respective 
-boolean equation in order for the corresponding logical model to show a higher 
-number of true positive predictions. By assigning the `OR NOT` link operator to 
-a target's boolean regulation equation, we allow more flexibility to the target's 
-output active result state - meaning that the inhibitors play less role and the 
-output state has a higher probability of being active - compared to assigning 
-the `AND NOT` link operator to the equation.
+The rows are ordered by the number of true positive predictions (ascending). 
+We have colored the names of the network nodes that were also found as biomarkers 
+(green color is used for the active biomarkers and red color for the inhibited 
+biomarkers). We observe that:
+
+- **Most of the biomarkers are nodes that do not have both activators and inhibitors**
+and so are absent from the above heatmap
+- There doesn't seem to exist a pattern between the models' link operators 
+and their corresponding performance (at least not for all of the nodes) when using
+the true positive predictions as a classifier for the models
+- There exist a lot of target nodes that need to have the `OR NOT` link operator 
+in their respective boolean equation in order for the corresponding logical model 
+to show a higher number of true positive predictions. By assigning the `OR NOT` 
+link operator to a target's boolean regulation equation, we allow more flexibility 
+to the target's output active result state - meaning that the inhibitors play less 
+role and the output state has a higher probability of being active - compared to 
+assigning the `AND NOT` link operator to the equation.
+
+We will also illustrate the heatmap of the `models.equations` object raw-order 
+by the MCC score which is a better performance classifier. Models who had a `NaN` 
+MCC score will be again placed in the lower performant category:
+```{r Equation Heatmap (MCC raw-ordered), fig.height = 7, fig.width = 7, dpi = 300, warning = FALSE}
+# order based on the MCC value
+models.mcc.sorted = sort(models.mcc, na.last = FALSE)
+models.sorted = names(models.mcc.sorted)
+
+models.equations.sorted = models.equations[models.sorted, ]
+
+superheat(models.equations.sorted, title.alignment = "center",
+          title = "Models link operators (AND/OR NOT)", 
+          row.title = "Models (MCC sorted)", smooth.heat = TRUE,
+          row.dendrogram = FALSE, col.dendrogram = TRUE, scale = FALSE,
+          clustering.method = "hierarchical", dist.method = "euclidean",
+          yr = models.mcc.sorted, yr.plot.type = "line", yr.axis.name = "MCC score",
+          yr.line.col = "cornflowerblue", yr.plot.size = 0.2,
+          heat.pal = c("red","gold"),
+          legend.breaks = c(0, 1), 
+          grid.hline = FALSE, grid.vline = FALSE,
+          bottom.label.text.size = 3, bottom.label.text.angle = 90, 
+          bottom.label.col = "white", bottom.label.text.col = bottom.nodes.colors)
+```
+
+In the MCC-ordered heatmap above we observe that there is **better correlation 
+between the boolean equations' link operators and the performance of a model** 
+compared to the $TP$ classification. For example, the biomarkers `STAT3` and 
+`JAK1` show distinguished patterns for the higher performance models (use of 
+`AND NOT` and `OR NOT` link operators respectively) when the models are sorted 
+by the MCC score.
 
 #### Synergy-prediction based analysis
 
@@ -797,12 +832,12 @@ update.biomarkers.files(biomarkers.dir, drug.comb,
                         biomarkers.BI.PI.active, biomarkers.BI.PI.inhibited)
 ```
 
-#### Biomarker results comparison
+#### Biomarker results
 
 In this section, we will compare the biomarkers found per predicted synergy for
 this particular cell line. This will show us if there are common biomarkers that
 are responsible for the prediction of different synergies:
-```{r}
+```{r Biomarkers heatmap, fig.height = 5, fig.width = 7, dpi = 300}
 biomarkers.synergy.res =
   get.biomarkers.per.synergy(predicted.synergies, biomarkers.dir, models.dir)
 
@@ -816,29 +851,33 @@ biomarkers.synergy.res =
 
 superheat(biomarkers.synergy.res, title.alignment = "center",
           title = paste0("Biomarker results (", cell.line, ")"),
-          row.dendrogram = FALSE, col.dendrogram = FALSE, scale = FALSE,
+          row.dendrogram = TRUE, col.dendrogram = TRUE, scale = FALSE,
           column.title = "Network Nodes", row.title = "Predicted synergies",
           heat.pal = c("tomato", "grey", "gold"),
           # grey   = not a biomarker
           # tomato = inhibited biomarker
           # gold   = active biomarker
-          grid.hline = FALSE, grid.vline = FALSE,
+          force.grid.vline = TRUE, force.grid.hline = TRUE,
+          grid.vline.size = 0.1, grid.hline.size = 0.1, 
           legend.breaks = c(-1, 0, 1),
-          left.label.col = "white", bottom.label.col = "white",
+          left.label.col = "white", left.label.text.size = 4,
+          bottom.label.col = "white",
           bottom.label.text.size = 2, bottom.label.text.angle = 90)
 ```
 
 So, in general we observe that:
+
 - A total of $63$ nodes were found as biomarkers for at least one synergy
 - We could find a lot of biomarkers for some synergies, but very few for some 
 others
 - There exist common biomarkers across different predicted synergies, e.g. `RXRA` 
-is a common inhibited biomarker across 3 synergy combinations
+is a common inhibited biomarker across 3 synergistic drug combinations
 - The results between the different synergies correlate in the sense that there 
 is no active biomarker for a particular synergy that was found as inhibited in 
 another and vise versa
 - The biomarkers of the `PI-D1` synergy are not shared with any of the other 
 predicted synergies' biomarkers
+- The synergies `BI-PD` and `AK-PD` share many common biomarkers
 
 ## TO BE REMOVED
 
