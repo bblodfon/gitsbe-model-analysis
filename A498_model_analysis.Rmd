@@ -173,14 +173,14 @@ predicted.synergies.percentage = 100 * length(predicted.synergies) /
 print(paste0("Percentage of True Positive predicted synergies: ", 
              specify.decimal(predicted.synergies.percentage, 2), "%"))
 ```
-So, for the `A498` cell line, there were indeed synergies that no model could 
-predict (e.g. `AK-BI`, `AK-PI`). Next, we would like to know the maximum number 
-of observed synergies predicted by one model alone - **can one model by itself 
+So, for this particular cell line, **there were indeed observed synergies that no 
+model could predict** (e.g. `AK-BI`, `AK-PI`). Next, we would like to know the maximum 
+number of observed synergies predicted by one model alone - **can one model by itself 
 predict all the true positive synergies predicted by all the models together** or 
 do we need many models to capture this diverse synergy landscape? To do that, we 
 go even further and **count the number of models that predict a specific set of 
-synergies** for every possible combination subset of the predicted synergy set 
-found above:
+observed synergies** for every possible combination subset of the `predicted.synergies`
+object:
 ```{r Synergy stats 2}
 # Find the number of predictive models for every synergy subset
 predicted.synergies.powerset = powerSet(predicted.synergies)
@@ -203,12 +203,15 @@ make.barplot.on.synergy.subset.stats(synergy.subset.stats,
                                      bottom.margin = 9, cell.line)
 ```
 
-As can be seen from the figure above (where we excluded sets of synergies that 
-were predicted by no model by setting the `threshold.for.subset.removal` value 
-to 1), **almost half of the models predict no synergies**, while the `PI-D1` 
-synergy is predicted by almost all the rest of the models. Next we calculate 
-the maximum number of correctly predicted synergies ($TP$ - True Positives) per 
-model:
+From the above figure (where we excluded sets of synergies that were predicted 
+by no model by setting the `threshold.for.subset.removal` value to 1) we observe 
+that:
+
+- **Almost half of the models predict no synergies**
+- The `PI-D1` synergy is predicted by almost all the rest of the models. 
+
+Next we calculate the maximum number of correctly predicted synergies ($TP$ - 
+True Positives) per model:
 ```{r TP Stats}
 # Count the predictions of the observed synergies per model (TP)
 models.synergies.tp = apply(observed.model.predictions, 1, sum, na.rm = T)
@@ -221,10 +224,14 @@ make.barplot.on.models.stats(models.synergies.tp.stats, cell.line,
                             ylab = "Number of models")
 ```
 
-So, there were indeed **only 2 models that predicted 3 synergies** - the set 
+To summarize:
+
+- There were **only 2 models that predicted 3 synergies** - the set 
 `BI-PD,PD-PI,PI-D1` - which is the **maximum number of predicted synergies by an 
-individual model**, whereas **no model could predict all 5 of the total predicted 
-synergies**. The power of the ensemble model approach lies in the fact that (as 
+individual model**
+- **No model could predict all 5 of the total predicted synergies**. 
+
+The power of the ensemble model approach lies in the fact that (as 
 we saw from the above figures) even though we may not have *individual super models* 
 that can predict many observed drug combinations, there are many that predict 
 *at least one* and which will be used by the drug response analysis module 
@@ -330,8 +337,8 @@ We will now **list the important nodes** that affect the models' prediction
 performance **with regards to the number of true positive synergies** that they 
 predict. Comparing the graphs above, we observe that there exist common nodes 
 that maintain the same significant influence in all of the graphs. Setting the 
-**threshold for the absolute significance level in average state differences** 
-to $0.7$ and taking the middle case scenario as the representative one (1 $TP$ vs 
+**threshold for the absolute significance level in average state differences 
+to $0.7$** and taking the middle case scenario as the representative one (1 $TP$ vs 
 3 $TP$) we find the nodes that have to be in a more *active* state:
 ```{r TP biomarkers (active)}
 threshold = 0.7
@@ -394,15 +401,18 @@ make.barplot.on.models.stats(models.mcc.stats, cell.line, title = "MCC scores",
                              cont.values = TRUE)
 ```
 
-So, overall from the above figure we can see that there are no really bad models
-(MCC values close to -1), while most of them perform are a little better than 
-random prediction (MCC values > 0.1). Also, we note that there are models that 
-produced `NaN` for the MCC score. Given the MCC formula:
+From the above figure we observe that: 
+
+- There are no relatively bad models (MCC values close to -1)
+- Most of the models perform a little better than random prediction ($MCC>0$).
+- There are models that had `NaN` value for the MCC score.
+
+Given the MCC formula:
 $MCC = (TP\cdot TN - FP\cdot FN)/\sqrt{(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)}$,
-we can see that this happens because of zero devision. Two of the four values in
-the denominator represent the number of positive $(TP+FN)$ and negative $(TN+FP)$ 
-observations which are non-zero for every model, since they correspond to the
-observed and non-obsered synergies in each case. 
+we can see that the MCC value can be `NaN` because of zero devision. Two of the 
+four values in the denominator represent the number of positive $(TP+FN)$ and 
+negative $(TN+FP)$ observations which are non-zero for every model, since they 
+correspond to the observed and non-obsered synergies in each case. 
 The case where both $TN$ and $FN$ are zero is rare (if non-existent) 
 because of the imbalanced dataset (large proportion of negatives) and the reason 
 that logical models which report no negatives means that they should find 
@@ -412,6 +422,7 @@ that have **both TP and FP equal to zero**:
 ```{r NaN MCC score}
 sum(models.synergies.tp + models.synergies.fp == 0)
 ```
+
 Since these models could intentify no synergies (either correctly or 
 wrongly), we decided to put them as the lowest performant category in our 
 MCC-based analysis. To classify the models based on the MCC score (which takes 
@@ -433,6 +444,7 @@ if (sum(is.na(mcc.values)) > 0) {
 mcc.classes = get.mcc.classes(mcc.intervals)
 print.mcc.classification.info(mcc.classes)
 ```
+
 Following our first strategy, **we will split the models based on the MCC 
 performance metric score**. For example, the bad models will be the ones that 
 had a `NaN` MCC score $(TP+FP = 0)$ whereas the good models will be the ones that 
