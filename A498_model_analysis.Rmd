@@ -846,24 +846,33 @@ update.biomarkers.files(biomarkers.dir, drug.comb,
 
 #### Biomarker results
 
-In this section, we will compare the biomarkers found per predicted synergy for
-this particular cell line. This will show us if there are common biomarkers that
-are responsible for the prediction of different synergies:
+In this section, we will compare the **biomarkers found per predicted synergy** 
+for this particular cell line as well as the **performance biomarkers** (notated 
+as **PERF** in the heatmap below) which were found using the common results from 
+the TP and MCC classification-based model analysis:
 ```{r Biomarkers heatmap, fig.height = 5, fig.width = 7, dpi = 300}
+# Biomarkers from sections:
+# `Synergy-prediction based analysis`, `Synergy-set prediction based analysis`
 biomarkers.synergy.res =
   get.biomarkers.per.synergy(predicted.synergies, biomarkers.dir, models.dir)
 
-# store total biomarker results
+# store biomarkers in one file
 save.df.to.file(biomarkers.synergy.res, file =
                 paste0(biomarkers.dir, "biomarkers_per_synergy"))
 
-# prune nodes which are not found as biomarkers for any predicted synergy
-biomarkers.synergy.res =
-  biomarkers.synergy.res[, colSums(biomarkers.synergy.res != 0) > 0]
+# Biomarkers from section:
+# `Common performance-related biomarkers`
+biomarkers.res = add.performance.biomarkers(biomarkers.synergy.res, 
+                                            common.biomarkers.active, 
+                                            common.biomarkers.inhibited)
 
-superheat(biomarkers.synergy.res, title.alignment = "center",
+# prune nodes which are not found as biomarkers for any predicted synergy or
+# for better model performance
+biomarkers.res = biomarkers.res[, colSums(biomarkers.res != 0) > 0]
+
+superheat(biomarkers.res, title.alignment = "center",
           title = paste0("Biomarker results (", cell.line, ")"),
-          row.dendrogram = TRUE, col.dendrogram = TRUE, scale = FALSE,
+          row.dendrogram = FALSE, col.dendrogram = TRUE, scale = FALSE,
           column.title = "Network Nodes", row.title = "Predicted synergies",
           heat.pal = c("tomato", "grey", "gold"),
           # grey   = not a biomarker
@@ -879,9 +888,16 @@ superheat(biomarkers.synergy.res, title.alignment = "center",
 
 So, in general we observe that:
 
-- A total of $63$ nodes were found as biomarkers for at least one synergy
-- We could find a lot of biomarkers for some synergies, but very few for some 
-others
+- A total of $63$ nodes were found as biomarkers (for at least one synergy)
+- We found a lot of biomarkers for some synergies, but very few for some others. 
+Usually we wouldn't expect too many biomarkers that are directly related
+to the prediction of a specific synergy. The abudance of (false positive) biomarkers 
+for some synergies (e.g. `AK-PD`) relates to the model classification method used, 
+which does not incorporate in its internal logic that the prediction of other 
+synergies than the ones used for the grouping itself can affect the biomarker 
+results obtained from it
+- All the performance-related biomarkers (PERF) were also observed as biomarkers
+for the prediction of a specific synergy(ies)
 - There exist common biomarkers across different predicted synergies, e.g. `RXRA` 
 is a common inhibited biomarker across 3 synergistic drug combinations
 - The results between the different synergies correlate in the sense that there 
@@ -889,7 +905,8 @@ is no active biomarker for a particular synergy that was found as inhibited in
 another and vise versa
 - The biomarkers of the `PI-D1` synergy are not shared with any of the other 
 predicted synergies' biomarkers
-- The synergies `BI-PD` and `AK-PD` share many common biomarkers
+- The synergies `BI-PD` and `AK-PD` share many common biomarkers as well as with
+the performance-related biomarkers
 
 ## TO BE REMOVED
 

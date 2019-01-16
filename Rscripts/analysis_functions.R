@@ -259,3 +259,21 @@ get.mcc.classes = function(mcc.intervals) {
 
   return(mcc.classes)
 }
+
+# adds one more row to the `biomarkers.synergy.res` data.frame with the
+# performance-related biomarkers
+add.performance.biomarkers =
+  function(biomarkers.synergy.res, biomarkers.active, biomarkers.inhibited) {
+    # initialize `row` data.frame
+    node.names = colnames(biomarkers.synergy.res)
+    row = as.data.frame(matrix(0, ncol = length(node.names), nrow = 1))
+    colnames(row) = node.names
+    rownames(row) = "PERF"
+
+    # add biomarkers
+    row[colnames(row) %in% biomarkers.active] = 1
+    row[colnames(row) %in% biomarkers.inhibited] = -1
+
+    res = rbind(row, biomarkers.synergy.res)
+    return(res)
+}
