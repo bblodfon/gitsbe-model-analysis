@@ -94,16 +94,17 @@ add.numbers.above.the.bars = function(stats, bp, color) {
   }
 }
 
-make.multiple.density.plot = function(densities, legend.title) {
-  plot(NA, xlim = range(sapply(densities, "[", "x")),
-       ylim = range(sapply(densities, "[", "y")),
-       main = "Density Estimation for the Average State Difference",
-       xlab = "Activity state (absolute difference value)",
-       ylab = "Density")
-  mapply(lines, densities, col = 1:length(densities))
+# `densities` is a list, each element holding the results from executing
+# the `density` function to a (different) vector
+make.multiple.density.plot =
+  function(densities, legend.title, title, x.axis.label) {
+    plot(NA, xlim = range(sapply(densities, "[", "x")),
+             ylim = range(sapply(densities, "[", "y")),
+             main = title, xlab = x.axis.label, ylab = "Density")
+    mapply(lines, densities, col = 1:length(densities))
 
-  legend("topright", legend = names(densities), fill = 1:length(densities),
-         title = legend.title)
+    legend("topright", legend = names(densities), fill = 1:length(densities),
+           title = legend.title)
 }
 
 # plot network using the `threejs` library
