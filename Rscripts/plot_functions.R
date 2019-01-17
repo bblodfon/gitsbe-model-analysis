@@ -5,7 +5,9 @@ make.color.bar.plot = function(color.vector, number.vector, title, xlab = "") {
   axis(1, bp, number.vector)
 }
 
-# models.stats is the result of `table(num.vector)`
+# models.stats is the result of `table(num.vector)`.
+# If `length(models.stats) > ~30`, don't use this function (too dense data)
+# `cont.values` is used for trimming the digits of continuous values on the x-axis
 make.barplot.on.models.stats =
   function(models.stats, cell.line, title, xlab, ylab, cont.values = FALSE) {
 
