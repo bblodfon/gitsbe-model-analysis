@@ -100,14 +100,14 @@ add.numbers.above.the.bars = function(stats, bp, color) {
 # `densities` is a list, each element holding the results from executing
 # the `density` function to a (different) vector
 make.multiple.density.plot =
-  function(densities, legend.title, title, x.axis.label) {
+  function(densities, legend.title, title, x.axis.label, legend.size = 1) {
     plot(NA, xlim = range(sapply(densities, "[", "x")),
              ylim = range(sapply(densities, "[", "y")),
              main = title, xlab = x.axis.label, ylab = "Density")
     mapply(lines, densities, col = 1:length(densities))
 
     legend("topright", legend = names(densities), fill = 1:length(densities),
-           title = legend.title)
+           title = legend.title, cex = legend.size)
 }
 
 # plot network using the `threejs` library
