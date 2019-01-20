@@ -260,6 +260,37 @@ get.mcc.classes = function(mcc.intervals) {
   return(mcc.classes)
 }
 
+# `diff.res` is a 2-dim matrix (rows = classification group matchings,
+# columns = nodes)
+# `type` = active or inhibited
+# If there is at least one value in a column that surpasses the threshold given,
+# the corresponding node is return as a biomarker
+get.biomarkers = function(diff.res, threshold, type) {
+  dimen = dim(diff.res)
+  rows = dimen[1]
+  nodes.num = dimen[2]
+
+  biomarkers = character(0)
+  for(node.index in 1:nodes.num) {
+    node.name = colnames(diff.res)[node.index]
+    for (row.index in 1:rows) {
+      if (type == "active") {
+        if (diff.res[row.index, node.index] > threshold) {
+          biomarkers = c(biomarkers, node.name)
+          break
+        }
+      } else { # inhibited
+        if (diff.res[row.index, node.index] < -threshold) {
+          biomarkers = c(biomarkers, node.name)
+          break
+        }
+      }
+    }
+  }
+
+  return(biomarkers)
+}
+
 # adds one more row to the `biomarkers.synergy.res` data.frame with the
 # performance-related biomarkers
 add.performance.biomarkers =
