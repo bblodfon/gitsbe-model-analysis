@@ -5,11 +5,11 @@ make.color.bar.plot = function(color.vector, number.vector, title, xlab = "") {
   axis(1, bp, number.vector)
 }
 
-# models.stats is the result of `table(num.vector)`.
-# If `length(models.stats) > ~30`, don't use this function (too dense data)
+# models.stats is the result of `table(num.vector)`
+# Use `threshold` when there too many categories and the graph appears too dense
 # `cont.values` is used for trimming the digits of continuous values on the x-axis
 make.barplot.on.models.stats =
-  function(models.stats, cell.line, title, xlab, ylab, cont.values = FALSE) {
+  function(models.stats, cell.line, title, xlab, ylab, cont.values = FALSE, threshold = 0) {
 
     # Find is there is just one `NaN` category
     there.is.one.NaN.category = FALSE
@@ -24,6 +24,9 @@ make.barplot.on.models.stats =
     if (there.is.one.NaN.category) {
       models.stats = c(nan.value, models.stats[names(models.stats) != "NaN"])
     }
+
+    # prune some bars :)
+    models.stats = models.stats[models.stats > threshold]
 
     x.axis.values =
       get.x.axis.values(models.stats, there.is.one.NaN.category, cont.values)

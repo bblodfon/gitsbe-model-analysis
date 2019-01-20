@@ -1,3 +1,4 @@
+# `digits.to.keep` refers to digits after decimal point '.'
 specify.decimal = function(number, digits.to.keep) {
   trimws(format(round(number, digits.to.keep), nsmall = digits.to.keep))
 }

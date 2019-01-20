@@ -19,7 +19,10 @@ The input for the simulations and the output data are in the `cell-lines-2500`
 directory (the 2500 number denotes the number of simulations executed). The 
 analysis will be presented step by step in the sections below.
 
-The R version used for this analysis is: **3.4.4 (Someone to Lean On)**.
+The R version used for this analysis is: 
+```{r R version}
+R.version.string
+```
 
 ## Prerequisites
 
@@ -291,7 +294,9 @@ colnames(diff.tp.results) = tp.comb.names
 diff.tp.results = t(diff.tp.results)
 
 tp.densities = apply(abs(diff.tp.results), 1, density)
-make.multiple.density.plot(tp.densities, legend.title = "True Positives")
+make.multiple.density.plot(tp.densities, legend.title = "True Positives", 
+                           x.axis.label = "Activity state (absolute difference value)",
+                           title = "Density Estimation for the Average State Difference")
 ```
 
 What we are actually looking for is density plots that are *largely skewed to 
@@ -469,7 +474,9 @@ colnames(diff.mcc.results) = mcc.classes.comb.names
 diff.mcc.results = t(diff.mcc.results)
 
 mcc.densities = apply(abs(diff.mcc.results), 1, density)
-make.multiple.density.plot(mcc.densities, legend.title = "MCC classes")
+make.multiple.density.plot(mcc.densities, legend.title = "MCC classes",
+                           x.axis.label = "Activity state (absolute difference value)",
+                           title = "Density Estimation for the Average State Difference")
 ```
 
 From the above graph we notice that the `NaN` MCC class has almost the same 
@@ -695,7 +702,9 @@ diff.predicted.synergies.results =
 diff.predicted.synergies.results = t(diff.predicted.synergies.results)
 
 densities = apply(abs(diff.predicted.synergies.results), 1, density)
-make.multiple.density.plot(densities, legend.title = "Predicted Synergies")
+make.multiple.density.plot(densities, legend.title = "Predicted Synergies",
+                           x.axis.label = "Activity state (absolute difference value)",
+                           title = "Density Estimation for the Average State Difference")
 ```
 
 Next, we will plot the biomarkers with the network visualization method (for all
