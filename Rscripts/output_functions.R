@@ -30,6 +30,17 @@ pretty.print.vector.names = function(vec, vector.names.str = "nodes") {
                paste0(names(vec), collapse = ",")))
 }
 
+# `vector.names.str` tell us what `names(vec)` actually is, to put it on
+# the print message
+pretty.print.vector.values = function(vec, vector.names.str = "nodes") {
+  if (length(vec) == 1) {
+    vector.names.str = substr(vector.names.str, start = 1,
+                              stop = nchar(vector.names.str) - 1)
+  }
+  print(paste0(length(vec), " ", vector.names.str, ": ",
+               paste0(vec, collapse = ",")))
+}
+
 # get the common `names` from two vectors and print an appropriate message
 # `vector.names.str` tell us what `names(vec)` actually is, to put it on
 # the print message
