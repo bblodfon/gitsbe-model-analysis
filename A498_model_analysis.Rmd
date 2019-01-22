@@ -211,7 +211,7 @@ by no model by setting the `threshold.for.subset.removal` value to 1) we observe
 that:
 
 - **Almost half of the models predict no synergies**
-- The `PI-D1` synergy is predicted by almost all the rest of the models. 
+- The `PI-D1` synergy is predicted by almost all the rest of the models
 
 Next we calculate the maximum number of correctly predicted synergies ($TP$ - 
 True Positives) per model:
@@ -916,22 +916,6 @@ another and vise versa
 predicted synergies' biomarkers
 - The synergies `BI-PD` and `AK-PD` share many common biomarkers as well as with
 the performance-related biomarkers
-
-## TO BE REMOVED
-
-### Comparison of network visualization libraries: igraph, visNetwork, threejs
-```{r Compare network libraries}
-# igraph
-plot.network(net, diff.mcc.3.4, layout = nice.layout,
-             title = "Bad models, MCC: [0, 0.2) vs Good models, MCC: [0.2, 0.4]")
-
-library("visNetwork") # version 2.0.5
-plot.network.vis(net, diff.mcc.3.4, layout = nice.layout,
-             title = "Bad models, MCC: [0, 0.2) vs Good models, MCC: [0.2, 0.4]")
-
-library("threejs") # version 0.3.1
-plot.network.3d(net, diff.mcc.3.4)
-```
 
 ## References
 
