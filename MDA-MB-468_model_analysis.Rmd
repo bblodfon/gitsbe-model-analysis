@@ -532,7 +532,7 @@ common.biomarkers.mixed.2 =
 common.biomarkers.active = 
   get.common.values(biomarkers.mcc.active, biomarkers.tp.active)
 common.biomarkers.inhibited =
-  get.common.names(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
+  get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
 We believe that the MCC score better captures the performance categories within 

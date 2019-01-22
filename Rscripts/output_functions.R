@@ -63,7 +63,7 @@ get.common.names = function(vec1, vec2, vector.names.str = "nodes") {
 # `vector.values.str` tell us what the `vec` values are, to put it on
 # the print message
 get.common.values = function(vec1, vec2, vector.values.str = "nodes") {
-  common.values = intersect(names(vec1), names(vec2))
+  common.values = intersect(vec1, vec2)
   common.values.number = length(common.values)
 
   if (common.values.number == 0) {
