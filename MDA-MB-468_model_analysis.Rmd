@@ -592,9 +592,9 @@ models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
 bottom.nodes.colors = rep("black", length(colnames(models.equations.sorted)))
 names(bottom.nodes.colors) = colnames(models.equations.sorted)
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    common.biomarkers.active] = "green"
+                    biomarkers.mcc.active] = "green"
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    common.biomarkers.inhibited] = "red"
+                    biomarkers.mcc.inhibited] = "red"
 
 superheat(models.equations.sorted, title.alignment = "center",
           title = "Models link operators (AND/OR NOT)", 
@@ -630,7 +630,7 @@ to show a higher number of true positive predictions. By assigning the `OR NOT`
 link operator to a target's boolean regulation equation, we allow more flexibility 
 to the target's output active result state - meaning that the inhibitors play less 
 role and the output state has a higher probability of being active - compared to 
-assigning the `AND NOT` link operator to the equation.
+assigning the `AND NOT` link operator to the equation
 
 We will also illustrate the heatmap of the `models.equations` object raw-order 
 by the MCC score which is a better performance classifier. Models who had a `NaN` 
@@ -658,8 +658,8 @@ superheat(models.equations.sorted, title.alignment = "center",
 
 In the MCC-ordered heatmap above we observe that there is **better correlation 
 between the boolean equations' link operators and the performance of a model** 
-compared to the $TP$ classification. For example, the node `STAT3` and 
-`GSK3A` show distinguished patterns for the higher performance models (use of 
+compared to the $TP$ classification. For example, the node `STAT3` and the biomarker 
+`RAF1` show distinguished patterns for the higher performance models (use of 
 `AND NOT` and `OR NOT` link operators respectively) when the models are sorted 
 by the MCC score.
 

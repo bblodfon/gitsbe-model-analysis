@@ -232,7 +232,7 @@ To summarize:
 - There were **only 2 models that predicted 3 synergies** - the set 
 `BI-PD,PD-PI,PI-D1` - which is the **maximum number of predicted synergies by an 
 individual model**
-- **No model could predict all 5 of the total predicted synergies**. 
+- **No model could predict all 5 of the total predicted synergies**
 
 The power of the ensemble model approach lies in the fact that (as 
 we saw from the above figures) even though we may not have *individual super models* 
@@ -341,19 +341,22 @@ plot.network(net, diff.tp.2.3, layout = nice.layout,
 We will now **list the important nodes** that affect the models' prediction 
 performance **with regards to the number of true positive synergies** that they 
 predict. Comparing the graphs above, we observe that there exist common nodes 
-that maintain the same significant influence in all of the graphs. Setting the 
+that maintain the same significant influence in all of the graphs. We set the 
 **threshold for the absolute significance level in average state differences 
-to $0.7$** and taking the middle case scenario as the representative one (1 $TP$ vs 
-3 $TP$) we find the nodes that have to be in a more *active* state:
+to $0.7$**. A node will be marked as a biomarker (active or inhibited) if 
+its activity state difference surpassed the aforementioned threshold (positively 
+or negatively) **for any of the tested groups** (e.g. 2 $TP$ vs 3 $TP$). So, the 
+nodes that have to be in a more *active* state are:
 ```{r TP biomarkers (active)}
-threshold = 0.7
-biomarkers.tp.active = diff.tp.1.3[diff.tp.1.3 > threshold]
-pretty.print.vector.names(biomarkers.tp.active)
+biomarkers.tp.active = get.biomarkers(diff.tp.results, threshold = 0.7, 
+                                      type = "active")
+pretty.print.vector.values(biomarkers.tp.active)
 ```
 Also, the nodes that have to be in a more *inhibited* state are:
 ```{r TP biomarkers (inhibited)}
-biomarkers.tp.inhibited = diff.tp.1.3[diff.tp.1.3 < -threshold]
-pretty.print.vector.names(biomarkers.tp.inhibited)
+biomarkers.tp.inhibited = get.biomarkers(diff.tp.results, threshold = 0.7, 
+                                         type = "inhibited")
+pretty.print.vector.values(biomarkers.tp.inhibited)
 ```
 
 #### MCC classification-based analysis
@@ -406,11 +409,11 @@ make.barplot.on.models.stats(models.mcc.stats, cell.line, title = "MCC scores",
                              cont.values = TRUE)
 ```
 
-From the above figure we observe that: 
+From the above figure we observe that:
 
 - There are no relatively bad models (MCC values close to -1)
-- Most of the models perform a little better than random prediction ($MCC>0$).
-- There are models that had `NaN` value for the MCC score.
+- Most of the models perform a little better than random prediction ($MCC>0$)
+- There are models that had `NaN` value for the MCC score
 
 Given the MCC formula:
 $MCC = (TP\cdot TN - FP\cdot FN)/\sqrt{(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)}$,
@@ -502,17 +505,19 @@ plot.network(net, diff.mcc.3.4, layout = nice.layout,
 ```
 
 We will now **list the important nodes** that affect the models' prediction 
-performance **with regards to their MCC classification**, using the average state 
-difference results from comparing the 2nd to the 4th MCC class. First, the 
-nodes that have to be in a more *active* state:
+performance **with regards to their MCC classification**, using the same method
+as in the `True Positives-based analysis` section. First, the nodes that have to 
+be in a more *active* state:
 ```{r MCC biomarkers (active)}
-biomarkers.mcc.active = diff.mcc.2.4[diff.mcc.2.4 > threshold]
-pretty.print.vector.names(biomarkers.mcc.active)
+biomarkers.mcc.active = get.biomarkers(diff.mcc.results, threshold = 0.7, 
+                                      type = "active")
+pretty.print.vector.values(biomarkers.mcc.active)
 ```
 Secondly, the nodes that have to be in a more *inhibited* state:
 ```{r MCC biomarkers (inhibited)}
-biomarkers.mcc.inhibited = diff.mcc.2.4[diff.mcc.2.4 < -threshold]
-pretty.print.vector.names(biomarkers.mcc.inhibited)
+biomarkers.mcc.inhibited = get.biomarkers(diff.mcc.results, threshold = 0.7, 
+                                      type = "inhibited")
+pretty.print.vector.values(biomarkers.mcc.inhibited)
 ```
 
 #### Common performance-related biomarkers
@@ -524,21 +529,21 @@ nodes reported as significantly active in one method which were significantly
 inhibited in the other, showing that the two methods' results correlate well:
 ```{r Common biomarkers (mixed)}
 common.biomarkers.mixed.1 = 
-  get.common.names(biomarkers.mcc.active, biomarkers.tp.inhibited)
+  get.common.values(biomarkers.mcc.active, biomarkers.tp.inhibited)
 common.biomarkers.mixed.2 = 
-  get.common.names(biomarkers.mcc.inhibited, biomarkers.tp.active)
+  get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.active)
 ```
 
 To sum up, we list the common biomarkers that need to be in a more *active* 
 state:
 ```{r Common biomarkers (active)}
 common.biomarkers.active = 
-  get.common.names(biomarkers.mcc.active, biomarkers.tp.active)
+  get.common.values(biomarkers.mcc.active, biomarkers.tp.active)
 ```
 We also list the common nodes that have to be in a more *inhibited* state:
 ```{r Common biomarkers (inhibited)}
 common.biomarkers.inhibited =
-  get.common.names(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
+  get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
 Lastly, we will save these common performance-related biomarkers for further 
@@ -633,7 +638,7 @@ to show a higher number of true positive predictions. By assigning the `OR NOT`
 link operator to a target's boolean regulation equation, we allow more flexibility 
 to the target's output active result state - meaning that the inhibitors play less 
 role and the output state has a higher probability of being active - compared to 
-assigning the `AND NOT` link operator to the equation.
+assigning the `AND NOT` link operator to the equation
 
 We will also illustrate the heatmap of the `models.equations` object raw-order 
 by the MCC score which is a better performance classifier. Models who had a `NaN` 
@@ -713,6 +718,7 @@ The biomarker results for each predicted synergy will be stored for further
 comparison with the results from the other cell lines.
 
 ```{r Graphs: Good vs Bad models based on a specific synergy prediction}
+threshold = 0.7
 for (drug.comb in predicted.synergies) {
   title.text = paste0("Prediction of ", drug.comb, 
                       " synergy: Good models vs Bad Models")
