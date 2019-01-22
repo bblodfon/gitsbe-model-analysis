@@ -30,14 +30,14 @@ pretty.print.vector.names = function(vec, vector.names.str = "nodes") {
                paste0(names(vec), collapse = ",")))
 }
 
-# `vector.names.str` tell us what `names(vec)` actually is, to put it on
+# `vector.values.str` tell us what the `vec` values are, to put it on
 # the print message
-pretty.print.vector.values = function(vec, vector.names.str = "nodes") {
+pretty.print.vector.values = function(vec, vector.values.str = "nodes") {
   if (length(vec) == 1) {
-    vector.names.str = substr(vector.names.str, start = 1,
-                              stop = nchar(vector.names.str) - 1)
+    vector.values.str = substr(vector.values.str, start = 1,
+                              stop = nchar(vector.values.str) - 1)
   }
-  print(paste0(length(vec), " ", vector.names.str, ": ",
+  print(paste0(length(vec), " ", vector.values.str, ": ",
                paste0(vec, collapse = ",")))
 }
 
@@ -56,6 +56,24 @@ get.common.names = function(vec1, vec2, vector.names.str = "nodes") {
     print(paste0(common.names.number, " ", vector.names.str, ": ",
           paste0(common.names, collapse = ",")))
     return(common.names)
+  }
+}
+
+# get the common values from two vectors and print an appropriate message
+# `vector.values.str` tell us what the `vec` values are, to put it on
+# the print message
+get.common.values = function(vec1, vec2, vector.values.str = "nodes") {
+  common.values = intersect(names(vec1), names(vec2))
+  common.values.number = length(common.values)
+
+  if (common.values.number == 0) {
+    print(paste0("No common ", vector.values.str))
+    return(NULL)
+  }
+  else {
+    print(paste0(common.values.number, " ", vector.values.str, ": ",
+                 paste0(common.values, collapse = ",")))
+    return(common.values)
   }
 }
 
@@ -87,6 +105,8 @@ save.df.to.file = function(df, file) {
               row.names = TRUE, sep = "\t")
 }
 
+# we keep the biomarkers already stored in the respective file and just add the
+# new ones
 update.biomarkers.files =
   function(biomarkers.dir, drug.comb, biomarkers.active.new, biomarkers.inhibited.new) {
     # update the active biomarkers

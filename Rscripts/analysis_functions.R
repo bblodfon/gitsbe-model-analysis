@@ -49,7 +49,7 @@ count.models.that.predict.synergy.set =
     synergy.vector = unlist(drug.comb.set)
     if (length(synergy.vector) == 0) {
       count = sum(apply(model.predictions, 1, function(x) {
-        all(x != 1, na.rm = T)
+        all(x == 0, na.rm = T)
       }))
     } else if (length(synergy.vector) == 1) {
       count = sum(model.predictions[, synergy.vector], na.rm = T)
@@ -116,6 +116,9 @@ get.avg.activity.diff.based.on.mcc.classification =
 
     # `good.models` != `bad.models` (disjoing sets of models)
     stopifnot(!(good.models %in% bad.models))
+    # small number of models in some category: need to redefine the MCC intervals
+    stopifnot(length(good.models) > 1)
+    stopifnot(length(bad.models) > 1)
 
     good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
     bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
