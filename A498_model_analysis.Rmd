@@ -1,8 +1,14 @@
 ---
 title: "A498 Cell Line Model Analysis"
+author: "[John Zobolas](https://github.com/bblodfon)"
 output:
   html_document:
     df_print: paged
+    theme: united # also good: default, cosmo, readable
+    toc: true
+    toc_float: true
+    toc_depth: 5
+    number_sections: false
     #self_contained: no
 ---
 
@@ -18,11 +24,6 @@ a topology that was build for simulating a cancer cell fate decision network.
 The input for the simulations and the output data are in the `cell-lines-2500` 
 directory (the 2500 number denotes the number of simulations executed). The 
 analysis will be presented step by step in the sections below.
-
-The R version used for this analysis is: 
-```{r R version}
-R.version.string
-```
 
 ## Prerequisites
 
@@ -41,6 +42,11 @@ source("Rscripts/input_functions.R")
 source("Rscripts/output_functions.R")
 source("Rscripts/analysis_functions.R")
 source("Rscripts/plot_functions.R")
+```
+
+The R version used for this analysis is: 
+```{r R version, results = 'asis'}
+pretty.print.string(R.version.string)
 ```
 
 ## Input
@@ -84,7 +90,7 @@ head(model.predictions)
 ```
 So, we can see that our dataset has the models as rows and each column is a 
 different drug combination that was tested in our simulations.
-```{r Model&Drug Stats}
+```{r Model&Drug Stats, results = 'asis'}
 drug.combinations.tested = colnames(model.predictions)
 models                   = rownames(model.predictions)
 nodes                    = get.node.names(models.dir)
@@ -94,8 +100,9 @@ number.of.models           = length(models)
 number.of.nodes            = length(nodes)
 
 print.model.and.drug.stats(number.of.drug.comb.tested, number.of.models, 
-                           number.of.nodes)
+                           number.of.nodes, html.output = TRUE)
 ```
+
 Next, we get the full stable state and the equations per model:
 ```{r Input: models stable states}
 models.stable.state = get.stable.state.from.models.dir(models.dir)
@@ -132,13 +139,13 @@ discarded (so less columns in this dataset) since in a later section we study on
 the equations whose link operators differentiate between the models.
 
 Lastly, the synergies observed for this particular cell line are:
-```{r Input: observed synergies}
+```{r Input: observed synergies, results = 'asis'}
 observed.synergies = get.observed.synergies(
   observed.synergies.file, drug.combinations.tested)
 number.of.observed.synergies = length(observed.synergies)
 
-print(paste("Number of synergies observed:", number.of.observed.synergies))
-observed.synergies
+pretty.print.vector.values(observed.synergies, 
+                           vector.values.str = "observed synergies")
 ```
 
 ## Analysis
@@ -168,14 +175,18 @@ number.of.models.per.observed.synergy =
   apply(observed.model.predictions, 2, sum, na.rm = T)
 predicted.synergies = names(number.of.models.per.observed.synergy)[
                             number.of.models.per.observed.synergy > 0]
+```
 
-number.of.models.per.observed.synergy
-predicted.synergies
+```{r Print synergy stats, results = 'asis'}
+pretty.print.vector.values(predicted.synergies, 
+                           vector.values.str = "predicted synergies")
+
 predicted.synergies.percentage = 100 * length(predicted.synergies) /
                     number.of.observed.synergies
-print(paste0("Percentage of True Positive predicted synergies: ", 
-             specify.decimal(predicted.synergies.percentage, 2), "%"))
+pretty.print.string(paste0("Percentage of True Positive predicted synergies: ", 
+                    specify.decimal(predicted.synergies.percentage, 2), "%"))
 ```
+
 So, for this particular cell line, **there were indeed observed synergies that no 
 model could predict** (e.g. `AK-BI`, `AK-PI`). Next, we would like to know the maximum 
 number of observed synergies predicted by one model alone - **can one model by itself 
@@ -347,13 +358,14 @@ to $0.7$**. A node will be marked as a biomarker (active or inhibited) if
 its activity state difference surpassed the aforementioned threshold (positively 
 or negatively) **for any of the tested groups** (e.g. 2 $TP$ vs 3 $TP$). So, the 
 nodes that have to be in a more *active* state are:
-```{r TP biomarkers (active)}
+```{r TP biomarkers (active), results = 'asis'}
 biomarkers.tp.active = get.biomarkers(diff.tp.results, threshold = 0.7, 
                                       type = "active")
 pretty.print.vector.values(biomarkers.tp.active)
 ```
+
 Also, the nodes that have to be in a more *inhibited* state are:
-```{r TP biomarkers (inhibited)}
+```{r TP biomarkers (inhibited), results = 'asis'}
 biomarkers.tp.inhibited = get.biomarkers(diff.tp.results, threshold = 0.7, 
                                          type = "inhibited")
 pretty.print.vector.values(biomarkers.tp.inhibited)
@@ -427,8 +439,8 @@ that logical models which report no negatives means that they should find
 fixpoint attractors for every possible drug combination perturbation which also 
 is extremely unlikely. We can actually see that the `NaN` are produced by models 
 that have **both TP and FP equal to zero**:
-```{r NaN MCC score}
-sum(models.synergies.tp + models.synergies.fp == 0)
+```{r NaN MCC score, results = 'asis'}
+pretty.print.string(sum(models.synergies.tp + models.synergies.fp == 0))
 ```
 
 Since these models could intentify no synergies (either correctly or 
@@ -438,7 +450,7 @@ values in the $[-1, 1]$ interval), we devised a method that **splits the previou
 found MCC values range to intervals of a specific size** (each corresponding to a 
 different classification category), so that each model's MCC score falls within 
 a specific interval:
-```{r MCC classification}
+```{r MCC classification, results = 'asis'}
 mcc.values = as.numeric(names(models.mcc.stats))
 
 # split into classes with a 0.2 MCC value range each
@@ -450,8 +462,8 @@ if (sum(is.na(mcc.values)) > 0) {
 }
 
 mcc.classes = get.mcc.classes(mcc.intervals)
-print.mcc.classification.info(mcc.classes)
-```
+print.mcc.classification.info(mcc.classes, html.output = TRUE)
+``` 
 
 Following our first strategy, **we will split the models based on the MCC 
 performance metric score**. For example, the bad models will be the ones that 
@@ -508,13 +520,14 @@ We will now **list the important nodes** that affect the models' prediction
 performance **with regards to their MCC classification**, using the same method
 as in the `True Positives-based analysis` section. First, the nodes that have to 
 be in a more *active* state:
-```{r MCC biomarkers (active)}
+```{r MCC biomarkers (active), results = 'asis'}
 biomarkers.mcc.active = get.biomarkers(diff.mcc.results, threshold = 0.7, 
                                       type = "active")
 pretty.print.vector.values(biomarkers.mcc.active)
 ```
+
 Secondly, the nodes that have to be in a more *inhibited* state:
-```{r MCC biomarkers (inhibited)}
+```{r MCC biomarkers (inhibited), results = 'asis'}
 biomarkers.mcc.inhibited = get.biomarkers(diff.mcc.results, threshold = 0.7, 
                                       type = "inhibited")
 pretty.print.vector.values(biomarkers.mcc.inhibited)
@@ -527,7 +540,7 @@ performance (TP and MCC), we observe that there exist **common biomarkers** in
 both active and inhibited state cases. Also we note that there weren't any common 
 nodes reported as significantly active in one method which were significantly 
 inhibited in the other, showing that the two methods' results correlate well:
-```{r Common biomarkers (mixed)}
+```{r Common biomarkers (mixed), results = 'asis'}
 common.biomarkers.mixed.1 = 
   get.common.values(biomarkers.mcc.active, biomarkers.tp.inhibited)
 common.biomarkers.mixed.2 = 
@@ -536,12 +549,13 @@ common.biomarkers.mixed.2 =
 
 To sum up, we list the common biomarkers that need to be in a more *active* 
 state:
-```{r Common biomarkers (active)}
+```{r Common biomarkers (active), results = 'asis'}
 common.biomarkers.active = 
   get.common.values(biomarkers.mcc.active, biomarkers.tp.active)
 ```
+
 We also list the common nodes that have to be in a more *inhibited* state:
-```{r Common biomarkers (inhibited)}
+```{r Common biomarkers (inhibited), results = 'asis'}
 common.biomarkers.inhibited =
   get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
@@ -724,15 +738,20 @@ for (drug.comb in predicted.synergies) {
                       " synergy: Good models vs Bad Models")
   diff = diff.predicted.synergies.results[drug.comb, ]
   plot.network(net, diff, layout = nice.layout, title = title.text)
+  
   biomarkers.active = diff[diff > threshold]
   biomarkers.inhibited = diff[diff < -threshold]
-  print.biomarkers.for.specific.synergy(drug.comb, biomarkers.active, 
-                                                   biomarkers.inhibited)
+  
   save.vector.to.file(vector = biomarkers.active, file = paste0(
     biomarkers.dir, drug.comb, "_biomarkers_active"), with.row.names = TRUE)
   save.vector.to.file(vector = biomarkers.inhibited, file = paste0(
     biomarkers.dir, drug.comb, "_biomarkers_inhibited"), with.row.names = TRUE)
 }
+```
+
+```{r Biomarkers per predicted synergy, results = 'asis'}
+print.biomarkers.per.predicted.synergy(biomarkers.dir, drug.comb,
+                                       predicted.synergies)
 ```
 
 We notice that for some predicted synergies the above method identified zero 
@@ -764,18 +783,20 @@ plot.network(net, diff.PD.PI, layout = nice.layout, title = title.text)
 ```
 
 and report the active biomarkers found:
-```{r PD-PI biomarkers (active)}
+```{r PD-PI biomarkers (active), results = 'asis'}
 biomarkers.PD.PI.active = diff.PD.PI[diff.PD.PI > threshold]
 pretty.print.vector.names(biomarkers.PD.PI.active)
 ```
+
 Note that with the previous method of classifying the models (those that 
 predict the `PD-PI` synergy and those that don't), we couldn't identify the 2 
 biomarkers that need to be in an active state for the prediction of this particular
 synergy. The inhibited biomarker is the same one as before:
-```{r PD-PI biomarkers (inhibited)}
+```{r PD-PI biomarkers (inhibited), results = 'asis'}
 biomarkers.PD.PI.inhibited = diff.PD.PI[diff.PD.PI < -threshold]
 pretty.print.vector.names(biomarkers.PD.PI.inhibited)
 ```
+
 Lastly, we add the newly found biomarkers in the respective files:
 ```{r Update PD-PI biomarkers}
 drug.comb = "PD-PI"
@@ -804,16 +825,18 @@ plot.network(net, diff.BI.PD, layout = nice.layout, title = title.text)
 ```
 
 and report the active biomarkers found:
-```{r BI-PD biomarkers (active)}
+```{r BI-PD biomarkers (active), results = 'asis'}
 biomarkers.BI.PD.active = diff.BI.PD[diff.BI.PD > threshold]
 pretty.print.vector.names(biomarkers.BI.PD.active)
 ```
+
 Note that these biomarkers are completely different from the ones found with the 
 previous method. Same is true for the inhibited biomarkers:
-```{r BI-PD biomarkers (inhibited)}
+```{r BI-PD biomarkers (inhibited), results = 'asis'}
 biomarkers.BI.PD.inhibited = diff.BI.PD[diff.BI.PD < -threshold]
 pretty.print.vector.names(biomarkers.BI.PD.inhibited)
 ```
+
 Lastly, we add the newly found biomarkers in the respective files:
 ```{r Update BI-PD biomarkers}
 drug.comb = "BI-PD"
@@ -841,13 +864,13 @@ plot.network(net, diff.BI.PI, layout = nice.layout, title = title.text)
 ```
 
 and report the active biomarkers found:
-```{r BI-PI biomarkers (active)}
+```{r BI-PI biomarkers (active), results = 'asis'}
 biomarkers.BI.PI.active = diff.BI.PI[diff.BI.PI > threshold]
 pretty.print.vector.names(biomarkers.BI.PI.active)
 ```
 
 We also report the inhibited biomarkers:
-```{r BI-PI biomarkers (inhibited)}
+```{r BI-PI biomarkers (inhibited), results = 'asis'}
 biomarkers.BI.PI.inhibited = diff.BI.PI[diff.BI.PI < -threshold]
 pretty.print.vector.names(biomarkers.BI.PI.inhibited)
 ```
