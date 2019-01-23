@@ -3,58 +3,97 @@ specify.decimal = function(number, digits.to.keep) {
   trimws(format(round(number, digits.to.keep), nsmall = digits.to.keep))
 }
 
-print.model.and.drug.stats = function(drug.combs, models, nodes) {
-  print(paste("Drug combinations tested:", drug.combs,
-              "Number of models:", models,
-              "Number of nodes:", nodes))
+# nice printing of a string in an R notebook
+# use `with.gt = FALSE` when you want to nicely print multiple lines
+# ('gt' is the '>' symbol)
+pretty.print.string = function(string, with.gt = TRUE) {
+  if (with.gt)
+    cat(paste0("> ", string))
+  else
+    cat(string)
 }
 
-print.mcc.classification.info = function(mcc.classes) {
-  number.of.mcc.classes = length(mcc.classes)
-  print(paste0("MCC values are split into ",
-               number.of.mcc.classes, " classes:"))
+# prints a bold string only when `html.output` is enabled. Otherwise,
+# prints a normal string
+pretty.print.bold.string =
+  function(string, with.gt = TRUE, html.output = TRUE) {
+    if (html.output) {
+      bold.string = paste0("<b>", string, "</b>")
+      if (with.gt)
+        cat(paste0("> ", bold.string))
+      else
+        cat(bold.string)
+    } else {
+      pretty.print.string(string, with.gt = with.gt)
+    }
+}
 
+print.empty.line = function(html.output = FALSE) {
+  if (html.output)
+    cat("<br/>")
+  else
+    cat("\n")
+}
+
+print.model.and.drug.stats =
+  function(drug.combs, models, nodes, html.output) {
+    pretty.print.string(paste("Drug combinations tested:", drug.combs))
+    print.empty.line(html.output)
+    pretty.print.string(paste("Number of models:", models), with.gt = FALSE)
+    print.empty.line(html.output)
+    pretty.print.string(paste("Number of nodes:", nodes), with.gt = FALSE)
+}
+
+print.mcc.classification.info = function(mcc.classes, html.output) {
+  number.of.mcc.classes = length(mcc.classes)
+  pretty.print.string(paste0("MCC values are split into ",
+                      number.of.mcc.classes, " classes:"))
+  print.empty.line(html.output)
   for (i in 1:number.of.mcc.classes) {
-    print(paste0(i, ". ", mcc.classes[i]))
+    pretty.print.string(paste0(i, ". ", mcc.classes[i]), with.gt = FALSE)
+    print.empty.line(html.output)
   }
 }
 
 # `vector.names.str` tell us what `names(vec)` actually is, to put it on
 # the print message
-pretty.print.vector.names = function(vec, vector.names.str = "nodes") {
+pretty.print.vector.names = function(vec, vector.names.str = "nodes",
+                                     seperator = ", ", with.gt = TRUE) {
   if (length(vec) == 1) {
     vector.names.str = substr(vector.names.str, start = 1,
                               stop = nchar(vector.names.str) - 1)
   }
-  print(paste0(length(vec), " ", vector.names.str, ": ",
-               paste0(names(vec), collapse = ",")))
+  pretty.print.string(paste0(length(vec), " ", vector.names.str, ": ",
+                      paste0(names(vec), collapse = seperator)), with.gt)
 }
 
 # `vector.values.str` tell us what the `vec` values are, to put it on
 # the print message
-pretty.print.vector.values = function(vec, vector.values.str = "nodes") {
+pretty.print.vector.values = function(vec, vector.values.str = "nodes",
+                                      seperator = ", ", with.gt = TRUE) {
   if (length(vec) == 1) {
     vector.values.str = substr(vector.values.str, start = 1,
                               stop = nchar(vector.values.str) - 1)
   }
-  print(paste0(length(vec), " ", vector.values.str, ": ",
-               paste0(vec, collapse = ",")))
+  pretty.print.string(paste0(length(vec), " ", vector.values.str, ": ",
+                      paste0(vec, collapse = seperator)), with.gt)
 }
 
 # get the common `names` from two vectors and print an appropriate message
 # `vector.names.str` tell us what `names(vec)` actually is, to put it on
 # the print message
-get.common.names = function(vec1, vec2, vector.names.str = "nodes") {
+get.common.names = function(vec1, vec2, vector.names.str = "nodes",
+                            with.gt = TRUE) {
   common.names = intersect(names(vec1), names(vec2))
   common.names.number = length(common.names)
 
   if (common.names.number == 0) {
-    print(paste0("No common ", vector.names.str))
+    str = paste0("No common ", vector.names.str)
+    pretty.print.string(str, with.gt = with.gt)
     return(NULL)
   }
   else {
-    print(paste0(common.names.number, " ", vector.names.str, ": ",
-          paste0(common.names, collapse = ",")))
+    pretty.print.vector.names(common.names, with.gt = with.gt)
     return(common.names)
   }
 }
@@ -62,37 +101,68 @@ get.common.names = function(vec1, vec2, vector.names.str = "nodes") {
 # get the common values from two vectors and print an appropriate message
 # `vector.values.str` tell us what the `vec` values are, to put it on
 # the print message
-get.common.values = function(vec1, vec2, vector.values.str = "nodes") {
+get.common.values = function(vec1, vec2, vector.values.str = "nodes",
+                             with.gt = TRUE) {
   common.values = intersect(vec1, vec2)
   common.values.number = length(common.values)
 
   if (common.values.number == 0) {
-    print(paste0("No common ", vector.values.str))
+    str = paste0("No common ", vector.values.str)
+    pretty.print.string(str, with.gt = with.gt)
     return(NULL)
   }
   else {
-    print(paste0(common.values.number, " ", vector.values.str, ": ",
-                 paste0(common.values, collapse = ",")))
+    pretty.print.vector.values(common.values, with.gt = with.gt)
     return(common.values)
   }
 }
 
-print.biomarkers.for.specific.synergy =
-  function(drug.comb, biomarkers.active, biomarkers.inhibited) {
-    print(paste("Biomarkers for", drug.comb, "synergy prediction"))
-    print.empty.line()
+print.biomarkers.per.predicted.synergy =
+  function(biomakrers.dir, drug.comb, predicted.synergies, html.output = TRUE) {
+    pretty.print.string("")
+    for (drug.comb in predicted.synergies) {
+      # get the active biomarkers
+      active.biomarkers.file =
+        paste0(biomarkers.dir, drug.comb, "_biomarkers_active")
+      if (file.size(active.biomarkers.file) == 0) {
+        biomarkers.active.names = NULL
+      } else {
+        biomarkers.active =
+          read.table(active.biomarkers.file, stringsAsFactors = FALSE)
+        biomarkers.active.names = biomarkers.active[,1]
+      }
 
-    print("Active biomarkers")
-    pretty.print.vector.names(biomarkers.active)
-    print.empty.line()
+      # get the inhibited biomarkers
+      inhibited.biomarkers.file =
+        paste0(biomarkers.dir, drug.comb, "_biomarkers_inhibited")
+      if (file.size(inhibited.biomarkers.file) == 0) {
+        biomarkers.inhibited.names = NULL
+      } else {
+        biomarkers.inhibited =
+          read.table(inhibited.biomarkers.file, stringsAsFactors = FALSE)
+        biomarkers.inhibited.names = biomarkers.inhibited[,1]
+      }
 
-    print("Inhibited biomarkers")
-    pretty.print.vector.names(biomarkers.inhibited)
-    print.empty.line()
-}
+      # print biomarkers
+      str = paste("Biomarkers for", drug.comb, "synergy prediction")
+      pretty.print.bold.string(str, with.gt = FALSE, html.output = html.output)
+      print.empty.line(html.output)
+      print.empty.line(html.output)
 
-print.empty.line = function() {
-  cat("\n")
+      pretty.print.bold.string("Active biomarkers", with.gt = FALSE,
+                               html.output = html.output)
+      print.empty.line(html.output)
+      pretty.print.vector.values(biomarkers.active.names, with.gt = FALSE)
+      print.empty.line(html.output)
+      print.empty.line(html.output)
+
+      pretty.print.bold.string("Inhibited biomarkers", with.gt = FALSE,
+                               html.output = html.output)
+      print.empty.line(html.output)
+      pretty.print.vector.values(biomarkers.inhibited.names, with.gt = FALSE)
+      print.empty.line(html.output)
+      print.empty.line(html.output)
+    }
 }
 
 save.vector.to.file = function(vector, file, with.row.names = FALSE) {
@@ -105,10 +175,11 @@ save.df.to.file = function(df, file) {
               row.names = TRUE, sep = "\t")
 }
 
-# we keep the biomarkers already stored in the respective file and just add the
-# new ones
+# we keep the biomarkers already stored in the respective file
+# and just add the new ones
 update.biomarkers.files =
-  function(biomarkers.dir, drug.comb, biomarkers.active.new, biomarkers.inhibited.new) {
+  function(biomarkers.dir, drug.comb, biomarkers.active.new,
+           biomarkers.inhibited.new) {
     # update the active biomarkers
     active.biomarkers.file =
       paste0(biomarkers.dir, drug.comb, "_biomarkers_active")
@@ -158,6 +229,7 @@ update.biomarkers.files =
     }
 }
 
+# `df` is (n x 2) dimensions
 add.vector.to.data.frame = function(df, vec) {
   if (length(vec) == 0) return(df)
   for (i in 1:length(vec)) {
@@ -166,10 +238,4 @@ add.vector.to.data.frame = function(df, vec) {
     df = rbind(df, c(name, value))
   }
   return(df)
-}
-
-output.data.to.file = function(dir.to.save, filename, data, with.col.names) {
-  output.file = paste0(dir.to.save, "/", filename)
-  write.table(data, output.file, append = FALSE, sep = "\t", dec = ".",
-              col.names = with.col.names, quote = FALSE)
 }
