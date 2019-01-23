@@ -306,6 +306,7 @@ models.ppv = models.synergies.tp / (models.synergies.tp + models.synergies.fp) #
 models.fpr = models.synergies.fp / models.synergies.n
 models.accuracy = (models.synergies.tp + models.synergies.tn) / 
                   (models.synergies.p + models.synergies.n)
+models.balanced.accuracy = (models.tpr + models.tnr)/2
 ```
 
 ```{r Graphs: Fitness vs Evaluation metrics}
