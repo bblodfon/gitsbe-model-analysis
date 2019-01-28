@@ -947,7 +947,7 @@ The abudance of (false positive) biomarkers for some synergies (e.g. `PI-D1`)
 relates to the model classification method used, which does not incorporate in 
 its internal logic that the prediction of other synergies than the ones used for 
 the grouping itself can affect the biomarker results obtained from it
-- We couldn't find any biomarkers at the $0.7$ threshold for the `D1-P5` synergy
+- We couldn't identify any biomarkers at the $0.7$ threshold for the `D1-P5` synergy
 - All the performance-related biomarkers (PERF) were also observed as biomarkers
 for the prediction of a specific synergy(ies) with the exception of the `RAF1` node
 - There exist common biomarkers across different predicted synergies, e.g. `SGK3` 
