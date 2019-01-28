@@ -463,7 +463,7 @@ if (sum(is.na(mcc.values)) > 0) {
 
 mcc.classes = get.mcc.classes(mcc.intervals)
 print.mcc.classification.info(mcc.classes, html.output = TRUE)
-``` 
+```
 
 Following our first strategy, **we will split the models based on the MCC 
 performance metric score**. For example, the bad models will be the ones that 
