@@ -28,6 +28,11 @@ make.barplot.on.models.stats =
     # prune some bars :)
     models.stats = models.stats[models.stats > threshold]
 
+    # If number of `NaN` values are lower then the `threshold` and
+    # as such will be pruned, there will be no `NaN` bar in the plot
+    if (there.is.one.NaN.category && nan.value <= threshold)
+      there.is.one.NaN.category = FALSE
+
     x.axis.values =
       get.x.axis.values(models.stats, there.is.one.NaN.category, cont.values)
     y.axis.values = pretty(models.stats)
