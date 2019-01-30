@@ -126,6 +126,51 @@ get.avg.activity.diff.based.on.mcc.classification =
     return(good.avg.activity - bad.avg.activity)
 }
 
+get.avg.activity.diff.based.on.mcc.clustering =
+  function(models.mcc, models.mcc.no.nan.sorted, models.stable.state,
+           mcc.class.ids, models.cluster.ids, class.id.low, class.id.high) {
+    if (class.id.low >= class.id.high) {
+      stop("`class.id.low` needs to be smaller than `class.id.high`")
+    }
+
+    bad.class.id  = mcc.class.ids[class.id.low]
+    good.class.id = mcc.class.ids[class.id.high]
+
+    # find the 'good' models
+    good.models = get.models.based.on.mcc.class.id(
+      good.class.id, models.cluster.ids, models.mcc.no.nan.sorted
+    )
+
+    # find the 'bad' models
+    if(is.nan(bad.class.id)) {
+      # the `NaN` MCC scored models (can only be 'bad' ones)
+      bad.models = names(models.mcc)[is.nan(models.mcc)]
+    } else {
+      bad.models =
+        get.models.based.on.mcc.class.id(
+          bad.class.id, models.cluster.ids, models.mcc.no.nan.sorted
+        )
+    }
+
+    # `good.models` != `bad.models` (disjoing sets of models)
+    stopifnot(!(good.models %in% bad.models))
+    # small number of models in some category: need to redefine the MCC intervals
+    stopifnot(length(good.models) > 1)
+    stopifnot(length(bad.models) > 1)
+
+    good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
+    bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+
+    return(good.avg.activity - bad.avg.activity)
+}
+
+# `models.cluster.ids` is a vector specifying the class id of the MCC score
+# as defined in the `models.mcc` (one-to-one)
+get.models.based.on.mcc.class.id =
+  function(class.id, models.cluster.ids, models.mcc) {
+    return(names(models.mcc[models.cluster.ids == class.id]))
+  }
+
 get.models.based.on.mcc.interval =
   function(models, models.mcc, mcc.interval, include.high.value = FALSE) {
     res = sapply(models.mcc, is.between, low.thres = mcc.interval[1],
