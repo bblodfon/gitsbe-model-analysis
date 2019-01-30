@@ -221,7 +221,7 @@ From the above figure (where we excluded sets of synergies that were predicted
 by no model by setting the `threshold.for.subset.removal` value to 1) we observe 
 that:
 
-- **More than half of the models predict no synergies**
+- **More than half of the models predict none of the observed synergies**
 - The `PI-D1` synergy is the most common predicted synergy for the rest of the models
 
 Next we calculate the maximum number of correctly predicted synergies ($TP$ - 
