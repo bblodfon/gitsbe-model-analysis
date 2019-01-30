@@ -90,7 +90,7 @@ get.common.names = function(vec1, vec2, vector.names.str = "nodes",
   if (common.names.number == 0) {
     str = paste0("No common ", vector.names.str)
     pretty.print.string(str, with.gt = with.gt)
-    return(NULL)
+    return(FALSE)
   }
   else {
     pretty.print.vector.names(common.names, with.gt = with.gt)
@@ -109,7 +109,7 @@ get.common.values = function(vec1, vec2, vector.values.str = "nodes",
   if (common.values.number == 0) {
     str = paste0("No common ", vector.values.str)
     pretty.print.string(str, with.gt = with.gt)
-    return(NULL)
+    return(FALSE)
   }
   else {
     pretty.print.vector.values(common.values, with.gt = with.gt)
