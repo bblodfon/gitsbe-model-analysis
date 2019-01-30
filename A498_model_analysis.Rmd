@@ -32,6 +32,7 @@ have them):
 ```{r Load libraries, message = FALSE}
 library(rje) # version 1.9
 library(igraph) # version 1.2.2, see (Csardi, 2006)
+library(Ckmeans.1d.dp) # version 4.2.2, see (Wang, 2011)
 library(superheat) # version 1.0.0, see (Barter, 2017)
 ```
 and the relevant helper functions:
@@ -221,7 +222,7 @@ From the above figure (where we excluded sets of synergies that were predicted
 by no model by setting the `threshold.for.subset.removal` value to 1) we observe 
 that:
 
-- **Almost half of the models predict no synergies**
+- **Almost half of the models predict none of the observed synergies**
 - The `PI-D1` synergy is predicted by almost all the rest of the models
 
 Next we calculate the maximum number of correctly predicted synergies ($TP$ - 
@@ -330,22 +331,18 @@ net = contruct.network(topology.file, models.dir)
 # nice.layout = layout_nicely(net)
 nice.layout = as.matrix(read.table(coordinates.file))
 ```
+
 In the next colored graphs we can identify the important nodes whose activity
 state can influence the true positive prediction performance (from 0 true 
 positive synergies to a total of 3):
 ```{r Graphs: Good vs Bad models based on the number of TPs}
 # useful tutorial about network visualization in R: (Ognyanova, 2018)
 
-diff.tp.0.3 = diff.tp.results[3,]
-plot.network(net, diff.tp.0.3, layout = nice.layout,
+plot.network(net, diff.tp.results["(0,3)",], layout = nice.layout,
              title = "Bad models (0 TP) vs Good models (3 TP)")
-
-diff.tp.1.3 = diff.tp.results[5,]
-plot.network(net, diff.tp.1.3, layout = nice.layout,
+plot.network(net, diff.tp.results["(1,3)",], layout = nice.layout,
              title = "Bad models (1 TP) vs Good models (3 TP)")
-
-diff.tp.2.3 = diff.tp.results[6,]
-plot.network(net, diff.tp.2.3, layout = nice.layout,
+plot.network(net, diff.tp.results["(2,3)",], layout = nice.layout,
              title = "Bad models (2 TP) vs Good models (3 TP)")
 ```
 
@@ -369,6 +366,13 @@ Also, the nodes that have to be in a more *inhibited* state are:
 biomarkers.tp.inhibited = get.biomarkers(diff.tp.results, threshold = 0.7, 
                                          type = "inhibited")
 pretty.print.vector.values(biomarkers.tp.inhibited)
+```
+
+We check if there are nodes found by our method as biomarkers in both active and 
+inhibited states:
+```{r TP biomarkers check consistency, results = 'asis'}
+common.biomarkers.tp = 
+  get.common.values(biomarkers.tp.active, biomarkers.tp.inhibited)
 ```
 
 #### MCC classification-based analysis
@@ -444,45 +448,53 @@ pretty.print.string(sum(models.synergies.tp + models.synergies.fp == 0))
 ```
 
 Since these models could intentify no synergies (either correctly or 
-wrongly), we decided to put them as the lowest performant category in our 
-MCC-based analysis. To classify the models based on the MCC score (which takes 
-values in the $[-1, 1]$ interval), we devised a method that **splits the previously 
-found MCC values range to intervals of a specific size** (each corresponding to a 
-different classification category), so that each model's MCC score falls within 
-a specific interval:
-```{r MCC classification, results = 'asis'}
-mcc.values = as.numeric(names(models.mcc.stats))
+wrongly), we decided to put them **as the lowest performant category** in our 
+MCC-based analysis. To classify the models based on their MCC score (which takes 
+values in the $[-1, 1]$ interval, `NaN` values excluded), we will perform a 
+*univariate k-means clustering* to **split the previously found MCC values to 
+different classes**. The MCC classification is presented with a histogram:
+```{r MCC clasification}
+num.of.classes = 4
+mcc.class.ids = 1:num.of.classes
 
-# split into classes with a 0.2 MCC value range each
-mcc.intervals = get.mcc.intervals(mcc.values, interval.size = 0.2)
+models.mcc.no.nan = models.mcc[!is.nan(models.mcc)]
+models.mcc.no.nan.sorted = sort(models.mcc.no.nan)
 
-# add NaN category (if applicable)
-if (sum(is.na(mcc.values)) > 0) {
-  mcc.intervals = rbind(c(NaN, NaN), mcc.intervals)
-}
+# find the clusters
+res = Ckmeans.1d.dp(x = models.mcc.no.nan.sorted, k = num.of.classes)
+models.cluster.ids = res$cluster
 
-mcc.classes = get.mcc.classes(mcc.intervals)
-print.mcc.classification.info(mcc.classes, html.output = TRUE)
+plot.mcc.classes.hist(models.mcc.no.nan.sorted, models.cluster.ids,
+                      num.of.classes, mcc.class.ids)
 ```
+
+Note that in total we have **5 MCC classes**, since the `NaN` MCC values constitute
+a class on its own.
 
 Following our first strategy, **we will split the models based on the MCC 
 performance metric score**. For example, the bad models will be the ones that 
 had a `NaN` MCC score $(TP+FP = 0)$ whereas the good models will be the ones that 
-had an MCC score between $[-0.2, 0)$. This particular classification strategy will 
-be used for every possible combination of the MCC classes as defined by the 
-`mcc.classes` object and the density estimation of the nodes' average state 
+had an MCC score belonging to the first MCC class as seen in the histogram above. 
+This particular classification strategy will be used for every possible combination 
+of the MCC classes and the density estimation of the nodes' average state 
 differences in each case will be ploted in a common graph:
 ```{r Good vs Bad models based on the MCC classification}
-mcc.class.id.comb = t(combn(1:length(mcc.classes), 2))
+# add NaN class (if applicable)
+if (sum(is.nan(models.mcc)) > 0) {
+  mcc.class.ids = append(mcc.class.ids, values = NaN, after = 0)
+}
+
+mcc.class.id.comb = t(combn(1:length(mcc.class.ids), 2))
 
 diff.mcc.results = apply(mcc.class.id.comb, 1, function(comb) {
-  return(get.avg.activity.diff.based.on.mcc.classification(
-    models, models.mcc, mcc.intervals, models.stable.state, 
-    class.id.low = comb[1], class.id.high = comb[2]))
+  return(get.avg.activity.diff.based.on.mcc.clustering(
+          models.mcc, models.mcc.no.nan.sorted, models.stable.state,
+          mcc.class.ids, models.cluster.ids, 
+          class.id.low = comb[1], class.id.high = comb[2]))
 })
 
 mcc.classes.comb.names = apply(mcc.class.id.comb, 1, function(comb) {
-  return(paste0("(", mcc.classes[comb[1]], ", ", mcc.classes[comb[2]], ")"))
+  return(paste0("(", mcc.class.ids[comb[1]], ",", mcc.class.ids[comb[2]], ")"))
 })
 
 colnames(diff.mcc.results) = mcc.classes.comb.names
@@ -494,26 +506,16 @@ make.multiple.density.plot(mcc.densities, legend.title = "MCC classes",
                            title = "Density Estimation for the Average State Difference")
 ```
 
-From the above graph we notice that the `NaN` MCC class has almost the same 
-density distribution of the absolute average state differences when compared to
-all the other MCC classes, meaning that this truly represents a (bad) class
-of models which are fundamentally different from all other models that have at 
-least one $TP$ or $FP$ prediction. The density plots of interest here are the ones 
-that compare the **2nd vs 4th class** $([-0.2, 0), [0.2, 0.4])$ and the **3rd vs 
-4th class** $([0, 0.2), [0.2, 0.4])$. Next, we visualize the average state 
-differences with our network coloring method, in order to identify the important 
-nodes whose activity state can influence the prediction performance based on the 
-MCC classification:
+Many of the density plots above are of interest to us, since they are *right 
+skewed*. Next, we visualize the average state differences with our network 
+coloring method for 2 of the above cases, in order to identify the important 
+nodes whose activity state can influence the prediction performance based on 
+the MCC classification:
 ```{r Graphs: Good vs Bad models based on the MCC classification}
-# ([-0.2, 0), [0.2, 0.4])
-diff.mcc.2.4 = diff.mcc.results[5,]
-plot.network(net, diff.mcc.2.4, layout = nice.layout, 
-             title = "Bad models, MCC: [-0.2, 0) vs Good models, MCC: [0.2, 0.4]")
-
-# ([0, 0.2), [0.2, 0.4])
-diff.mcc.3.4 = diff.mcc.results[6,]
-plot.network(net, diff.mcc.3.4, layout = nice.layout, 
-             title = "Bad models, MCC: [0, 0.2) vs Good models, MCC: [0.2, 0.4]")
+plot.network(net, diff.mcc.results["(1,2)",], layout = nice.layout, 
+             title = "Bad models (MCC Class: 1) vs Good models (MCC Class: 2)")
+plot.network(net, diff.mcc.results["(3,4)",], layout = nice.layout, 
+             title = "Bad models (MCC Class: 3) vs Good models (MCC Class: 4)")
 ```
 
 We will now **list the important nodes** that affect the models' prediction 
@@ -530,6 +532,48 @@ Secondly, the nodes that have to be in a more *inhibited* state:
 ```{r MCC biomarkers (inhibited), results = 'asis'}
 biomarkers.mcc.inhibited = get.biomarkers(diff.mcc.results, threshold = 0.7, 
                                       type = "inhibited")
+pretty.print.vector.values(biomarkers.mcc.inhibited)
+```
+
+We check if there are nodes found by our method as biomarkers in both active and 
+inhibited states:
+```{r MCC biomarkers check consistency, results = 'asis'}
+common.biomarkers.mcc = 
+  get.common.values(biomarkers.mcc.active, biomarkers.mcc.inhibited)
+```
+
+Since there are common nodes that were found to surpass the significance 
+threshold level for the average state difference between two MCC classes *both 
+negatively and positively*, we will keep these biomarkers only in the state which 
+corresponds to the comparison of the highest classification categories. For example, 
+if for the comparison of the MCC classses $(1,3)$ the node of interest had an 
+average  difference of $-0.89$ while for the comparison of the $(3,4)$ MCC classes 
+it had a value of $0.91$, then we will keep that node only in the active biomarker 
+list. The logic behind this is that the higher the MCC classes we compare, the 
+more sure we are that the average state difference corresponds to a better 
+indicator of the state of the biomarker found.
+
+```{r Fix MCC biomarkers, results = 'asis'}
+# remove the common biomarkers
+biomarkers.mcc.active = 
+  biomarkers.mcc.active[!biomarkers.mcc.active %in% common.biomarkers.mcc]
+biomarkers.mcc.inhibited = 
+  biomarkers.mcc.inhibited[!biomarkers.mcc.inhibited %in% common.biomarkers.mcc]
+
+# find the proper state of the biomarkers and add them
+threshold = 0.7
+for (biomarker in common.biomarkers.mcc) {
+  logical.vector = diff.mcc.results[, biomarker] > threshold | 
+                   diff.mcc.results[, biomarker] < -threshold
+  comparison.index = max(which(logical.vector == TRUE))
+  if (diff.mcc.results[comparison.index, biomarker] > threshold)
+    biomarkers.mcc.active = append(biomarkers.mcc.active, biomarker)
+  else
+    biomarkers.mcc.inhibited = append(biomarkers.mcc.inhibited, biomarker)
+}
+
+# printing MCC biomarkers
+pretty.print.vector.values(biomarkers.mcc.active)
 pretty.print.vector.values(biomarkers.mcc.inhibited)
 ```
 
@@ -550,7 +594,7 @@ common.biomarkers.mixed.2 =
 To sum up, we list the common biomarkers that need to be in a more *active* 
 state:
 ```{r Common biomarkers (active), results = 'asis'}
-common.biomarkers.active = 
+common.biomarkers.active =
   get.common.values(biomarkers.mcc.active, biomarkers.tp.active)
 ```
 
@@ -950,4 +994,5 @@ the performance-related biomarkers
 
 1. Csardi G, Nepusz T (2006) The igraph software package for complex network research, InterJournal, Complex Systems 1695. [http://igraph.org](http://igraph.org)
 2. Ognyanova, K. (2018) Network visualization with R. Retrieved from [www.kateto.net/network-visualization](http://www.kateto.net/network-visualization)
-3. Barter Rebecca, Yu Bin (2017) Superheat: An R package for creating beautiful and extendable heatmaps for visualizing complex data. [https://arxiv.org/abs/1512.01524](https://arxiv.org/abs/1512.01524), [https://rlbarter.github.io/superheat/](https://rlbarter.github.io/superheat/)
+3. Wang, H. and Song, M. (2011) Ckmeans.1d.dp: optimal k-means clustering in one dimension by dynamic programming. The R Journal 3(2), 29–33. Retrieved from [https://journal.r-project.org/archive/2011-2/RJournal_2011-2_Wang+Song.pdf](Retrieved from https://journal.r-project.org/archive/2011-2/RJournal_2011-2_Wang+Song.pdf)
+4. Barter Rebecca, Yu Bin (2017) Superheat: An R package for creating beautiful and extendable heatmaps for visualizing complex data. [https://arxiv.org/abs/1512.01524](https://arxiv.org/abs/1512.01524), [https://rlbarter.github.io/superheat/](https://rlbarter.github.io/superheat/)
