@@ -42,6 +42,12 @@ print.model.and.drug.stats =
     pretty.print.string(paste("Number of models:", models), with.gt = FALSE)
     print.empty.line(html.output)
     pretty.print.string(paste("Number of nodes:", nodes), with.gt = FALSE)
+  }
+
+print.model.stats = function(models, nodes, html.output) {
+  pretty.print.string(paste("Number of models:", models), with.gt = TRUE)
+  print.empty.line(html.output)
+  pretty.print.string(paste("Number of nodes:", nodes), with.gt = FALSE)
 }
 
 print.mcc.classification.info = function(mcc.classes, html.output) {
@@ -77,6 +83,38 @@ pretty.print.vector.values = function(vec, vector.values.str = "nodes",
   }
   pretty.print.string(paste0(length(vec), " ", vector.values.str, ": ",
                       paste0(vec, collapse = seperator)), with.gt)
+}
+
+# make sure that the vector `vec` has the `names(vec)` set
+pretty.print.vector.names.and.values = function(vec) {
+  len = length(vec)
+  stopifnot(len > 0)
+
+  vec.names = names(vec)
+  if (len == 1) {
+    pretty.print.name.and.value(vec.names, vec, with.gt = TRUE, with.comma = FALSE)
+  } else {
+    for (index in 1:len) {
+      name = vec.names[index]
+      value = vec[index]
+      if (index == 1)
+        pretty.print.name.and.value(name, value, with.gt = TRUE, with.comma = TRUE)
+      if (index != 1 & index != len)
+        pretty.print.name.and.value(name, value)
+      if (index == len)
+        pretty.print.name.and.value(name, value, with.comma = FALSE)
+    }
+  }
+}
+
+pretty.print.name.and.value =
+  function(name, value, with.gt = FALSE, with.comma = TRUE) {
+    if (with.comma) {
+      pretty.print.string(string = paste0(name, ": ", value, ", "),
+                          with.gt = with.gt)
+    }
+    else
+      pretty.print.string(string = paste0(name, ": ", value), with.gt = with.gt)
 }
 
 # get the common `names` from two vectors and print an appropriate message
