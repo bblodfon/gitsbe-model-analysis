@@ -32,6 +32,7 @@ have them):
 ```{r Load libraries, message = FALSE}
 library(rje) # version 1.9
 library(igraph) # version 1.2.2, see (Csardi, 2006)
+library(Ckmeans.1d.dp) # version 4.2.2, see (Wang, 2011)
 library(superheat) # version 1.0.0, see (Barter, 2017)
 ```
 and the relevant helper functions:
@@ -221,7 +222,7 @@ From the above figure (where we excluded sets of synergies that were predicted
 by no model by setting the `threshold.for.subset.removal` value to 1) we observe 
 that:
 
-- **Almost half of the models predict no synergies**
+- **Almost half of the models predict none of the observed synergies**
 - The `PI-D1` synergy is predicted by almost all the rest of the models
 
 Next we calculate the maximum number of correctly predicted synergies ($TP$ - 
@@ -336,16 +337,11 @@ positive synergies to a total of 2):
 ```{r Graphs: Good vs Bad models based on the number of TPs}
 # useful tutorial about network visualization in R: (Ognyanova, 2018)
 
-diff.tp.0.1 = diff.tp.results[1,]
-plot.network(net, diff.tp.0.1, layout = nice.layout,
+plot.network(net, diff.tp.results["(0,1)",], layout = nice.layout,
              title = "Bad models (0 TP) vs Good models (1 TP)")
-
-diff.tp.0.2 = diff.tp.results[2,]
-plot.network(net, diff.tp.0.2, layout = nice.layout,
+plot.network(net, diff.tp.results["(0,2)",], layout = nice.layout,
              title = "Bad models (0 TP) vs Good models (2 TP)")
-
-diff.tp.1.2 = diff.tp.results[3,]
-plot.network(net, diff.tp.1.2, layout = nice.layout,
+plot.network(net, diff.tp.results["(1,2)",], layout = nice.layout,
              title = "Bad models (1 TP) vs Good models (2 TP)")
 ```
 
@@ -357,8 +353,8 @@ that maintain the same significant influence in all of the graphs. We set the
 to $0.7$**. A node will be marked as a biomarker (active or inhibited) if 
 its activity state difference surpassed the aforementioned threshold (positively 
 or negatively) **for any of the tested groups** (e.g. 1 $TP$ vs 2 $TP$). We 
-observe that using the above threshold (which was also used in the other cell 
-lines), no biomarkers can be identified:
+observe **that using the above threshold (which was also used in the other cell 
+lines), no biomarkers can be identified**:
 
 ```{r TP biomarkers (mixed), results = 'asis'}
 biomarkers.tp.active = get.biomarkers(diff.tp.results, threshold = 0.7, 
@@ -370,7 +366,9 @@ pretty.print.vector.values(biomarkers.tp.active)
 pretty.print.vector.values(biomarkers.tp.inhibited)
 ```
 
-We could lower the threshold to $0.6$ and thus identify possible *active* 
+This happens mainly because of the low number of $TP$ synergies (larger number of
+$TP$ would allow better performance classification). So, for this cell line, we 
+lower the significance threshold to $0.6$ and thus identify these *active* 
 biomarkers:
 ```{r TP biomarkers (active), results = 'asis'}
 biomarkers.tp.active = get.biomarkers(diff.tp.results, threshold = 0.6, 
@@ -378,12 +376,18 @@ biomarkers.tp.active = get.biomarkers(diff.tp.results, threshold = 0.6,
 pretty.print.vector.values(biomarkers.tp.active)
 ```
 
-The biomarkers that have to be in a more *inhibited* state and correspond to a 
-$0.6$ threshold, are:
+The *inhibited* biomarkers that correspond to a $0.6$ threshold, are:
 ```{r TP biomarkers (inhibited), results = 'asis'}
 biomarkers.tp.inhibited = get.biomarkers(diff.tp.results, threshold = 0.6, 
                                          type = "inhibited")
 pretty.print.vector.values(biomarkers.tp.inhibited)
+```
+
+We check if there are nodes found by our method as biomarkers in both active and 
+inhibited states:
+```{r TP biomarkers check consistency, results = 'asis'}
+common.biomarkers.tp = 
+  get.common.values(biomarkers.tp.active, biomarkers.tp.inhibited)
 ```
 
 #### MCC classification-based analysis
@@ -398,7 +402,7 @@ screening evaluation it will be even less true positives) we will now devise a
 method to split the models into different performance categories based on the 
 value of the **Matthews Correlation Coefficient (MCC) score** which takes into 
 account the balance ratios of all the four confusion matrix values:
-```{r MCC Stats, fig.height = 5, fig.width = 9}
+```{r MCC Stats, fig.height = 6, fig.width = 9}
 # Count the false negatives (FN)
 models.synergies.fn = apply(observed.model.predictions, 1, function(x) {
   sum( x == 0 | is.na(x) )
@@ -461,45 +465,49 @@ pretty.print.string(sum(models.synergies.tp + models.synergies.fp == 0))
 ```
 
 Since these models could intentify no synergies (either correctly or 
-wrongly), we decided to put them as the lowest performant category in our 
-MCC-based analysis. To classify the models based on the MCC score (which takes 
-values in the $[-1, 1]$ interval), we devised a method that **splits the previously 
-found MCC values range to intervals of a specific size** (each corresponding to a 
-different classification category), so that each model's MCC score falls within 
-a specific interval:
-```{r MCC classification, results = 'asis'}
-mcc.values = as.numeric(names(models.mcc.stats))
+wrongly), we decided to put them **as the lowest performant category** in our 
+MCC-based analysis. To classify the models based on their MCC score (which takes 
+values in the $[-1, 1]$ interval, `NaN` values excluded), we will perform a 
+*univariate k-means clustering* to **split the previously found MCC values to 
+different classes**. The MCC classification is presented with a histogram:
+```{r MCC clasification}
+num.of.classes = 5
+mcc.class.ids = 1:num.of.classes
 
-# split into classes with a 0.2 MCC value range each
-mcc.intervals = get.mcc.intervals(mcc.values, interval.size = 0.25)
+models.mcc.no.nan = models.mcc[!is.nan(models.mcc)]
+models.mcc.no.nan.sorted = sort(models.mcc.no.nan)
 
-# add NaN category (if applicable)
-if (sum(is.na(mcc.values)) > 0) {
-  mcc.intervals = rbind(c(NaN, NaN), mcc.intervals)
-}
+# find the clusters
+res = Ckmeans.1d.dp(x = models.mcc.no.nan.sorted, k = num.of.classes)
+models.cluster.ids = res$cluster
 
-mcc.classes = get.mcc.classes(mcc.intervals)
-print.mcc.classification.info(mcc.classes, html.output = TRUE)
+plot.mcc.classes.hist(models.mcc.no.nan.sorted, models.cluster.ids,
+                      num.of.classes, mcc.class.ids)
 ```
+
+Note that in total we will have **5 MCC classes** in our subsequent analysis, 
+excluding the `NaN` MCC class, because of the small number of models (18) that 
+belong to this class compared to the other MCC class sizes.
 
 Following our first strategy, **we will split the models based on the MCC 
 performance metric score**. For example, the bad models will be the ones that 
-had a `NaN` MCC score $(TP+FP = 0)$ whereas the good models will be the ones that 
-had an MCC score between $[-0.25, 0)$. This particular classification strategy will 
-be used for every possible combination of the MCC classes as defined by the 
-`mcc.classes` object and the density estimation of the nodes' average state 
-differences in each case will be ploted in a common graph:
+had an MCC score belonging to the first MCC class whereas the good models will 
+be the ones that had an MCC score belonging to the third MCC class as seen in 
+the histogram above. This particular classification strategy will be used for 
+every possible combination of the MCC classes and the density estimation of the 
+nodes' average state differences in each case will be ploted in a common graph:
 ```{r Good vs Bad models based on the MCC classification}
-mcc.class.id.comb = t(combn(1:length(mcc.classes), 2))
+mcc.class.id.comb = t(combn(1:length(mcc.class.ids), 2))
 
 diff.mcc.results = apply(mcc.class.id.comb, 1, function(comb) {
-  return(get.avg.activity.diff.based.on.mcc.classification(
-    models, models.mcc, mcc.intervals, models.stable.state, 
-    class.id.low = comb[1], class.id.high = comb[2]))
+  return(get.avg.activity.diff.based.on.mcc.clustering(
+          models.mcc, models.mcc.no.nan.sorted, models.stable.state,
+          mcc.class.ids, models.cluster.ids, 
+          class.id.low = comb[1], class.id.high = comb[2]))
 })
 
 mcc.classes.comb.names = apply(mcc.class.id.comb, 1, function(comb) {
-  return(paste0("(", mcc.classes[comb[1]], ", ", mcc.classes[comb[2]], ")"))
+  return(paste0("(", mcc.class.ids[comb[1]], ",", mcc.class.ids[comb[2]], ")"))
 })
 
 colnames(diff.mcc.results) = mcc.classes.comb.names
@@ -511,21 +519,16 @@ make.multiple.density.plot(mcc.densities, legend.title = "MCC classes",
                            title = "Density Estimation for the Average State Difference")
 ```
 
-The density plots of interest here are the ones that compare the **1st vs 2nd 
-class** $(NaN, [-0.25, 0))$ and the **1st vs 4th class** $(NaN, [0.25, 0.5])$. 
-Next, we visualize the average state differences with our network coloring method, 
-in order to identify the important nodes whose activity state can influence the 
-prediction performance based on the MCC classification:
+Many of the density plots above are of interest to us, since they are *right 
+skewed*. Next, we visualize the average state differences with our network 
+coloring method for 2 of the above cases, in order to identify the important 
+nodes whose activity state can influence the prediction performance based on 
+the MCC classification:
 ```{r Graphs: Good vs Bad models based on the MCC classification}
-# (NaN, [-0.25, 0))
-diff.mcc.1.2 = diff.mcc.results[1,]
-plot.network(net, diff.mcc.1.2, layout = nice.layout, 
-             title = "Bad models, MCC: NaN vs Good models, MCC: [-0.25, 0)")
-
-# (NaN, [0.25, 0.5])
-diff.mcc.1.4 = diff.mcc.results[3,]
-plot.network(net, diff.mcc.1.4, layout = nice.layout, 
-             title = "Bad models, MCC: NaN vs Good models, MCC: [0.25, 0.5]")
+plot.network(net, diff.mcc.results["(3,4)",], layout = nice.layout, 
+             title = "Bad models (MCC Class: 3) vs Good models (MCC Class: 4)")
+plot.network(net, diff.mcc.results["(2,5)",], layout = nice.layout, 
+             title = "Bad models (MCC Class: 2) vs Good models (MCC Class: 5)")
 ```
 
 We will now **list the important nodes** that affect the models' prediction 
@@ -545,33 +548,47 @@ biomarkers.mcc.inhibited = get.biomarkers(diff.mcc.results, threshold = 0.7,
 pretty.print.vector.values(biomarkers.mcc.inhibited)
 ```
 
-#### Common performance-related biomarkers
+We check if there are nodes found by our method as biomarkers in both active and 
+inhibited states:
+```{r MCC biomarkers check consistency, results = 'asis'}
+common.biomarkers.mcc = 
+  get.common.values(biomarkers.mcc.active, biomarkers.mcc.inhibited)
+```
 
-Since the true-positive based classification method for identifying biomarkers 
-didn't produce any results at the $0.7$ significance level and based on the fact
-that the MCC score better captures the performance categories within our imbalanced 
-dataset, we will use the results from the MCC analysis as performance biomarkers.
-Also, there are no common biomarkers found between the two methods of classification
-even if we compare the results with different significance thresholds ($TP:0.6$ vs 
-$MCC:0.7$) which means that the two methods don't correlate:
-```{r Common biomarkers (mixed), results = 'asis'}
+#### Performance-related biomarkers
+
+Comparing the two methods we used for the classification of the models' prediction
+performance (TP and MCC), we observe that there exist **common biomarkers** in 
+both active and inhibited state cases. Also we note that there weren't any common 
+nodes reported as significantly active in one method which were significantly 
+inhibited in the other, showing that the two methods' results correlate well:
+```{r Performance biomarkers (mixed), results = 'asis'}
 common.biomarkers.mixed.1 = 
   get.common.values(biomarkers.mcc.active, biomarkers.tp.inhibited)
 common.biomarkers.mixed.2 = 
   get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.active)
-common.biomarkers.active = 
+```
+
+To sum up, we list the common biomarkers that need to be in a more *active* 
+state:
+```{r Performance biomarkers (active), results = 'asis'}
+biomarkers.perf.active =
   get.common.values(biomarkers.mcc.active, biomarkers.tp.active)
-common.biomarkers.inhibited =
+```
+
+We also list the common nodes that have to be in a more *inhibited* state:
+```{r Performance biomarkers (inhibited), results = 'asis'}
+biomarkers.perf.inhibited =
   get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
-Lastly, we will save the performance-related biomarkers (MCC based) for further 
+Lastly, we will save these common performance-related biomarkers for further 
 analysis and comparison with the results from all the different cell lines:
-```{r Save common performance biomarkers}
+```{r Save performance biomarkers}
 biomarkers.dir = paste0(data.dir, "biomarkers/")
-save.vector.to.file(vector = biomarkers.mcc.active, 
+save.vector.to.file(vector = biomarkers.perf.active,
                     file = paste0(biomarkers.dir, "biomarkers_active"))
-save.vector.to.file(vector = biomarkers.mcc.inhibited, 
+save.vector.to.file(vector = biomarkers.perf.inhibited,
                     file = paste0(biomarkers.dir, "biomarkers_inhibited"))
 ```
 
@@ -619,9 +636,9 @@ models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
 bottom.nodes.colors = rep("black", length(colnames(models.equations.sorted)))
 names(bottom.nodes.colors) = colnames(models.equations.sorted)
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    biomarkers.mcc.active] = "green"
+                    biomarkers.perf.active] = "green"
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    biomarkers.mcc.inhibited] = "red"
+                    biomarkers.perf.inhibited] = "red"
 
 superheat(models.equations.sorted, title.alignment = "center",
           title = "Models link operators (AND/OR NOT)", 
@@ -685,10 +702,10 @@ superheat(models.equations.sorted, title.alignment = "center",
 
 In the MCC-ordered heatmap above we observe that there is **better correlation 
 between the boolean equations' link operators and the performance of a model** 
-compared to the $TP$ classification. For example, the biomarker `CREB1` and the 
-node `MAPK14` show distinguished patterns for the higher performance models (use 
-of `AND NOT` and `OR NOT` link operators respectively) when the models are sorted 
-by the MCC score.
+compared to the $TP$ classification. For example, the node `AKT1` and the 
+biomarker `MAPK14` show distinguished patterns for the higher performance models 
+(use of `AND NOT` and `OR NOT` link operators respectively) when the models are 
+sorted by the MCC score.
 
 #### Synergy-prediction based analysis
 
@@ -856,10 +873,10 @@ save.df.to.file(biomarkers.synergy.res, file =
                 paste0(biomarkers.dir, "biomarkers_per_synergy"))
 
 # Biomarkers from section:
-# `Common performance-related biomarkers`
+# `Performance-related biomarkers`
 biomarkers.res = add.performance.biomarkers(biomarkers.synergy.res, 
-                                            biomarkers.mcc.active, 
-                                            biomarkers.mcc.inhibited)
+                                            biomarkers.perf.active, 
+                                            biomarkers.perf.inhibited)
 
 # prune nodes which are not found as biomarkers for any predicted synergy or
 # for better model performance
@@ -878,12 +895,12 @@ superheat(biomarkers.res, title.alignment = "center",
           legend.breaks = c(-1, 0, 1),
           left.label.col = "white", left.label.text.size = 4,
           bottom.label.col = "white",
-          bottom.label.text.size = 2, bottom.label.text.angle = 90)
+          bottom.label.text.size = 2.6)
 ```
 
 So, in general we observe that:
 
-- A total of $14$ nodes were found as biomarkers (for at least one synergy)
+- A total of $10$ nodes were found as biomarkers (for at least one synergy)
 - We couldn’t indentify any biomarkers at the $0.7$ threshold for the `PI-D1` 
 synergy, while for the `BI-D1` synergy we found 10 biomarkers. Usually we wouldn't 
 expect too many biomarkers that are directly related to the prediction of a 
@@ -892,8 +909,8 @@ specific synergy. The abudance of (false positive) biomarkers for some synergies
 incorporate in its internal logic that the prediction of other synergies than the 
 ones used for the grouping itself can affect the biomarker results obtained from 
 it
-- The performance-related biomarkers (PERF) were not observed as biomarkers
-for the prediction of a specific synergy(ies)
+- The performance-related biomarkers (PERF) were exactly the same ones found for
+the prediction of the `BI-D1` synergy
 
 ## References
 
