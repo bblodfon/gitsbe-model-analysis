@@ -578,14 +578,14 @@ pretty.print.vector.values(biomarkers.mcc.active)
 pretty.print.vector.values(biomarkers.mcc.inhibited)
 ```
 
-#### Common performance-related biomarkers
+#### Performance-related biomarkers
 
 Comparing the two methods we used for the classification of the models' prediction
 performance (TP and MCC), we observe that there exist **common biomarkers** in 
 both active and inhibited state cases. Also we note that there weren't any common 
 nodes reported as significantly active in one method which were significantly 
 inhibited in the other, showing that the two methods' results correlate well:
-```{r Common biomarkers (mixed), results = 'asis'}
+```{r Performance biomarkers (mixed), results = 'asis'}
 common.biomarkers.mixed.1 = 
   get.common.values(biomarkers.mcc.active, biomarkers.tp.inhibited)
 common.biomarkers.mixed.2 = 
@@ -594,24 +594,24 @@ common.biomarkers.mixed.2 =
 
 To sum up, we list the common biomarkers that need to be in a more *active* 
 state:
-```{r Common biomarkers (active), results = 'asis'}
-common.biomarkers.active =
+```{r Performance biomarkers (active), results = 'asis'}
+biomarkers.perf.active =
   get.common.values(biomarkers.mcc.active, biomarkers.tp.active)
 ```
 
 We also list the common nodes that have to be in a more *inhibited* state:
-```{r Common biomarkers (inhibited), results = 'asis'}
-common.biomarkers.inhibited =
+```{r Performance biomarkers (inhibited), results = 'asis'}
+biomarkers.perf.inhibited =
   get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
 Lastly, we will save these common performance-related biomarkers for further 
 analysis and comparison with the results from all the different cell lines:
-```{r Save common performance biomarkers}
+```{r Save performance biomarkers}
 biomarkers.dir = paste0(data.dir, "biomarkers/")
-save.vector.to.file(vector = common.biomarkers.active, 
+save.vector.to.file(vector = biomarkers.perf.active, 
                     file = paste0(biomarkers.dir, "biomarkers_active"))
-save.vector.to.file(vector = common.biomarkers.inhibited, 
+save.vector.to.file(vector = biomarkers.perf.inhibited, 
                     file = paste0(biomarkers.dir, "biomarkers_inhibited"))
 ```
 
@@ -659,9 +659,9 @@ models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
 bottom.nodes.colors = rep("black", length(colnames(models.equations.sorted)))
 names(bottom.nodes.colors) = colnames(models.equations.sorted)
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    common.biomarkers.active] = "green"
+                    biomarkers.perf.active] = "green"
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    common.biomarkers.inhibited] = "red"
+                    biomarkers.perf.inhibited] = "red"
 
 superheat(models.equations.sorted, title.alignment = "center",
           title = "Models link operators (AND/OR NOT)", 
@@ -944,10 +944,10 @@ save.df.to.file(biomarkers.synergy.res, file =
                 paste0(biomarkers.dir, "biomarkers_per_synergy"))
 
 # Biomarkers from section:
-# `Common performance-related biomarkers`
+# `Performance-related biomarkers`
 biomarkers.res = add.performance.biomarkers(biomarkers.synergy.res, 
-                                            common.biomarkers.active, 
-                                            common.biomarkers.inhibited)
+                                            biomarkers.perf.active, 
+                                            biomarkers.perf.inhibited)
 
 # prune nodes which are not found as biomarkers for any predicted synergy or
 # for better model performance
