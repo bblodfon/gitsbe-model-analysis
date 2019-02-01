@@ -74,8 +74,8 @@ nodes  = get.node.names(models.dir)
 
 models.stable.state = get.stable.state.from.models.dir(models.dir)
 
-# print the stable state of the first model
-pretty.print.vector.names.and.values(models.stable.state[1,])
+# print the stable state of the first model (first 12 nodes)
+pretty.print.vector.names.and.values(models.stable.state[1,], n = 12)
 ```
 
 ```{r Model Stats, results = 'asis'}
@@ -89,20 +89,23 @@ PARADIGM, CCLE) to derive the activity states of the network nodes produce furth
 nodes that are present in the consensus steady state vector (but not in our 
 network) and so they need to be discarded. Also, we reorder the columns of the 
 consensus vector so as to match the order of nodes as they are in the 
-`models.stable.state` object.
+`models.stable.state` object:
 ```{r Input: consensus steady state, results = 'asis'}
 consensus.steady.state = get.consensus.steady.state(steady.state.file)
 consensus.steady.state = 
   prune.to.common.nodes.and.reorder(consensus.steady.state, nodes)
 
-# print the consensus steady state
-pretty.print.vector.names.and.values(consensus.steady.state)
+# print the consensus steady state (first 12 nodes)
+pretty.print.vector.names.and.values(consensus.steady.state, n = 12)
 ```
+
+As we can see, even for the first 12 nodes, the consensus steady state is 
+different compared to the example stable state of the first model.
 
 ## Analysis
 
-Continuing, we compare each of the models' stable state to the consensus one and 
-find the percentage of matches for each model (fitness value). Then, we 
+Continuing, **we compare each of the models' stable state to the consensus one and 
+find the percentage of matches for each model (fitness value)**. Then, we 
 calculate the percentage of models that had a fitness match that was larger than
 a threshold value (e.g. 0.55 or more than 55% match) and we plot the models' 
 percentage results while ranging the fitness threshold value from 0 to 100%:

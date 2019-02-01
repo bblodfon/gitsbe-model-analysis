@@ -263,10 +263,10 @@ nodes  = get.node.names(models.dir)
 
 models.stable.state = get.stable.state.from.models.dir(models.dir)
 
-# print the stable state of the first model
-pretty.print.vector.names.and.values(models.stable.state[1,])</code></pre>
+# print the stable state of the first model (first 12 nodes)
+pretty.print.vector.names.and.values(models.stable.state[1,], n = 12)</code></pre>
 <blockquote>
-<p>MAP3K7: 0, MAP2K6: 0, MAP2K3: 0, NLK: 0, MAP3K4: 0, MAP2K4: 1, IKBKG: 0, IKBKB: 1, AKT1: 0, BRAF: 0, SMAD3: 1, DAB2IP: 1, GSK3B: 1, BRCA1: 0, PPP1CA: 1, ESR1: 1, CHUK: 1, AR: 1, RAF1: 0, DLX5: 1, CHEK1: 1, GAB2: 0, RARA: 1, PRKACA: 0, CTNNB1: 1, SH3RF1: 0, TTC3: 0, PTPN1: 0, NR3C1: 1, POU5F1: 1, CREB1: 1, IRAK1: 1, RAC1: 1, BMI1: 1, GSK3A: 0, MAP3K11: 0, YAP1: 0, MTOR: 1, AKT2: 1, GSK3B/Axin/APC: 1, MAPK14: 1, AKT3: 1, FGFR1: 0, TP53: 1, TAB1: 0, RPS6KA5: 1, CASP3: 0, STAT3: 0, EGFR: 0, PPARG: 1, DUSP1: 1, PTPN7: 0, MAX: 0, GATA6: 1, NOTCH1: 1, MYC: 0, AKT: 1, PTEN: 0, APC: 1, LRP6: 1, PSEN1: 0, ROR2: 0, PHLPP1: 0, PRKCE: 1, MAML1: 0, CEBPA: 0, AXIN1: 1, MAP2K1: 0, MAPK1: 1, IRS1: 1, MAPK3: 1, ERK1/2: 1, MAP2K2: 1, MEK1/2: 1, PIK3CA: 1, PtsIns(3,4,5)P3: 1, PI3K: 1, PIK3CG: 1, TCF4: 1, LEF1: 1, JNK: 1, MAPK8: 0, MAPK8IP1: 0, RXRA: 1, MAPK8IP3: 0, MAPK9: 0, APP: 0, SIRT1: 0, LAT: 1, RPS6KA1: 1, STK11: 0, JAK1: 1, TYK2: 1, JAK3: 1, IFNGR2/INFGR1: 1, IFNGR1: 1, PTPN11: 1, IFNGR2: 1, IL2RB: 1, IL10RA: 1, JAK2: 0, CSF2RA: 0, APOA1: 0, CSNK1D: 1, CDK5: 1, SIRT2: 0, CUL1: 0, PPM1A: 0, PTK2: 1, SOCS3: 0, TGFB1: 0, HSPA1A: 0, SALL4: 0, RPS6K: 1, PDPK1: 1, RPS6KB1: 1, PLK1: 1, RPS6KA3: 1, PRKCD: 1, PRKCZ: 1, PKN1: 1, PRKCA: 1, SGK3: 1, PRKCB: 1, PRKCG: 1, PAK1: 1, ROCK1: 0, SYK: 0, MAP4K1: 0, VAV1: 0, LCK: 1, TGFBR1: 0, TRAF6: 0, RHOA: 0, PIK3R1: 0, CCND1: 1, FOXO3: 1, CASP8: 0, CASP9: 0</p>
+<p>MAP3K7: 0, MAP2K6: 0, MAP2K3: 0, NLK: 0, MAP3K4: 0, MAP2K4: 1, IKBKG: 0, IKBKB: 1, AKT1: 0, BRAF: 0, SMAD3: 1, DAB2IP: 1</p>
 </blockquote>
 <pre class="r"><code>number.of.nodes = length(nodes)
 number.of.models = length(models)
@@ -274,20 +274,21 @@ print.model.stats(number.of.models, number.of.nodes, html.output = TRUE)</code><
 <blockquote>
 <p>Number of models: 7500<br />Number of nodes: 139</p>
 </blockquote>
-<p>Next, we get the consensus steady state. Note that the data and tools used (e.g. PARADIGM, CCLE) to derive the activity states of the network nodes produce further nodes that are present in the consensus steady state vector (but not in our network) and so they need to be discarded. Also, we reorder the columns of the consensus vector so as to match the order of nodes as they are in the <code>models.stable.state</code> object.</p>
+<p>Next, we get the consensus steady state. Note that the data and tools used (e.g. PARADIGM, CCLE) to derive the activity states of the network nodes produce further nodes that are present in the consensus steady state vector (but not in our network) and so they need to be discarded. Also, we reorder the columns of the consensus vector so as to match the order of nodes as they are in the <code>models.stable.state</code> object:</p>
 <pre class="r"><code>consensus.steady.state = get.consensus.steady.state(steady.state.file)
 consensus.steady.state = 
   prune.to.common.nodes.and.reorder(consensus.steady.state, nodes)
 
-# print the consensus steady state
-pretty.print.vector.names.and.values(consensus.steady.state)</code></pre>
+# print the consensus steady state (first 12 nodes)
+pretty.print.vector.names.and.values(consensus.steady.state, n = 12)</code></pre>
 <blockquote>
-<p>MAP3K7: 0, MAP2K6: 0, MAP2K3: 0, NLK: 0, MAP3K4: 0, MAP2K4: 1, IKBKG: 0, IKBKB: 1, AKT1: 1, BRAF: 1, SMAD3: 1, DAB2IP: 0, GSK3B: 1, BRCA1: 0, PPP1CA: 0, ESR1: 0, CHUK: 1, AR: 1, RAF1: 1, DLX5: 0, CHEK1: 0, GAB2: 0, RARA: 0, PRKACA: 0, CTNNB1: 1, SH3RF1: 0, TTC3: 1, PTPN1: 0, NR3C1: 1, POU5F1: 1, CREB1: 1, IRAK1: 1, RAC1: 1, BMI1: 0, GSK3A: 0, MAP3K11: 1, YAP1: 0, MTOR: 0, AKT2: 0, GSK3B/Axin/APC: 1, MAPK14: 1, AKT3: 1, FGFR1: 0, TP53: 1, TAB1: 0, RPS6KA5: 0, CASP3: 0, STAT3: 1, EGFR: 1, PPARG: 1, DUSP1: 1, PTPN7: 1, MAX: 0, GATA6: 1, NOTCH1: 0, MYC: 0, AKT: 1, PTEN: 0, APC: 1, LRP6: 0, PSEN1: 1, ROR2: 1, PHLPP1: 0, PRKCE: 1, MAML1: 1, CEBPA: 0, AXIN1: 1, MAP2K1: 0, MAPK1: 1, IRS1: 1, MAPK3: 1, ERK1/2: 0, MAP2K2: 0, MEK1/2: 1, PIK3CA: 1, PtsIns(3,4,5)P3: 0, PI3K: 0, PIK3CG: 1, TCF4: 0, LEF1: 1, JNK: 0, MAPK8: 0, MAPK8IP1: 0, RXRA: 1, MAPK8IP3: 0, MAPK9: 1, APP: 0, SIRT1: 0, LAT: 0, RPS6KA1: 1, STK11: 0, JAK1: 1, TYK2: 0, JAK3: 0, IFNGR2/INFGR1: 1, IFNGR1: 1, PTPN11: 1, IFNGR2: 1, IL2RB: 1, IL10RA: 1, JAK2: 1, CSF2RA: 0, APOA1: 0, CSNK1D: 1, CDK5: 1, SIRT2: 1, CUL1: 0, PPM1A: 0, PTK2: 1, SOCS3: 1, TGFB1: 0, HSPA1A: 1, SALL4: 1, RPS6K: 1, PDPK1: 0, RPS6KB1: 0, PLK1: 0, RPS6KA3: 1, PRKCD: 1, PRKCZ: 1, PKN1: 1, PRKCA: 0, SGK3: 1, PRKCB: 0, PRKCG: 0, PAK1: 0, ROCK1: 0, SYK: 0, MAP4K1: 1, VAV1: 1, LCK: 0, TGFBR1: 0, TRAF6: 0, RHOA: 0, PIK3R1: 1, CCND1: 1, FOXO3: 1, CASP8: 1, CASP9: 0</p>
+<p>MAP3K7: 0, MAP2K6: 0, MAP2K3: 0, NLK: 0, MAP3K4: 0, MAP2K4: 1, IKBKG: 0, IKBKB: 1, AKT1: 1, BRAF: 1, SMAD3: 1, DAB2IP: 0</p>
 </blockquote>
+<p>As we can see, even for the first 12 nodes, the consensus steady state is different compared to the example stable state of the first model.</p>
 </div>
 <div id="analysis" class="section level2">
 <h2>Analysis</h2>
-<p>Continuing, we compare each of the models’ stable state to the consensus one and find the percentage of matches for each model (fitness value). Then, we calculate the percentage of models that had a fitness match that was larger than a threshold value (e.g. 0.55 or more than 55% match) and we plot the models’ percentage results while ranging the fitness threshold value from 0 to 100%:</p>
+<p>Continuing, <strong>we compare each of the models’ stable state to the consensus one and find the percentage of matches for each model (fitness value)</strong>. Then, we calculate the percentage of models that had a fitness match that was larger than a threshold value (e.g. 0.55 or more than 55% match) and we plot the models’ percentage results while ranging the fitness threshold value from 0 to 100%:</p>
 <pre class="r"><code>models.fitness = apply(models.stable.state, 1, function(state) {
   return(get.percentage.of.matches(state, consensus.steady.state)) 
 })

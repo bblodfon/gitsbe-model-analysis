@@ -85,23 +85,35 @@ pretty.print.vector.values = function(vec, vector.values.str = "nodes",
                       paste0(vec, collapse = seperator)), with.gt)
 }
 
-# make sure that the vector `vec` has the `names(vec)` set
-pretty.print.vector.names.and.values = function(vec) {
+# vector `vec` has to have `names(vec)` non-empty
+# `n` is the (integer) number of elements you want to print
+pretty.print.vector.names.and.values = function(vec, n = -1) {
   len = length(vec)
   stopifnot(len > 0)
+
+  # print all elements by default
+  if (n == -1) n = len
 
   vec.names = names(vec)
   if (len == 1) {
     pretty.print.name.and.value(vec.names, vec, with.gt = TRUE, with.comma = FALSE)
   } else {
-    for (index in 1:len) {
+    # limit elements to show
+    if (n >= 1 & n < len)
+      last.index = n
+    else
+      last.index = len
+
+    for (index in 1:last.index) {
       name = vec.names[index]
       value = vec[index]
-      if (index == 1)
+      if (index == 1 & index != last.index)
         pretty.print.name.and.value(name, value, with.gt = TRUE, with.comma = TRUE)
-      if (index != 1 & index != len)
+      if (index == 1 & index == last.index)
+        pretty.print.name.and.value(name, value, with.gt = TRUE, with.comma = FALSE)
+      if (index != 1 & index != last.index)
         pretty.print.name.and.value(name, value)
-      if (index == len)
+      if (index != 1 & index == last.index)
         pretty.print.name.and.value(name, value, with.comma = FALSE)
     }
   }
