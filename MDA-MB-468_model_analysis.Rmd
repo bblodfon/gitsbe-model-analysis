@@ -544,19 +544,19 @@ common.biomarkers.mcc =
   get.common.values(biomarkers.mcc.active, biomarkers.mcc.inhibited)
 ```
 
-#### Common performance-related biomarkers
+#### Performance-related biomarkers
 
 Comparing the two methods we used for the classification of the models' prediction
 performance (TP and MCC), we observe that there exist **no common biomarkers** in 
 either active or inhibited state cases:
-```{r Common biomarkers (mixed), results = 'asis'}
+```{r Performance biomarkers (mixed), results = 'asis'}
 common.biomarkers.mixed.1 = 
   get.common.values(biomarkers.mcc.active, biomarkers.tp.inhibited)
 common.biomarkers.mixed.2 = 
   get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.active)
-common.biomarkers.active = 
+biomarkers.perf.active = 
   get.common.values(biomarkers.mcc.active, biomarkers.tp.active)
-common.biomarkers.inhibited =
+biomarkers.perf.inhibited =
   get.common.values(biomarkers.mcc.inhibited, biomarkers.tp.inhibited)
 ```
 
@@ -567,9 +567,13 @@ for further analysis and comparison with the results from all the different cell
 lines:
 ```{r Save performance biomarkers}
 biomarkers.dir = paste0(data.dir, "biomarkers/")
-save.vector.to.file(vector = biomarkers.mcc.active, 
+
+biomarkers.perf.active    = biomarkers.mcc.active
+biomarkers.perf.inhibited = biomarkers.mcc.inhibited
+
+save.vector.to.file(vector = biomarkers.perf.active, 
                     file = paste0(biomarkers.dir, "biomarkers_active"))
-save.vector.to.file(vector = biomarkers.mcc.inhibited, 
+save.vector.to.file(vector = biomarkers.perf.inhibited, 
                     file = paste0(biomarkers.dir, "biomarkers_inhibited"))
 ```
 
@@ -617,9 +621,9 @@ models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
 bottom.nodes.colors = rep("black", length(colnames(models.equations.sorted)))
 names(bottom.nodes.colors) = colnames(models.equations.sorted)
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    biomarkers.mcc.active] = "green"
+                    biomarkers.perf.active] = "green"
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
-                    biomarkers.mcc.inhibited] = "red"
+                    biomarkers.perf.inhibited] = "red"
 
 superheat(models.equations.sorted, title.alignment = "center",
           title = "Models link operators (AND/OR NOT)", 
@@ -683,7 +687,7 @@ superheat(models.equations.sorted, title.alignment = "center",
 
 In the MCC-ordered heatmap above we observe that there is **better correlation 
 between the boolean equations' link operators and the performance of a model** 
-compared to the $TP$ classification. For example, the node `STAT3` and the biomarker 
+compared to the $TP$ classification. For example, the biomarkers `STAT3` and 
 `RAF1` show distinguished patterns for the higher performance models (use of 
 `AND NOT` and `OR NOT` link operators respectively) when the models are sorted 
 by the MCC score.
@@ -925,10 +929,10 @@ save.df.to.file(biomarkers.synergy.res, file =
                 paste0(biomarkers.dir, "biomarkers_per_synergy"))
 
 # Biomarkers from section:
-# `Common performance-related biomarkers`
+# `Performance-related biomarkers`
 biomarkers.res = add.performance.biomarkers(biomarkers.synergy.res, 
-                                            biomarkers.mcc.active, 
-                                            biomarkers.mcc.inhibited)
+                                            biomarkers.perf.active, 
+                                            biomarkers.perf.inhibited)
 
 # prune nodes which are not found as biomarkers for any predicted synergy or
 # for better model performance
