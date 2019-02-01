@@ -244,16 +244,15 @@ get.avg.activity.diff.based.on.diff.synergy.set.prediction =
     }
 
     common.models = intersect(models.synergy.set, models.synergy.subset)
-
-    # print(paste0(length(models.synergy.set), " models predicted the synergy set ",
-    #       synergy.set.str, ", ", length(models.synergy.subset),
-    #       " models predicted the synergy subset ", synergy.subset.str, " and ",
-    #       length(common.models), " models are common"))
-
     good.models = common.models
     bad.models  = outersect(models.synergy.set, models.synergy.subset)
 
+    # check: no good model inside the bad model list
     stopifnot(all(!(good.models %in% bad.models)))
+
+    # check: no empty list of either good or bad models
+    stopifnot(!is.empty(bad.models))
+    stopifnot(!is.empty(good.models))
 
     good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
     bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
@@ -264,6 +263,10 @@ get.avg.activity.diff.based.on.diff.synergy.set.prediction =
 # The opposite of `intersect` function {base}
 outersect = function(x, y) {
   sort(c(setdiff(x, y), setdiff(y, x)))
+}
+
+is.empty = function(obj) {
+  if (length(obj)) return(FALSE) else return(TRUE)
 }
 
 # inputs are vectors of same size and one-to-one value correspondence
