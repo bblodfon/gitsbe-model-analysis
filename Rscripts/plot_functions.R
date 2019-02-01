@@ -1,4 +1,4 @@
-colors.100 = c("#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941",
+colors.100 = c("#000000", "#0089A3", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941",
                "#006FA6", "#A30059", "#FFDBE5", "#7A4900", "#0000A6", "#63FFAC",
                "#B79762", "#004D43", "#8FB0FF", "#997D87", "#5A0007", "#809693",
                "#FEFFE6", "#1B4400", "#4FC601", "#3B5DFF", "#4A3B53", "#FF2F80",
@@ -14,7 +14,7 @@ colors.100 = c("#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941",
                "#C8A1A1", "#1E6E00", "#7900D7", "#A77500", "#6367A9", "#A05837",
                "#6B002C", "#772600", "#D790FF", "#9B9700", "#549E79", "#FFF69F",
                "#201625", "#72418F", "#BC23FF", "#99ADC0", "#3A2465", "#922329",
-               "#5B4534", "#FDE8DC", "#404E55", "#0089A3")
+               "#5B4534", "#FDE8DC", "#404E55", "#FFFF00")
 
 # Don't use this function to visualize more than 42 colors!
 make.color.bar.plot = function(color.vector, number.vector, title, xlab = "") {
