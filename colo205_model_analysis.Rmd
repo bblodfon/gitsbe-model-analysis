@@ -815,10 +815,13 @@ the ones already found with the previous method and if none of them is common
 we just add the new ones to the list of biomarkers for that specific synergy. 
 On the other hand, if the synergy-set comparison method identifies a subset of 
 the previously found biomarkers for a specific synergy (one common node at least), 
-we will only keep the later method's biomarkers since we believe that the synergy-set
-prediction based method is more accurate at identifying biomarkers for a specific 
-synergy because of the fewer models involved in each contrasting category which
-also minimizes the total false positive synergy predictions taken into account.
+**we will only keep the later method's biomarkers** since we believe that the 
+synergy-set prediction based method is more accurate at identifying biomarkers 
+for a specific synergy because of the fewer models involved in each contrasting 
+category which also minimizes the total false positive synergy predictions taken 
+into account. Note that if the second method finds even more biomarkers than the 
+first, we have the option to prune the end result to only the common biomarkers 
+between the two methods.
 
 We will focus our analysis on the predicted synergy `BI-PI`.
 
