@@ -380,8 +380,8 @@ pretty.print.vector.values(biomarkers.tp.inhibited)
 ```
 
 This happens mainly because of the low number of $TP$ synergies (larger number of
-$TP$ would allow better performance classification). So, for this cell line, we 
-lower the significance threshold to $0.6$ and thus identify these *active* 
+$TP$ would allow better performance classification). So, for this cell line, **we 
+lower the significance threshold to $0.6$** and thus identify these *active* 
 biomarkers:
 ```{r TP biomarkers (active), results = 'asis'}
 biomarkers.tp.active = get.biomarkers(diff.tp.results, threshold = 0.6, 
@@ -788,10 +788,23 @@ print.biomarkers.per.predicted.synergy(biomarkers.dir, drug.comb,
 ```
 
 We notice that for some predicted synergies the above method identified zero 
-biomarkers. We will now study cases where the main goal is the better identification 
-and/or refinement of the biomarkers responsible for allowing the models to 
-predict one extra synergy from a specific synergy set. We will focus on the 
-predicted synergies `BI-D1` and `PI-D1`.
+biomarkers. We will now study cases where the main goal is the **better 
+identification and/or refinement of the biomarkers responsible for allowing the 
+models to predict one extra synergy from a specific synergy set**. If we find 
+biomarkers for a predicted synergy using this strategy, we compare them to 
+the ones already found with the previous method and if none of them is common 
+we just add the new ones to the list of biomarkers for that specific synergy. 
+On the other hand, if the synergy-set comparison method identifies a subset of 
+the previously found biomarkers for a specific synergy (one common node at least), 
+**we will only keep the later method's biomarkers** since we believe that the 
+synergy-set prediction based method is more accurate at identifying biomarkers 
+for a specific synergy because of the fewer models involved in each contrasting 
+category which also minimizes the total false positive synergy predictions taken 
+into account. Note that if the second method finds even more biomarkers than the 
+first, we have the option to prune the end result to only the common biomarkers 
+between the two methods.
+
+We will focus our analysis on the predicted synergies `BI-D1` and `PI-D1`.
 
 #### Synergy-set prediction based analysis
 
@@ -830,7 +843,8 @@ biomarkers.BI.D1.inhibited = diff.BI.D1[diff.BI.D1 < -threshold]
 pretty.print.vector.names(biomarkers.BI.D1.inhibited)
 ```
 
-Lastly, we add the newly found biomarkers in the respective files:
+Lastly, we update the biomarkers for this specific synergy in the respective 
+file:
 ```{r Update BI-D1 biomarkers}
 drug.comb = "BI-D1"
 update.biomarkers.files(biomarkers.dir, drug.comb, 

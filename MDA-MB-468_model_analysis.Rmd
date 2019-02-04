@@ -773,10 +773,24 @@ print.biomarkers.per.predicted.synergy(biomarkers.dir, drug.comb,
 ```
 
 We notice that for some predicted synergies the above method identified zero 
-biomarkers. We will now study cases where the main goal is the better identification 
-and/or refinement of the biomarkers responsible for allowing the models to 
-predict one extra synergy from a specific synergy set. We will focus on the 
-predicted synergies `PI-JN`, `JN-D1`, `D1-P5` and `PI-D1`.
+biomarkers. We will now study cases where the main goal is the **better 
+identification and/or refinement of the biomarkers responsible for allowing the 
+models to predict one extra synergy from a specific synergy set**. If we find 
+biomarkers for a predicted synergy using this strategy, we compare them to 
+the ones already found with the previous method and if none of them is common 
+we just add the new ones to the list of biomarkers for that specific synergy. 
+On the other hand, if the synergy-set comparison method identifies a subset of 
+the previously found biomarkers for a specific synergy (one common node at least), 
+**we will only keep the later method's biomarkers** since we believe that the 
+synergy-set prediction based method is more accurate at identifying biomarkers 
+for a specific synergy because of the fewer models involved in each contrasting 
+category which also minimizes the total false positive synergy predictions taken 
+into account. Note that if the second method finds even more biomarkers than the 
+first, we have the option to prune the end result to only the common biomarkers 
+between the two methods.
+
+We will focus our analysis on the predicted synergies `PI-JN`, `JN-D1`, `D1-P5` 
+and `PI-D1`.
 
 #### Synergy-set prediction based analysis
 
@@ -811,7 +825,8 @@ biomarkers.PI.JN.inhibited = diff.PI.JN[diff.PI.JN < -threshold]
 pretty.print.vector.names(biomarkers.PI.JN.inhibited)
 ```
 
-Lastly, we add the newly found biomarkers in the respective files:
+Lastly, we update the biomarkers for this specific synergy in the respective 
+file:
 ```{r Update PI-JN biomarkers}
 drug.comb = "PI-JN"
 update.biomarkers.files(biomarkers.dir, drug.comb, 
@@ -849,7 +864,8 @@ biomarkers.JN.D1.inhibited = diff.JN.D1[diff.JN.D1 < -threshold]
 pretty.print.vector.names(biomarkers.JN.D1.inhibited)
 ```
 
-Lastly, we add the newly found biomarkers in the respective files:
+Lastly, we update the biomarkers for this specific synergy in the respective 
+file:
 ```{r Update JN-D1 biomarkers}
 drug.comb = "JN-D1"
 update.biomarkers.files(biomarkers.dir, drug.comb, 
@@ -916,7 +932,8 @@ biomarkers.PI.D1.inhibited = diff.PI.D1[diff.PI.D1 < -threshold]
 pretty.print.vector.names(biomarkers.PI.D1.inhibited)
 ```
 
-Lastly, we add the newly found biomarkers in the respective files:
+Lastly, we update the biomarkers for this specific synergy in the respective 
+file:
 ```{r Update PI-D1 biomarkers}
 drug.comb = "PI-D1"
 update.biomarkers.files(biomarkers.dir, drug.comb, 
