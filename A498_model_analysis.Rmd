@@ -85,11 +85,14 @@ models.dir = paste0(data.dir, "models")
 ```
 Now, we parse the data into proper R objects. First the synergy predictions 
 per model:
-```{r Input: model predictions}
+```{r Input: model predictions, results = 'asis'}
 model.predictions = get.model.predictions(model.predictions.file)
-head(model.predictions)
+
+# Example: first model's synergy predictions (first 12 drug combinations)
+pretty.print.vector.names.and.values(model.predictions[1,], n = 12)
 ```
-So, we can see that our dataset has the models as rows and each column is a 
+
+So, the `model.predictions` object has the models as rows and each column is a 
 different drug combination that was tested in our simulations.
 ```{r Model&Drug Stats, results = 'asis'}
 drug.combinations.tested = colnames(model.predictions)
@@ -105,36 +108,46 @@ print.model.and.drug.stats(number.of.drug.comb.tested, number.of.models,
 ```
 
 Next, we get the full stable state and the equations per model:
-```{r Input: models stable states}
+```{r Input: models stable states, results = 'asis'}
 models.stable.state = get.stable.state.from.models.dir(models.dir)
 models.stable.state = models.stable.state[models,]
-head(as.data.frame(models.stable.state))
+
+# Example: first model's stable state (first 12 nodes)
+pretty.print.vector.names.and.values(models.stable.state[1,], n = 12)
 ```
-The rows of the above dataset represent the models while the columns are the
-names of the nodes (proteins, genes, etc.) of the cancer cell network under
-study. So, each model has one stable state which means that in every model, the
-nodes in the network have reached a state of either 0 (inhibition) or 1
-(activation).
-```{r Input: models equations}
+
+The rows of the `models.stable.state` object represent the models while its 
+columns are the names of the nodes (proteins, genes, etc.) of the cancer cell 
+network under study. So, each model has one stable state which means that in 
+every model, **the nodes in the network have reached a state of either 0 
+(inhibition) or 1 (activation)**.
+```{r Input: models equations, results = 'asis'}
 models.equations = get.equations.from.models.dir(
   models.dir, remove.equations.without.link.operator = TRUE)
 models.equations = models.equations[models,]
-head(as.data.frame(models.equations))
+
+# Example: first model's link operators (first 12 nodes)
+pretty.print.vector.names.and.values(models.equations[1,], n = 12)
 ```
-For the equations, if we look at a specific row (a model so to speak), the 
-columns (node names) correspond to the *targets of regulation* (and the network 
-has been built so that *every node is a target* - i.e. it has other nodes 
-activating and/or inhibiting it). The general form of a boolean equation is: 
-**Target \*= (Activator OR Activator OR...) AND NOT (Inhibitor OR Inhibitor 
-OR...)**.
+
+For the `models.equations`, if we look at a specific row (a model so to speak), 
+the columns (node names) correspond to the *targets of regulation* (and the 
+network has been built so that *every node is a target* - i.e. it has other 
+nodes activating and/or inhibiting it). The general form of a boolean equation 
+is:
+```{r General Form of the Logical Regulation Equation, results = 'asis'}
+general.equation = 
+  "Target *= (Activator OR Activator OR...) AND NOT (Inhibitor OR Inhibitor OR...)"
+pretty.print.bold.string(general.equation)
+```
 
 The difference between the models' boolean equations is the *link operator* 
 (OR NOT/AND NOT) which has been mutated (changed) through the evolutionary 
 process of the genetic algorithm in `Gitsbe`. For example, if a model has for 
-the column `ERK_f` (of the `models.equations` object) a value of 1, the correspoding 
-equation is: ERK_f \*= (MEK_f) **OR NOT** ((DUSP6) OR PPP1CA). A value of 0 would 
+the column `ERK_f` (of the `models.equations` object) **a value of 1**, the correspoding 
+equation is: ERK_f \*= (MEK_f) **OR NOT** ((DUSP6) OR PPP1CA). **A value of 0** would 
 correspond to the same equation but having **AND NOT** as the link operator:
-RK_f \*= (MEK_f) **AND NOT** ((DUSP6) OR PPP1CA). Note that the equations that do 
+ERK_f \*= (MEK_f) **AND NOT** ((DUSP6) OR PPP1CA). Note that the equations that do 
 not have link operators (meaning that they are *the same for every model*) are 
 discarded (so less columns in this dataset) since in a later section we study only 
 the equations whose link operators differentiate between the models.
@@ -638,11 +651,9 @@ models.synergies.tp.colors = tp.colors[
 ]
 names(models.synergies.tp.colors) = models
 
-title = "Color Palette"
-xlab  = "Number of True Positives"
 make.color.bar.plot(color.vector = tp.colors, 
                     number.vector = tp.values, 
-                    title, xlab)
+                    title = "Color Palette", xlab = "Number of True Positives")
 ```
 
 So, we will now illustrate the heatmap of the `models.equations` object raw-order 
@@ -655,7 +666,7 @@ models.sorted = names(models.synergies.tp.sorted)
 models.equations.sorted = models.equations[models.sorted, ]
 models.synergies.tp.colors.sorted = models.synergies.tp.colors[models.sorted]
 
-# color biomarkers names in the heatmap
+# color biomarker names in the heatmap
 bottom.nodes.colors = rep("black", length(colnames(models.equations.sorted)))
 names(bottom.nodes.colors) = colnames(models.equations.sorted)
 bottom.nodes.colors[names(bottom.nodes.colors) %in% 
