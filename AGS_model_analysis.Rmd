@@ -871,7 +871,7 @@ title.text = paste0("Good models (", synergy.set.str,
 plot.network(net, diff.PI.D1, layout = nice.layout, title = title.text)
 ```
 
-Sadly, there were no biomarkers found at the $0.7$ threshold in either active or
+Sadly, no biomarkers were found at the $0.7$ threshold in either active or
 inhibited states:
 ```{r PI-D1 biomarkers (mixed), results = 'asis'}
 biomarkers.PI.D1.active = diff.PI.D1[diff.PI.D1 > threshold]

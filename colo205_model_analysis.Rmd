@@ -440,7 +440,8 @@ make.barplot.on.models.stats(models.mcc.stats, cell.line, title = "MCC scores",
 From the above figure we observe that:
 
 - There are no relatively bad models (MCC values close to -1)
-- Some models perform close to random prediction ($MCC\approx0$)
+- Some models (exluding the `NaN` category) perform close to random prediction 
+($MCC\approx0$)
 - There are models that had `NaN` value for the MCC score
 
 Given the MCC formula:

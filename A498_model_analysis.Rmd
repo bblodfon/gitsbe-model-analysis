@@ -441,7 +441,8 @@ make.barplot.on.models.stats(models.mcc.stats, cell.line, title = "MCC scores",
 From the above figure we observe that:
 
 - There are no relatively bad models (MCC values close to -1)
-- Most of the models perform a little better than random prediction ($MCC>0$)
+- Most of the models  (exluding the `NaN` category) perform a little better than 
+random prediction ($MCC>0$)
 - There are models that had `NaN` value for the MCC score
 
 Given the MCC formula:
@@ -922,7 +923,7 @@ The third use case will contrast the models that predicted the synergy set
 allow us to find important nodes whose state can influence the prediction 
 performance of a model and make it predict the extra `BI-PI` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (BI-PI)}
-synergy.set.str = "BI-PI,PI-D1"
+synergy.set.str    = "BI-PI,PI-D1"
 synergy.subset.str = "PI-D1"
 diff.BI.PI = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)

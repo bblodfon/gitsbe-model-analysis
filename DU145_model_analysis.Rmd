@@ -419,7 +419,8 @@ make.barplot.on.models.stats(models.mcc.stats, cell.line, title = "MCC scores",
 From the above figure we observe that:
 
 - There are no relatively bad models (MCC values close to -1)
-- Most of the models perform a little better than random prediction ($MCC>0$)
+- Most of the models  (exluding the `NaN` category) perform a little better than 
+random prediction ($MCC>0$)
 - There are models that had `NaN` value for the MCC score
 
 Given the MCC formula:
@@ -495,7 +496,7 @@ mcc.densities = apply(abs(diff.mcc.results), 1, density)
 make.multiple.density.plot(mcc.densities, legend.title = "MCC classes",
                            x.axis.label = "Activity state (absolute difference value)",
                            title = "Density Estimation for the Average State Difference",
-                           legend.size = 0.7)
+                           legend.size = 0.8)
 ```
 
 Many of the density plots above are of interest to us, since they are *right 
@@ -756,7 +757,8 @@ into account. Note that if the second method finds even more biomarkers than the
 first, we have the option to prune the end result to only the common biomarkers 
 between the two methods.
 
-We will focus our analysis on the predicted synergies `PI-D1`, `BI-PI` and `BI-JN`.
+We will focus our analysis on the predicted synergies `PI-D1`, `BI-PI` and 
+`BI-JN`.
 
 #### Synergy-set prediction based analysis
 
@@ -769,12 +771,12 @@ the single synergy `BI-JN`. This will allow us to find important nodes whose
 state can influence the prediction performance of a model and make it predict 
 the extra `PI-D1` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (PI-D1)}
-synergy.set.str.1 = "BI-PI,PI-D1"
+synergy.set.str.1    = "BI-PI,PI-D1"
 synergy.subset.str.1 = "BI-PI"
 diff.PI.D1.1 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str.1, synergy.subset.str.1, model.predictions, models.stable.state)
 
-synergy.set.str.2 = "BI-JN,PI-D1"
+synergy.set.str.2    = "BI-JN,PI-D1"
 synergy.subset.str.2 = "BI-JN"
 diff.PI.D1.2 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str.2, synergy.subset.str.2, model.predictions, models.stable.state)
@@ -807,7 +809,7 @@ So, in this case **the 'good' models is just one model and the rest 626 are
 the 'bad' ones** that couldn't predict the extra `PI-D1` synergy. This 
 imbalanced comparison does not give us good results as we notice from the above 
 network graph (too many important nodes were identified). We will report the 
-active biomarker found using the results from the other comparison 
+active biomarker found using the results from the second comparison 
 (`BI-JN,PI-D1` vs `BI-JN`):
 ```{r PI-D1 biomarkers (active), results = 'asis'}
 biomarkers.PI.D1.active = diff.PI.D1.2[diff.PI.D1.2 > threshold]
@@ -835,7 +837,7 @@ The second use case will contrast the models that predicted the synergy set
 allow us to find important nodes whose state can influence the prediction 
 performance of a model and make it predict the extra `BI-PI` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (BI-PI)}
-synergy.set.str = "BI-PI,PI-D1"
+synergy.set.str    = "BI-PI,PI-D1"
 synergy.subset.str = "PI-D1"
 diff.BI.PI = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
@@ -847,7 +849,7 @@ title.text = paste0("Good models (", synergy.set.str,
 plot.network(net, diff.BI.PI, layout = nice.layout, title = title.text)
 ```
 
-Sadly, there were no biomarkers found at the $0.7$ threshold in either active or
+Sadly, no biomarkers were found at the $0.7$ threshold in either active or
 inhibited states:
 ```{r BI-PI biomarkers (mixed), results = 'asis'}
 biomarkers.BI.PI.active = diff.BI.PI[diff.BI.PI > threshold]
@@ -864,7 +866,7 @@ The third use case will contrast the models that predicted the synergy set
 allow us to find important nodes whose state can influence the prediction 
 performance of a model and make it predict the extra `BI-JN` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (BI-JN)}
-synergy.set.str = "BI-JN,PI-D1"
+synergy.set.str    = "BI-JN,PI-D1"
 synergy.subset.str = "PI-D1"
 diff.BI.JN = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
