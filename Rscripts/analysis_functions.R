@@ -44,6 +44,8 @@ get.percentage.of.matches = function(num.vec.1, num.vec.2) {
   return(matches.percentage)
 }
 
+# `drug.comb.set` is a list, whose every element is
+# a drug combination string
 count.models.that.predict.synergy.set =
   function(drug.comb.set, model.predictions) {
     synergy.vector = unlist(drug.comb.set)
@@ -75,6 +77,10 @@ get.avg.activity.diff.based.on.tp.predictions =
 
     # `good.models` != `bad.models` (disjoing sets of models)
     stopifnot(!(good.models %in% bad.models))
+
+    # small number of models in some category: TP analysis not good :)
+    stopifnot(length(good.models) > 1)
+    stopifnot(length(bad.models) > 1)
 
     good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
     bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
@@ -196,8 +202,13 @@ get.avg.activity.diff.based.on.specific.synergy.prediction =
     ]
     bad.models  = rownames(model.predictions)[
       model.predictions[, drug.comb] == 0 & !is.na(model.predictions[, drug.comb])
-      ]
+    ]
     # na.models = rownames(model.predictions)[is.na(model.predictions[, drug.comb])]
+
+    # small number of models in some category: comparison with 1 or no models does
+    # not make sense :)
+    stopifnot(length(good.models) > 1)
+    stopifnot(length(bad.models) > 1)
 
     good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
     bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
@@ -254,8 +265,17 @@ get.avg.activity.diff.based.on.diff.synergy.set.prediction =
     stopifnot(!is.empty(bad.models))
     stopifnot(!is.empty(good.models))
 
-    good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
-    bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+    if (length(good.models) == 1) {
+      good.avg.activity = models.stable.state[good.models, ]
+    } else {
+      good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
+    }
+
+    if (length(bad.models) == 1) {
+      bad.avg.activity = models.stable.state[bad.models, ]
+    } else {
+      bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+    }
 
     return(good.avg.activity - bad.avg.activity)
 }
