@@ -143,7 +143,7 @@ get.common.names = function(vec1, vec2, vector.names.str = "nodes",
     return(FALSE)
   }
   else {
-    pretty.print.vector.names(common.names, with.gt = with.gt)
+    pretty.print.vector.values(common.names, with.gt = with.gt)
     return(common.names)
   }
 }
@@ -346,4 +346,55 @@ add.vector.to.data.frame = function(df, vec) {
     df = rbind(df, c(name, value))
   }
   return(df)
+}
+
+# helper function to check which synergy sets to compare (the small synergy set
+# misses just one synergy from the larger set)
+get.synergy.comparison.sets = function(synergy.subset.stats) {
+  # keep only the synergy sets where we have at least one model predicting them
+  synergy.sets = synergy.subset.stats[synergy.subset.stats > 0]
+
+  # remove the zero set (models that predicted none of the synergy sets)
+  synergy.sets = synergy.sets[!names(synergy.sets) == ""]
+
+  # find the single drug combinations
+  synergy.set.sizes = numeric(0)
+  for (set in names(synergy.sets)) {
+    synergy.set.size = length(unlist(strsplit(set, split = ",")))
+    synergy.set.sizes = c(synergy.set.sizes, synergy.set.size)
+  }
+
+  # get the maximum size of a synergy set
+  max.size = max(synergy.set.sizes)
+
+  pretty.print.string("")
+  for (size in 1:(max.size - 1)) {
+    small.size = size
+    large.size = size + 1
+
+    small.synergy.sets = names(synergy.sets[synergy.set.sizes == small.size])
+    large.synergy.sets = names(synergy.sets[synergy.set.sizes == large.size])
+
+    for (small.synergy.set in small.synergy.sets) {
+      small.synergies = unlist(strsplit(small.synergy.set, split = ","))
+      for (large.synergy.set in large.synergy.sets) {
+        large.synergies = unlist(strsplit(large.synergy.set, split = ","))
+        if (all(small.synergies %in% large.synergies) &
+            synergy.sets[small.synergy.set] > synergy.sets[large.synergy.set]) {
+          synergy.to.test = outersect(small.synergies, large.synergies)
+          pretty.print.string(paste0("Synergy: ", synergy.to.test),
+                                   with.gt = FALSE)
+          print.empty.line()
+          pretty.print.string(paste0(small.synergy.set, " vs ", large.synergy.set),
+                              with.gt = FALSE)
+          print.empty.line()
+          print.empty.line()
+        }
+      }
+    }
+  }
+}
+
+outersect = function(x, y) {
+  sort(c(setdiff(x, y), setdiff(y, x)))
 }
