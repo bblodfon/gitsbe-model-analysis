@@ -904,8 +904,8 @@ update.biomarkers.files(biomarkers.dir, drug.comb,
 
 In this section, we will compare the **biomarkers found per predicted synergy** 
 for this particular cell line as well as the **performance biomarkers** (notated 
-as **PERF** in the heatmap below) which were found using the common results from 
-the TP and MCC classification-based model analysis:
+as **PERF** in the heatmap below) which were found using the results from the 
+MCC classification-based model analysis:
 ```{r Biomarkers heatmap, fig.height = 5, fig.width = 7, dpi = 300}
 # Biomarkers from sections:
 # `Synergy-prediction based analysis`, `Synergy-set prediction based analysis`
