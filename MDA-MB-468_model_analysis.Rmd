@@ -121,7 +121,7 @@ columns are the names of the nodes (proteins, genes, etc.) of the cancer cell
 network under study. So, each model has one stable state which means that in 
 every model, **the nodes in the network have reached a state of either 0 
 (inhibition) or 1 (activation)**.
-```{r Input: models equationsm, results = 'asis'}
+```{r Input: models equations, results = 'asis'}
 models.equations = get.equations.from.models.dir(
   models.dir, remove.equations.without.link.operator = TRUE)
 models.equations = models.equations[models,]
@@ -209,7 +209,7 @@ do we need many models to capture this diverse synergy landscape? To do that, we
 go even further and **count the number of models that predict a specific set of 
 observed synergies** for every possible combination subset of the `predicted.synergies`
 object:
-```{r Synergy stats 2}
+```{r Synergy stats 2, fig.height = 6, fig.width = 9}
 # Find the number of predictive models for every synergy subset
 predicted.synergies.powerset = powerSet(predicted.synergies)
 predicted.synergies.powerset = predicted.synergies.powerset[
@@ -790,42 +790,73 @@ into account. Note that if the second method finds even more biomarkers than the
 first, we have the option to prune the end result to only the common biomarkers 
 between the two methods.
 
-We will focus our analysis on the predicted synergies `PI-JN`, `JN-D1`, `D1-P5` 
-and `PI-D1`.
+We will focus our analysis on the predicted synergies `PI-JN`, `JN-D1`, `D1-P5`, 
+`PI-D1` and `BI-PI`.
 
 #### Synergy-set prediction based analysis
 
 ##### PI-JN synergy
 
 The first use case will contrast the models that predicted the synergy set 
-`PI-JN,JN-D1` vs the models that predicted the single synergy `JN-D1`. 
-This will allow us to find important nodes whose state can influence the 
-prediction performance of a model and make it predict the extra `PI-JN` synergy:
+`PI-JN,JN-D1` vs the models that predicted the single synergy `JN-D1` as well
+as the models that predicted the synergy set `PI-JN,PI-D1` vs the models that 
+predicted the single synergy `PI-D1`. This will allow us to find important nodes 
+whose state can influence the prediction performance of a model and make it 
+predict the extra `PI-JN` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (PI-JN)}
-synergy.set.str    = "PI-JN,JN-D1"
-synergy.subset.str = "JN-D1"
-diff.PI.JN = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
-  synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+synergy.set.str.1    = "PI-JN,JN-D1"
+synergy.subset.str.1 = "JN-D1"
+diff.PI.JN.1 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str.1, synergy.subset.str.1, model.predictions, models.stable.state)
+
+synergy.set.str.2    = "PI-JN,PI-D1"
+synergy.subset.str.2 = "PI-D1"
+diff.PI.JN.2 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str.2, synergy.subset.str.2, model.predictions, models.stable.state)
 ```
 We now visualize the average state differences:
 ```{r Graphs: Good vs Bad models based on different synergy set prediction (PI-JN)}
-title.text = paste0("Good models (", synergy.set.str,
-                    ") vs Bad Models (", synergy.subset.str, ")")
-plot.network(net, diff.PI.JN, layout = nice.layout, title = title.text)
+title.text = paste0("Good models (", synergy.set.str.1,
+                    ") vs Bad Models (", synergy.subset.str.1, ")")
+plot.network(net, diff.PI.JN.1, layout = nice.layout, title = title.text)
+
+title.text = paste0("Good models (", synergy.set.str.2,
+                    ") vs Bad Models (", synergy.subset.str.2, ")")
+plot.network(net, diff.PI.JN.2, layout = nice.layout, title = title.text)
 ```
 
-and report the active biomarkers found:
+As we see from the above graphs, each comparison produces different biomarkers 
+for the `PI-JN` synergy. Note that with the previous method where we contrasted 
+the models that predict the `PI-JN` synergy vs those that don't, we weren't 
+able to identify not even one biomarker. We report the active biomarkers found 
+from the two comparisons and check whether there were any common nodes found:
 ```{r PI-JN biomarkers (active), results = 'asis'}
-biomarkers.PI.JN.active = diff.PI.JN[diff.PI.JN > threshold]
-pretty.print.vector.names(biomarkers.PI.JN.active)
+biomarkers.PI.JN.active.1 = diff.PI.JN.1[diff.PI.JN.1 > threshold]
+pretty.print.vector.names(biomarkers.PI.JN.active.1)
+
+biomarkers.PI.JN.active.2 = diff.PI.JN.2[diff.PI.JN.2 > threshold]
+pretty.print.vector.names(biomarkers.PI.JN.active.2)
+
+biomarkers.PI.JN.active = 
+  get.common.names(biomarkers.PI.JN.active.1, biomarkers.PI.JN.active.2)
+biomarkers.PI.JN.active = c(biomarkers.PI.JN.active.1, biomarkers.PI.JN.active.2)
 ```
 
-The inhibited biomarkers are:
+So, since there were no common active biomarkers we merged the results into one.
+
+The inhibited biomarkers found by the two comparisons are:
 ```{r PI-JN biomarkers (inhibited), results = 'asis'}
-biomarkers.PI.JN.inhibited = diff.PI.JN[diff.PI.JN < -threshold]
-pretty.print.vector.names(biomarkers.PI.JN.inhibited)
+biomarkers.PI.JN.inhibited.1 = diff.PI.JN.1[diff.PI.JN.1 < -threshold]
+pretty.print.vector.names(biomarkers.PI.JN.inhibited.1)
+
+biomarkers.PI.JN.inhibited.2 = diff.PI.JN.2[diff.PI.JN.2 < -threshold]
+pretty.print.vector.names(biomarkers.PI.JN.inhibited.2)
+
+biomarkers.PI.JN.inhibited = biomarkers.PI.JN.inhibited.2
 ```
 
+Since the first comparison does not identify any inhibited biomarkers at the $0.7$
+threshold level, we use the inhibited biomarkers found from the second comparison. 
 Lastly, we update the biomarkers for this specific synergy in the respective 
 file:
 ```{r Update PI-JN biomarkers}
@@ -837,34 +868,73 @@ update.biomarkers.files(biomarkers.dir, drug.comb,
 ##### JN-D1 synergy
 
 The second use case will contrast the models that predicted the synergy set 
-`PI-JN,JN-D1` vs the models that predicted the single synergy `PI-JN`. 
-This will allow us to find important nodes whose state can influence 
-the prediction performance of a model and make it predict the extra `JN-D1` synergy:
+`PI-JN,JN-D1` vs the models that predicted the single synergy `PI-JN` as well
+as the models that predicted the synergy set `PI-D1,JN-D1` vs the models that 
+predicted the single synergy `PI-D1`. This will allow us to find important nodes 
+whose state can influence the prediction performance of a model and make it 
+predict the extra `JN-D1` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (JN-D1)}
-synergy.set.str    = "PI-JN,JN-D1"
-synergy.subset.str = "PI-JN"
-diff.JN.D1 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
-  synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+synergy.set.str.1    = "PI-JN,JN-D1"
+synergy.subset.str.1 = "PI-JN"
+diff.JN.D1.1 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str.1, synergy.subset.str.1, model.predictions, models.stable.state)
+
+synergy.set.str.2    = "PI-D1,JN-D1"
+synergy.subset.str.2 = "PI-D1"
+diff.JN.D1.2 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str.2, synergy.subset.str.2, model.predictions, models.stable.state)
 ```
 We now visualize the average state differences:
 ```{r Graphs: Good vs Bad models based on different synergy set prediction (JN-D1)}
-title.text = paste0("Good models (", synergy.set.str,
-                    ") vs Bad Models (", synergy.subset.str, ")")
-plot.network(net, diff.JN.D1, layout = nice.layout, title = title.text)
+title.text = paste0("Good models (", synergy.set.str.1,
+                    ") vs Bad Models (", synergy.subset.str.1, ")")
+plot.network(net, diff.JN.D1.1, layout = nice.layout, title = title.text)
+
+title.text = paste0("Good models (", synergy.set.str.2,
+                    ") vs Bad Models (", synergy.subset.str.2, ")")
+plot.network(net, diff.JN.D1.2, layout = nice.layout, title = title.text)
 ```
 
-and report the active biomarkers found:
+As we see from the above graphs, each comparison produces different biomarkers 
+for the `JN-D1` synergy. Note that with the previous method where we contrasted 
+the models that predict the `JN-D1` synergy vs those that don't, we weren't able 
+to identify not even one biomarker. We report the active biomarkers found from the 
+two comparisons and check whether there were any common nodes found:
 ```{r JN-D1 biomarkers (active), results = 'asis'}
-biomarkers.JN.D1.active = diff.JN.D1[diff.JN.D1 > threshold]
-pretty.print.vector.names(biomarkers.JN.D1.active)
+biomarkers.JN.D1.active.1 = diff.JN.D1.1[diff.JN.D1.1 > threshold]
+pretty.print.vector.names(biomarkers.JN.D1.active.1)
+
+biomarkers.JN.D1.active.2 = diff.JN.D1.2[diff.JN.D1.2 > threshold]
+pretty.print.vector.names(biomarkers.JN.D1.active.2)
+
+biomarkers.JN.D1.active.common.1.2 = 
+  get.common.names(biomarkers.JN.D1.active.1, biomarkers.JN.D1.active.2)
+
+biomarkers.JN.D1.active = 
+  c(biomarkers.JN.D1.active.1, biomarkers.JN.D1.active.2)
+biomarkers.JN.D1.active = 
+  biomarkers.JN.D1.active[unique(names(biomarkers.JN.D1.active))]
 ```
 
-The inhibited biomarkers are:
+Since there was just one common node, we merged the results and removed the 
+duplicated node. 
+
+The inhibited biomarkers found by the two comparisons are:
 ```{r JN-D1 biomarkers (inhibited), results = 'asis'}
-biomarkers.JN.D1.inhibited = diff.JN.D1[diff.JN.D1 < -threshold]
-pretty.print.vector.names(biomarkers.JN.D1.inhibited)
+biomarkers.JN.D1.inhibited.1 = diff.JN.D1.1[diff.JN.D1.1 < -threshold]
+pretty.print.vector.names(biomarkers.JN.D1.inhibited.1)
+
+biomarkers.JN.D1.inhibited.2 = diff.JN.D1.2[diff.JN.D1.2 < -threshold]
+pretty.print.vector.names(biomarkers.JN.D1.inhibited.2)
+
+biomarkers.JN.D1.inhibited.common.1.2 =
+  get.common.names(biomarkers.JN.D1.inhibited.1, biomarkers.JN.D1.inhibited.2)
+
+biomarkers.JN.D1.inhibited = biomarkers.JN.D1.inhibited.2
 ```
 
+Since the first comparison does not identify any inhibited biomarkers at the $0.7$
+threshold level, we use the inhibited biomarkers found from the second comparison. 
 Lastly, we update the biomarkers for this specific synergy in the respective 
 file:
 ```{r Update JN-D1 biomarkers}
@@ -880,7 +950,7 @@ The third use case will contrast the models that predicted the synergy set
 allow us to find important nodes whose state can influence the prediction 
 performance of a model and make it predict the extra `D1-P5` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (D1-P5)}
-synergy.set.str = "PI-D1,D1-P5"
+synergy.set.str    = "PI-D1,D1-P5"
 synergy.subset.str = "PI-D1"
 diff.D1.P5 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
   synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
@@ -892,7 +962,7 @@ title.text = paste0("Good models (", synergy.set.str,
 plot.network(net, diff.D1.P5, layout = nice.layout, title = title.text)
 ```
 
-Sadly, there were no biomarkers found at the $0.7$ threshold in either active or
+Sadly, no biomarkers were found at the $0.7$ threshold in either active or
 inhibited states:
 ```{r D1-P5 biomarkers (mixed), results = 'asis'}
 biomarkers.D1.P5.active = diff.D1.P5[diff.D1.P5 > threshold]
@@ -905,40 +975,137 @@ pretty.print.vector.names(biomarkers.D1.P5.inhibited)
 ##### PI-D1 synergy
 
 The fourth use case will contrast the models that predicted the synergy set 
-`PI-D1,D1-P5` vs the models that predicted the single synergy `D1-P5`. This will
-allow us to find important nodes whose state can influence the prediction 
-performance of a model and make it predict the extra `PI-D1` synergy:
+`PI-D1,D1-P5` vs the models that predicted the single synergy `D1-P5` as well
+as the models that predicted the synergy set `PI-D1,JN-D1` vs the models that 
+predicted the single synergy `JN-D1` and the models that predicted the synergy 
+set `PI-JN,PI-D1` vs the models that predicted the single synergy `PI-JN`. 
+These three comparisons will allow us to find important nodes whose state can 
+influence the prediction performance of a model and make it predict the extra 
+`PI-D1` synergy:
 ```{r Good vs Bad models based on different synergy set prediction (PI-D1)}
-synergy.set.str = "PI-D1,D1-P5"
-synergy.subset.str = "D1-P5"
-diff.PI.D1 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
-  synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+synergy.set.str.1    = "PI-D1,D1-P5"
+synergy.subset.str.1 = "D1-P5"
+diff.PI.D1.1 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str.1, synergy.subset.str.1, model.predictions, models.stable.state)
+
+synergy.set.str.2    = "PI-D1,JN-D1"
+synergy.subset.str.2 = "JN-D1"
+diff.PI.D1.2 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str.2, synergy.subset.str.2, model.predictions, models.stable.state)
+
+synergy.set.str.3    = "PI-JN,PI-D1"
+synergy.subset.str.3 = "PI-JN"
+diff.PI.D1.3 = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str.3, synergy.subset.str.3, model.predictions, models.stable.state)
 ```
 We now visualize the average state differences:
 ```{r Graphs: Good vs Bad models based on different synergy set prediction (PI-D1)}
-title.text = paste0("Good models (", synergy.set.str,
-                    ") vs Bad Models (", synergy.subset.str, ")")
-plot.network(net, diff.PI.D1, layout = nice.layout, title = title.text)
+title.text = paste0("Good models (", synergy.set.str.1,
+                    ") vs Bad Models (", synergy.subset.str.1, ")")
+plot.network(net, diff.PI.D1.1, layout = nice.layout, title = title.text)
+
+title.text = paste0("Good models (", synergy.set.str.2,
+                    ") vs Bad Models (", synergy.subset.str.2, ")")
+plot.network(net, diff.PI.D1.2, layout = nice.layout, title = title.text)
+
+title.text = paste0("Good models (", synergy.set.str.3,
+                    ") vs Bad Models (", synergy.subset.str.3, ")")
+plot.network(net, diff.PI.D1.3, layout = nice.layout, title = title.text)
 ```
 
-and report the active biomarkers found:
+As we see from the above graphs, each comparison produces different biomarkers 
+for the `PI-D1` synergy. We note that the two last comparisons have almost the 
+same results as with the previous method where we contrasted the models that
+predict the `PI-D1` synergy vs those that don't. We report the active biomarkers 
+found from the three comparisons and check whether there were any common nodes 
+found:
 ```{r PI-D1 biomarkers (active), results = 'asis'}
-biomarkers.PI.D1.active = diff.PI.D1[diff.PI.D1 > threshold]
-pretty.print.vector.names(biomarkers.PI.D1.active)
+biomarkers.PI.D1.active.1 = diff.PI.D1.1[diff.PI.D1.1 > threshold]
+pretty.print.vector.names(biomarkers.PI.D1.active.1)
+
+biomarkers.PI.D1.active.2 = diff.PI.D1.2[diff.PI.D1.2 > threshold]
+pretty.print.vector.names(biomarkers.PI.D1.active.2)
+
+biomarkers.PI.D1.active.3 = diff.PI.D1.3[diff.PI.D1.3 > threshold]
+pretty.print.vector.names(biomarkers.PI.D1.active.3)
+
+biomarkers.PI.D1.active.common.2.3 = 
+  get.common.names(biomarkers.PI.D1.active.2, biomarkers.PI.D1.active.3)
+
+biomarkers.PI.D1.active.common.1.2 = 
+  get.common.names(biomarkers.PI.D1.active.1, biomarkers.PI.D1.active.2)
+
+biomarkers.PI.D1.active = c(biomarkers.PI.D1.active.1, biomarkers.PI.D1.active.2)
 ```
 
-The inhibited biomarkers are:
+So, as the active biomarkers for this synergy we took the common biomarkers from 
+comparisons 2 and 3 and merged them with the ones from the first comparison (since 
+there were no common nodes).
+
+The inhibited biomarkers found from the three comparisons are:
 ```{r PI-D1 biomarkers (inhibited), results = 'asis'}
-biomarkers.PI.D1.inhibited = diff.PI.D1[diff.PI.D1 < -threshold]
-pretty.print.vector.names(biomarkers.PI.D1.inhibited)
+biomarkers.PI.D1.inhibited.1 = diff.PI.D1.1[diff.PI.D1.1 < -threshold]
+pretty.print.vector.names(biomarkers.PI.D1.inhibited.1)
+
+biomarkers.PI.D1.inhibited.2 = diff.PI.D1.1[diff.PI.D1.2 < -threshold]
+pretty.print.vector.names(biomarkers.PI.D1.inhibited.2)
+
+biomarkers.PI.D1.inhibited.3 = diff.PI.D1.3[diff.PI.D1.3 < -threshold]
+pretty.print.vector.names(biomarkers.PI.D1.inhibited.3)
+
+biomarkers.PI.D1.inhibited = biomarkers.PI.D1.inhibited.1
 ```
 
-Lastly, we update the biomarkers for this specific synergy in the respective 
-file:
+Since the second and third comparison did not identify any inhibited biomarkers 
+at the $0.7$ threshold level, we use the inhibited biomarkers found from the 
+first comparison. Lastly, we update the biomarkers for this specific synergy in 
+the respective file:
 ```{r Update PI-D1 biomarkers}
 drug.comb = "PI-D1"
 update.biomarkers.files(biomarkers.dir, drug.comb, 
                         biomarkers.PI.D1.active, biomarkers.PI.D1.inhibited)
+```
+
+##### BI-PI synergy
+
+The fifth use case will contrast the models that predicted the synergy set 
+`BI-PI,PI-D1` vs the models that predicted the single synergy `PI-D1`. This will
+allow us to find important nodes whose state can influence the prediction 
+performance of a model and make it predict the extra `BI-PI` synergy:
+```{r Good vs Bad models based on different synergy set prediction (BI-PI)}
+synergy.set.str    = "BI-PI,PI-D1"
+synergy.subset.str = "PI-D1"
+diff.BI.PI = get.avg.activity.diff.based.on.diff.synergy.set.prediction(
+  synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+```
+We now visualize the average state differences:
+```{r Graphs: Good vs Bad models based on different synergy set prediction (BI-PI)}
+title.text = paste0("Good models (", synergy.set.str,
+                    ") vs Bad Models (", synergy.subset.str, ")")
+plot.network(net, diff.BI.PI, layout = nice.layout, title = title.text)
+```
+
+The above graph gives us a better image of the nodes necessary for the prediction
+of this synergy than the graph where we compared all the models who predicted this 
+syenrgy vs the ones that did not. We report the active biomarkers found in this 
+case:
+```{r BI-PI biomarkers (active), results = 'asis'}
+biomarkers.BI.PI.active = diff.BI.PI[diff.BI.PI > threshold]
+pretty.print.vector.names(biomarkers.BI.PI.active)
+```
+
+The inhibited biomarkers are:
+```{r BI-PI biomarkers (inhibited), results = 'asis'}
+biomarkers.BI.PI.inhibited = diff.BI.PI[diff.BI.PI < -threshold]
+pretty.print.vector.names(biomarkers.BI.PI.inhibited)
+```
+
+Lastly, we update the biomarkers for this specific synergy in the respective 
+file:
+```{r Update BI-PI biomarkers}
+drug.comb = "BI-PI"
+update.biomarkers.files(biomarkers.dir, drug.comb, 
+                        biomarkers.BI.PI.active, biomarkers.BI.PI.inhibited)
 ```
 
 #### Biomarker results
@@ -985,7 +1152,7 @@ superheat(biomarkers.res, title.alignment = "center",
 
 So, in general we observe that:
 
-- A total of $52$ nodes were found as biomarkers (for at least one synergy)
+- A total of $67$ nodes were found as biomarkers (for at least one synergy)
 - Most synergies have more than 10 biomarkers. Usually we wouldn't expect too 
 many biomarkers that are directly related to the prediction of a specific synergy. 
 The abudance of (false positive) biomarkers for some synergies (e.g. `PI-D1`) 
