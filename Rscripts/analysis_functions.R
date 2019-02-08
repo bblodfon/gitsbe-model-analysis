@@ -205,13 +205,21 @@ get.avg.activity.diff.based.on.specific.synergy.prediction =
     ]
     # na.models = rownames(model.predictions)[is.na(model.predictions[, drug.comb])]
 
-    # small number of models in some category: comparison with 1 or no models does
-    # not make sense :)
-    stopifnot(length(good.models) > 1)
-    stopifnot(length(bad.models) > 1)
+    # check: no empty list of either good or bad models
+    stopifnot(!is.empty(bad.models))
+    stopifnot(!is.empty(good.models))
 
-    good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
-    bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+    if (length(good.models) == 1) {
+      good.avg.activity = models.stable.state[good.models, ]
+    } else {
+      good.avg.activity = apply(models.stable.state[good.models, ], 2, mean)
+    }
+
+    if (length(bad.models) == 1) {
+      bad.avg.activity = models.stable.state[bad.models, ]
+    } else {
+      bad.avg.activity = apply(models.stable.state[bad.models, ], 2, mean)
+    }
 
     return(good.avg.activity - bad.avg.activity)
 }
