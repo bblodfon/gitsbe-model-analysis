@@ -202,7 +202,10 @@ pretty.print.string(paste0("Percentage of True Positive predicted synergies: ",
 ```
 
 So, for this particular cell line, **there were indeed observed synergies that no 
-model could predict** (e.g. `AK-BI`, `AK-JN`). Next, we would like to know the maximum 
+model could predict** (e.g. 
+`r names(number.of.models.per.observed.synergy)[number.of.models.per.observed.synergy == 0][1]`, 
+`r names(number.of.models.per.observed.synergy)[number.of.models.per.observed.synergy == 0][2]`). 
+Next, we would like to know the maximum 
 number of observed synergies predicted by one model alone - **can one model by itself 
 predict all the true positive synergies predicted by all the models together** or 
 do we need many models to capture this diverse synergy landscape? To do that, we 
@@ -254,9 +257,10 @@ make.barplot.on.models.stats(models.synergies.tp.stats, cell.line,
 
 To summarize:
 
-- There were **631 models that predicted 2 synergies** - either the set 
-`BI-PI,PI-D1` or the `BI-JN,PI-D1` synergy set - which is the **maximum number 
-of predicted synergies by an individual model**
+- There were **`r models.synergies.tp.stats[length(models.synergies.tp.stats)]` 
+models that predicted `r names(models.synergies.tp.stats)[length(models.synergies.tp.stats)]` 
+synergies** - either the set `BI-PI,PI-D1` or the `BI-JN,PI-D1` synergy set - 
+which is the **maximum number of predicted synergies by an individual model**
 - **No model could predict all 3 of the total predicted synergies** 
 
 The power of the ensemble model approach lies in the fact that (as 
@@ -944,7 +948,8 @@ superheat(biomarkers.res, title.alignment = "center",
 
 So, in general we observe that:
 
-- A total of $58$ nodes were found as biomarkers (for at least one synergy)
+- A total of `r ncol(biomarkers.res)` nodes were found as biomarkers (for at 
+least one synergy)
 - None of the performance-related biomarkers (PERF) were also observed as 
 biomarkers for the prediction of a specific synergy(ies)
 - There exist common biomarkers across different predicted synergies, e.g. 

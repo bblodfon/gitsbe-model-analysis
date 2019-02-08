@@ -202,7 +202,10 @@ pretty.print.string(paste0("Percentage of True Positive predicted synergies: ",
 ```
 
 So, for this particular cell line, **there were indeed observed synergies that no 
-model could predict** (e.g. `AK-BI`, `AK-D1`). Next, we would like to know the maximum 
+model could predict** (e.g. 
+`r names(number.of.models.per.observed.synergy)[number.of.models.per.observed.synergy == 0][1]`, 
+`r names(number.of.models.per.observed.synergy)[number.of.models.per.observed.synergy == 0][2]`). 
+Next, we would like to know the maximum 
 number of observed synergies predicted by one model alone - **can one model by itself 
 predict all the true positive synergies predicted by all the models together** or 
 do we need many models to capture this diverse synergy landscape? To do that, we 
@@ -254,10 +257,11 @@ make.barplot.on.models.stats(models.synergies.tp.stats, cell.line,
 
 To summarize:
 
-- There were **405 models that predicted 2 synergies** - the set 
-`BI-D1,PI-D1` - which is the **maximum number of predicted synergies by an 
-individual model** and also the number of **total predicted synergies by all 
-models together**
+- There were **`r models.synergies.tp.stats[length(models.synergies.tp.stats)]` 
+models that predicted `r names(models.synergies.tp.stats)[length(models.synergies.tp.stats)]` 
+synergies** - the set `BI-D1,PI-D1` - which is the **maximum number of predicted 
+synergies by an individual model** and also the number of **total predicted 
+synergies by all models together**
 
 The power of the ensemble model approach lies in the fact that (as 
 we saw from the above figures) even though we may not have *individual super models* 
@@ -925,7 +929,8 @@ superheat(biomarkers.res, title.alignment = "center",
 
 So, in general we observe that:
 
-- A total of $10$ nodes were found as biomarkers (for at least one synergy)
+- A total of `r ncol(biomarkers.res)` nodes were found as biomarkers (for at 
+least one synergy)
 - We couldn’t indentify any biomarkers at the $0.7$ threshold for the `PI-D1` 
 synergy, while for the `BI-D1` synergy we found 10 biomarkers. Usually we wouldn't 
 expect too many biomarkers that are directly related to the prediction of a 

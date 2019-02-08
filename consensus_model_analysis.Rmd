@@ -167,18 +167,19 @@ plot(names(model.count.per.fitness), model.count.per.fitness,
 axis(2, at = y.axis.values, las = 1)
 ```
 
-Note that there are **17 unique fitness values** included in the range [0.54, 
-0.65], while the distribution of these values among the models can be seen in 
-the figure above. Almost **3000 models had a fitness of ~0.64** to the consensus
-steady state pattern, marking the area of the highest fitness models in the 
-figure. Furthermore, the number of unique stable states found by the models are 
-1330. This means that for a specific fitness value there will be many models that 
-have a stable state corresponding to it (having the same percentage of matches 
-for the activity states of the network nodes compared to the consensus state), 
-but the activity of the nodes between these models will be different, allowing a
-more diverse attractor landscape to match a specific fitness. To see the 
-difference between the stable states of the produced models relating to fitness,
-we produce the next heatmap:
+Note that there are **`r number.of.unique.fitness.values` unique fitness values** 
+included in the [0.54, 0.65] range, while the distribution of these values among 
+the models can be seen in the figure above. Almost **3000 models had a fitness 
+of ~0.64** to the consensus steady state pattern, marking the area of the highest 
+fitness models in the figure. Furthermore, **the number of unique stable states 
+found by the models is `r number.of.unique.stable.states`**. This means that for 
+a specific fitness value there will be many models that have a stable state 
+corresponding to it (having the same percentage of matches for the activity 
+states of the network nodes compared to the consensus state), but the activity 
+of the nodes between these models will be different, allowing a more diverse 
+attractor landscape to match a specific fitness. To see the difference between 
+the stable states of the produced models relating to fitness, we produce the 
+next heatmap:
 ```{r Fitness coloring}
 rbPal = colorRampPalette(c("green", "black", "red"))
 fitness.colors = rbPal(number.of.unique.fitness.values)[
