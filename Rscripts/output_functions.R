@@ -367,7 +367,10 @@ get.synergy.comparison.sets = function(synergy.subset.stats) {
   # get the maximum size of a synergy set
   max.size = max(synergy.set.sizes)
 
-  pretty.print.string("")
+  synergies = NULL
+  sets      = NULL
+  subsets   = NULL
+
   for (size in 1:(max.size - 1)) {
     small.size = size
     large.size = size + 1
@@ -382,17 +385,20 @@ get.synergy.comparison.sets = function(synergy.subset.stats) {
         if (all(small.synergies %in% large.synergies) &
             synergy.sets[small.synergy.set] > synergy.sets[large.synergy.set]) {
           synergy.to.test = outersect(small.synergies, large.synergies)
-          pretty.print.string(paste0("Synergy: ", synergy.to.test),
-                                   with.gt = FALSE)
-          print.empty.line()
-          pretty.print.string(paste0(small.synergy.set, " vs ", large.synergy.set),
-                              with.gt = FALSE)
-          print.empty.line()
-          print.empty.line()
+
+          synergies = append(synergies, synergy.to.test)
+          sets      = append(sets, large.synergy.set)
+          subsets   = append(subsets, small.synergy.set)
         }
       }
     }
   }
+
+  res.df = data.frame(synergies, sets, subsets, stringsAsFactors = FALSE)
+  res.df = res.df[order(res.df$synergies), ]
+  rownames(res.df) = 1:length(res.df$synergies)
+
+  return(res.df)
 }
 
 outersect = function(x, y) {
