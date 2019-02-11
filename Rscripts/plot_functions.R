@@ -244,6 +244,17 @@ get.node.colors = function(net, diff, col) {
   return(diff.colors[node.names])
 }
 
+# `diff.df` is a data.frame whose rows are classification group comparisons
+# with their name set in the `rownames()` and the columns are the network's
+# node names. This function is used to use `plot.network` multiple times on
+# different `diff` vectors
+plot.diff.df = function(net, diff.df, layout) {
+  for (row.index in 1:nrow(diff.df)) {
+    plot.network(net, diff.df[row.index, ], layout = layout,
+                 title = rownames(diff.df)[row.index])
+  }
+}
+
 # `file.format` can be one of: {pdf, svg, png, tiff}
 plot.string.to.file = function(file, file.format, plot.string){
   if (file.format == "pdf")
