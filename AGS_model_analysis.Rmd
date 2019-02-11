@@ -815,7 +815,7 @@ We will focus our analysis on the predicted synergies `BI-D1` and `PI-D1`.
 ##### BI-D1 synergy
 
 The first use case will contrast the models that predicted the synergy set 
-`BI-D1,PI-D1` vs the models that predicted the double synergy subset 
+`BI-D1,PI-D1` vs the models that predicted the single synergy subset 
 `PI-D1`. This will allow us to find important nodes whose state can 
 influence the prediction performance of a model and make it predict the extra 
 `BI-D1` synergy:

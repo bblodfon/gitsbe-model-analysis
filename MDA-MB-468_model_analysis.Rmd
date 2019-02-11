@@ -842,7 +842,7 @@ pretty.print.vector.names(biomarkers.PI.JN.active.1)
 biomarkers.PI.JN.active.2 = diff.PI.JN.2[diff.PI.JN.2 > threshold]
 pretty.print.vector.names(biomarkers.PI.JN.active.2)
 
-biomarkers.PI.JN.active = 
+biomarkers.PI.JN.active.common.1.2 = 
   get.common.names(biomarkers.PI.JN.active.1, biomarkers.PI.JN.active.2)
 biomarkers.PI.JN.active = c(biomarkers.PI.JN.active.1, biomarkers.PI.JN.active.2)
 ```
