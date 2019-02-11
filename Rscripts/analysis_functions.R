@@ -297,6 +297,49 @@ is.empty = function(obj) {
   if (length(obj)) return(FALSE) else return(TRUE)
 }
 
+calculate.models.mcc =
+  function(observed.model.predictions, unobserved.model.predictions,
+           models.synergies.tp, number.of.drug.comb.tested) {
+    # Count the false negatives (FN)
+    models.synergies.fn = apply(observed.model.predictions, 1, function(x) {
+      sum( x == 0 | is.na(x) )
+    })
+
+    # P = TP + FN (Positives)
+    positives = ncol(observed.model.predictions)
+    models.synergies.p = models.synergies.tp + models.synergies.fn
+
+    # Count the predictions of the non-observed synergies per model (FP)
+    models.synergies.fp =
+      calculate.models.synergies.fp(unobserved.model.predictions)
+
+    # Count the True Negatives (TN)
+    models.synergies.tn = apply(unobserved.model.predictions, 1, function(x) {
+      sum( x == 0 | is.na(x))
+    })
+
+    # N = FP + TN (Negatives)
+    negatives = ncol(unobserved.model.predictions)
+    models.synergies.n = models.synergies.fp + models.synergies.tn
+
+    # checks
+    stopifnot(models.synergies.p == positives)
+    stopifnot(models.synergies.n == negatives)
+    stopifnot(positives + negatives == number.of.drug.comb.tested)
+
+    # Calculate Matthews Correlation Coefficient (MCC)
+    models.mcc = calculate.mcc(models.synergies.tp, models.synergies.tn,
+                               models.synergies.fp, models.synergies.fn,
+                               positives, negatives)
+    return(models.mcc)
+}
+
+calculate.models.synergies.fp = function(unobserved.model.predictions) {
+  # Count the predictions of the non-observed synergies per model (FP)
+  models.synergies.fp = apply(unobserved.model.predictions, 1, sum, na.rm = T)
+  return(models.synergies.fp)
+}
+
 # inputs are vectors of same size and one-to-one value correspondence
 calculate.mcc = function(tp, tn, fp, fn, p, n) {
   return(

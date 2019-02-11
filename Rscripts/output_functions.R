@@ -159,7 +159,7 @@ get.common.values = function(vec1, vec2, vector.values.str = "nodes",
   if (common.values.number == 0) {
     str = paste0("No common ", vector.values.str)
     pretty.print.string(str, with.gt = with.gt)
-    return(FALSE)
+    return(NULL)
   }
   else {
     pretty.print.vector.values(common.values, with.gt = with.gt)
