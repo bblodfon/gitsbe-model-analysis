@@ -406,36 +406,12 @@ method to split the models into different performance categories based on the
 value of the **Matthews Correlation Coefficient (MCC) score** which takes into 
 account the balance ratios of all the four confusion matrix values:
 ```{r MCC Stats, fig.height = 6, fig.width = 9}
-# Count the false negatives (FN)
-models.synergies.fn = apply(observed.model.predictions, 1, function(x) {
-  sum( x == 0 | is.na(x) )
-})
+# Calculate Matthews Correlation Coefficient (MCC) for every model
+models.mcc = calculate.models.mcc(observed.model.predictions, 
+                                  unobserved.model.predictions, 
+                                  models.synergies.tp,
+                                  number.of.drug.comb.tested)
 
-# P = TP + FN (Positives)
-positives = ncol(observed.model.predictions)
-models.synergies.p = models.synergies.tp + models.synergies.fn
-
-# Count the predictions of the non-observed synergies per model (FP)
-models.synergies.fp = apply(unobserved.model.predictions, 1, sum, na.rm = T)
-
-# Count the True Negatives (TN)
-models.synergies.tn = apply(unobserved.model.predictions, 1, function(x) {
-  sum( x == 0 | is.na(x))
-})
-
-# N = FP + TN (Negatives)
-negatives = ncol(unobserved.model.predictions)
-models.synergies.n = models.synergies.fp + models.synergies.tn
-
-# checks
-stopifnot(models.synergies.p == positives)
-stopifnot(models.synergies.n == negatives)
-stopifnot(positives + negatives == number.of.drug.comb.tested)
-
-# Calculate Matthews Correlation Coefficient (MCC)
-models.mcc = calculate.mcc(models.synergies.tp, models.synergies.tn, 
-                           models.synergies.fp, models.synergies.fn,
-                           positives, negatives)
 models.mcc.stats = table(models.mcc, useNA = "ifany")
 
 make.barplot.on.models.stats(models.mcc.stats, cell.line, title = "MCC scores", 
@@ -463,6 +439,7 @@ fixpoint attractors for every possible drug combination perturbation which also
 is extremely unlikely. We can actually see that the `NaN` are produced by models 
 that have **both TP and FP equal to zero**:
 ```{r NaN MCC score, results = 'asis'}
+models.synergies.fp = calculate.models.synergies.fp(unobserved.model.predictions)
 pretty.print.string(sum(models.synergies.tp + models.synergies.fp == 0))
 ```
 
