@@ -1114,7 +1114,7 @@ biomarkers.res = add.performance.biomarkers(biomarkers.synergy.res,
 
 # prune nodes which are not found as biomarkers for any predicted synergy or
 # for better model performance
-biomarkers.res = biomarkers.res[, colSums(biomarkers.res != 0) > 0]
+biomarkers.res = prune.columns.from.df(biomarkers.res, value = 0)
 
 superheat(biomarkers.res, title.alignment = "center",
           title = paste0("Biomarker results (", cell.line, ")"),
