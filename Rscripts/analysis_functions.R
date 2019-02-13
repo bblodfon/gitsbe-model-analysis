@@ -430,3 +430,10 @@ add.performance.biomarkers =
     res = rbind(row, biomarkers.synergy.res)
     return(res)
 }
+
+# prune columns from a data.frame if all elements
+# of a column have the same integer `value`
+prune.columns.from.df = function(df, value) {
+  if (length(df) == 0) return(df)
+  return(df[, colSums(df != value) > 0])
+}
