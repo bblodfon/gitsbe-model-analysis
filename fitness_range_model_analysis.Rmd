@@ -127,7 +127,7 @@ number.of.unique.fitness.values = length(model.count.per.fitness)
 print(paste("Unique fitness values:", number.of.unique.fitness.values))
 ```
 
-```{r Fitness stats}
+```{r Fitness stats 2}
 y.axis.values = pretty(model.count.per.fitness)
 plot(names(model.count.per.fitness), model.count.per.fitness, 
      type = "l",  yaxt = "n",
