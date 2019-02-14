@@ -16,13 +16,15 @@ get.model.predictions = function(model.predictions.file) {
 }
 
 get.observed.synergies =
-  function(observed.synergies.file, drug.combinations.tested) {
+  function(observed.synergies.file, drug.combinations.tested = NULL) {
     #print(paste("Reading observed synergies file:", observed.synergies.file))
 
     lines = readLines(observed.synergies.file)
     observed.synergies = gsub("~", "-", lines)
 
-    validate.observed.synergies.data(observed.synergies, drug.combinations.tested)
+    if (!is.null(drug.combinations.tested)) {
+      validate.observed.synergies.data(observed.synergies, drug.combinations.tested)
+    }
 
     return(observed.synergies)
 }
@@ -288,4 +290,41 @@ get.biomarkers.per.synergy =
     }
 
     return(res)
+}
+
+# `biomarkers.dirs` is a vector of the cell lines' biomarker directories
+# and `type`` can be either 'active' or 'inhibited'
+get.perf.biomarkers.per.cell.line = function(biomarkers.dirs, type) {
+  if (type == "active")
+    biomarker.type.extension = "/biomarkers_active"
+  else
+    biomarker.type.extension = "/biomarkers_inhibited"
+
+  biomarkers.perf = sapply(biomarkers.dirs, function(biomarkers.dir) {
+    biomarkers.file = paste0(biomarkers.dir, biomarker.type.extension)
+    if (file.size(biomarkers.file) == 0)
+      return(list(NULL)) # empty list
+    else
+      return(
+        read.table(biomarkers.file, stringsAsFactors = FALSE)
+      )
+  })
+  # add the cell line name as id
+  names(biomarkers.perf) = names(biomarkers.dirs)
+
+  return(biomarkers.perf)
+}
+
+# `biomarkers.dirs` is a vector of the cell lines' biomarker directories
+get.synergy.biomarkers.per.cell.line = function(biomarkers.dirs) {
+  biomarkers.per.synergy = list()
+  for (i in seq_along(biomarkers.dirs)) {
+    biomarkers.file = paste0(biomarkers.dirs[i], "/biomarkers_per_synergy")
+    biomarkers.per.synergy[[i]] =
+      read.table(file = biomarkers.file, stringsAsFactors = FALSE,
+                 check.names = FALSE)
+  }
+  names(biomarkers.per.synergy) = names(biomarkers.dirs)
+
+  return(biomarkers.per.synergy)
 }
