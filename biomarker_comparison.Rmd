@@ -1,0 +1,220 @@
+---
+title: "Biomarker comparison across 8 cell lines"
+author: "[John Zobolas](https://github.com/bblodfon)"
+output:
+  html_document:
+    df_print: paged
+    theme: united # also good: default, cosmo, readable
+    toc: true
+    toc_float: true
+    toc_depth: 5
+    number_sections: false
+    #self_contained: no
+---
+
+## Intro
+
+In this notebook we will compare the biomarker results as found for each cell 
+line where cell-specific models (models trained towards a specific activity 
+profile from each cell line) were obtained through the simulations ran with the
+`Gitsbe` module of the DrugLogics software pipeline in their respective notebooks. 
+Note that per cell line, we identified:
+- Performance-related biomarkers, which represent important nodes that make our 
+models achieve a higher model performance classification (the methodology was 
+based on the number of $TP$ (true positives) and the $MCC$ (Mathews Correlation 
+Coefficient) score)
+- Per synergy predicted biomarkers, which represent important nodes that make 
+our models predict cell line specific observed synergies.
+
+**The cell line specific model & biomarker analysis notebooks are:**
+
+- [A498](https://bblodfon.github.io/gitsbe-model-analysis/A498_model_analysis.html)
+- [AGS](https://bblodfon.github.io/gitsbe-model-analysis/AGS_model_analysis.html)
+- [colo205](https://bblodfon.github.io/gitsbe-model-analysis/colo205_model_analysis.html)
+- [DU145](https://bblodfon.github.io/gitsbe-model-analysis/DU145_model_analysis.html)
+- [MDA-MB-468](https://bblodfon.github.io/gitsbe-model-analysis/MDA-MB-468_model_analysis.html)
+- [SF295](https://bblodfon.github.io/gitsbe-model-analysis/SF295_model_analysis.html)
+- [SW620](https://bblodfon.github.io/gitsbe-model-analysis/SW620_model_analysis.html)
+- [UACC62](https://bblodfon.github.io/gitsbe-model-analysis/UACC62_model_analysis.html)
+
+The input for the simulations and the output data are in the `cell-lines-2500` 
+directory (the 2500 number denotes the number of simulations executed). The 
+analysis will be presented step by step in the sections below.
+
+## Prerequisites
+
+Firstly, we load the required libraries (you need to install them if you don't
+have them):
+```{r Load libraries, message = FALSE}
+library(superheat) # version 1.0.0, see (Barter, 2017)
+```
+and the relevant helper functions:
+```{r Helper functions}
+# Set the working directory to the gitsbe-model-analysis folder: 
+# setwd("pathTo/gitsbe-model-analysis")
+source("Rscripts/input_functions.R")
+source("Rscripts/output_functions.R")
+source("Rscripts/analysis_functions.R")
+```
+
+The R version used for this analysis is: 
+```{r R version, results = 'asis'}
+pretty.print.string(R.version.string)
+```
+
+## Input
+
+```{r Input}
+cell.lines = c("A498", "AGS", "colo205", "DU145", "MDA-MB-468", "SF295", 
+               "SW620", "UACC62")
+
+cell.lines.dirs = sapply(cell.lines, function(cell.line) {
+  paste0(getwd(), "/cell-lines-2500/", cell.line)
+})
+
+biomarkers.dirs = sapply(cell.lines.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/biomarkers")
+})
+```
+
+## Performance Biomarkers per Cell Line
+
+```{r Performance Biomarkers Heatmap, fig.height = 7, fig.width = 9, dpi = 300}
+biomarkers.perf.active = 
+  get.perf.biomarkers.per.cell.line(biomarkers.dirs, type = "active")
+
+biomarkers.perf.inhibited =
+  get.perf.biomarkers.per.cell.line(biomarkers.dirs, type = "inhibited")
+
+# All cell lines are based on the same topology (and so the same nodes)
+models.dir = paste0(cell.lines.dirs[1], "/models")
+node.names = get.node.names(models.dir)
+
+# initialize res data.frame
+res = as.data.frame(matrix(0, ncol = length(node.names),
+                              nrow = length(cell.lines)))
+
+colnames(res) = node.names
+rownames(res) = cell.lines
+
+for (cell.line in cell.lines) {
+  biomarker.perf.active.vec = unlist(biomarkers.perf.active[cell.line])
+  biomarker.perf.inhibited.vec = unlist(biomarkers.perf.inhibited[cell.line])
+  
+  for (biomarker.active in biomarker.perf.active.vec) {
+    res[cell.line, biomarker.active] = 1
+  }
+  
+  for (biomarker.inhibited in biomarker.perf.inhibited.vec) {
+    res[cell.line, biomarker.inhibited] = -1
+  }
+}
+
+# remove nodes which are not biomarkers for any cell line
+res = prune.columns.from.df(res, value = 0)
+
+superheat(res, title.alignment = "center", title.size = 7,
+          title = paste0("Biomarker results per cell line"),
+          row.dendrogram = TRUE, col.dendrogram = TRUE, scale = FALSE,
+          column.title = "Network Nodes", row.title = "Cell Lines",
+          heat.pal = c("tomato", "grey", "gold"),
+          # grey   = not a biomarker
+          # tomato = inhibited biomarker
+          # gold   = active biomarker
+          force.grid.vline = TRUE, force.grid.hline = TRUE,
+          grid.vline.size = 0.1, grid.hline.size = 0.1, 
+          legend.breaks = c(-1, 0, 1),
+          left.label.col = "white", left.label.text.size = 5,
+          bottom.label.col = "white",
+          bottom.label.text.size = 1.7, bottom.label.text.angle = 90)
+```
+
+- Total of `r ncol(res)` performance biomarkers
+- There exist unique biomarkers per cell but also common ones (either same of 
+reverse states)
+
+## Observed synergies per cell line
+
+note the common observed synergies among many cell lines (PI-D1 for example)
+
+```{r Observed synergies Heatmap, fig.height = 7, fig.width = 9, dpi = 300}
+observed.synergies.files = sapply(cell.lines.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/observed_synergies")
+})
+
+observed.synergies.per.cell.line = 
+  sapply(observed.synergies.files, function(observed.synergies.file) {
+    get.observed.synergies(observed.synergies.file)
+  })
+
+# get all the drug combinations tested
+model.predictions.file = paste0(cell.lines.dirs[1], "/model_predictions")
+model.predictions = get.model.predictions(model.predictions.file)
+drug.combinations.tested = colnames(model.predictions)
+
+# initialize res data.frame
+res = as.data.frame(matrix(0, ncol = length(drug.combinations.tested),
+                              nrow = length(cell.lines)))
+colnames(res) = drug.combinations.tested
+rownames(res) = cell.lines
+
+for (cell.line in cell.lines) {
+  predicted.synergies = observed.synergies.per.cell.line[cell.line]
+  for (synergy in predicted.synergies) {
+    res[cell.line, synergy] = 1
+  }
+}
+
+# remove drug combinations which are not observed for any cell line
+res = prune.columns.from.df(res, value = 0)
+total.observed.synergies = colnames(res)
+total.observed.synergies.num = length(total.observed.synergies)
+
+superheat(res, title.alignment = "center", title.size = 7,
+          title = paste0("Observed synergies per cell line"),
+          row.dendrogram = TRUE, col.dendrogram = TRUE, scale = FALSE,
+          column.title = "Drug Combinations", row.title = "Cell Lines",
+          heat.pal = c("red", "green"),
+          # red   = non-observed synergy
+          # green = observed synergy
+          force.grid.vline = TRUE, force.grid.hline = TRUE,
+          grid.vline.size = 0.1, grid.hline.size = 0.1,
+          legend.breaks = c(0, 1),
+          left.label.col = "white", left.label.text.size = 5,
+          bottom.label.col = "white",
+          bottom.label.text.size = 3, bottom.label.text.angle = 90)
+```
+
+- There are a total of `r total.observed.synergies.num` observed synergies 
+across the `r length(cell.lines)` cell lines
+
+```{r Predicted synergies by the cell-specific models}
+biomarkers.per.synergy = get.synergy.biomarkers.per.cell.line(biomarkers.dirs)
+
+total.predicted.synergies = character(0)
+for (cell.line in cell.lines) {
+  total.predicted.synergies = 
+    c(total.predicted.synergies, rownames(biomarkers.per.synergy[cell.line][[1]]))
+}
+total.predicted.synergies = unique(total.predicted.synergies)
+total.predicted.synergies.num = length(total.predicted.synergies)
+```
+
+- The *cell-specific* models predicted `r total.predicted.synergies.num` of the
+`r total.observed.synergies.num` observed synergies found across the 
+`r length(cell.lines)` cell lines (**`r total.predicted.synergies.num/total.observed.synergies.num`% true 
+positive coverage**)
+- `PI-D1, AK-BI` are common synergies among all cell lines
+
+
+
+```{r heatmap: per observed synergy: cell lines vs network nodes}
+
+
+```
+
+
+
+## References
+
+1. Barter Rebecca, Yu Bin (2017) Superheat: An R package for creating beautiful and extendable heatmaps for visualizing complex data. [https://arxiv.org/abs/1512.01524](https://arxiv.org/abs/1512.01524), [https://rlbarter.github.io/superheat/](https://rlbarter.github.io/superheat/)
