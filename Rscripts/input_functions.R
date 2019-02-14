@@ -200,7 +200,7 @@ get.parent.dir = function(dir) {
   return(parent.dir)
 }
 
-contruct.network = function(topology.file, models.dir) {
+construct.network = function(topology.file, models.dir) {
   edges = get.edges.from.topology.file(topology.file)
 
   net = graph_from_data_frame(edges, directed = TRUE)

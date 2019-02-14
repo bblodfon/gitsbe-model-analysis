@@ -345,7 +345,7 @@ parent.dir = get.parent.dir(data.dir)
 topology.file = paste0(parent.dir, "/topology")
 coordinates.file = paste0(parent.dir, "/network_xy_coordinates")
 
-net = contruct.network(topology.file, models.dir)
+net = construct.network(topology.file, models.dir)
 
 # a static layout for plotting the same network always (igraph)
 # nice.layout = layout_nicely(net)
