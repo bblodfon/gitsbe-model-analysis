@@ -293,7 +293,7 @@ get.biomarkers.per.synergy =
 }
 
 # `biomarkers.dirs` is a vector of the cell lines' biomarker directories
-# and `type`` can be either 'active' or 'inhibited'
+# and `type` can be either 'active' or 'inhibited'
 get.perf.biomarkers.per.cell.line = function(biomarkers.dirs, type) {
   if (type == "active")
     biomarker.type.extension = "/biomarkers_active"

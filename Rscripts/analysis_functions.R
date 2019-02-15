@@ -437,3 +437,49 @@ prune.columns.from.df = function(df, value) {
   if (length(df) == 0) return(df)
   return(df[, colSums(df != value) > 0])
 }
+
+# merge the results of the performance (active and inhibited) biomarkers
+# from each cell line to a common `data.frame` object
+merge.perf.biomarkers =
+  function(node.names, cell.lines, biomarkers.perf.active, biomarkers.perf.inhibited) {
+    # initialize res data.frame
+    res = as.data.frame(matrix(0, ncol = length(node.names),
+                                  nrow = length(cell.lines)))
+    colnames(res) = node.names
+    rownames(res) = cell.lines
+
+    for (cell.line in cell.lines) {
+      biomarkers.perf.active.vec = unlist(biomarkers.perf.active[cell.line])
+      biomarkers.perf.inhibited.vec = unlist(biomarkers.perf.inhibited[cell.line])
+
+      for (biomarker.active in biomarkers.perf.active.vec) {
+        res[cell.line, biomarker.active] = 1
+      }
+
+      for (biomarker.inhibited in biomarkers.perf.inhibited.vec) {
+        res[cell.line, biomarker.inhibited] = -1
+      }
+    }
+
+    return(res)
+}
+
+# merge the observed synergies from each cell line to a common
+# `data.frame` object
+merge.observed.synergies =
+  function(drug.combinations.tested, cell.lines, observed.synergies.per.cell.line) {
+    # initialize res data.frame
+    res = as.data.frame(matrix(0, ncol = length(drug.combinations.tested),
+                                  nrow = length(cell.lines)))
+    colnames(res) = drug.combinations.tested
+    rownames(res) = cell.lines
+
+    for (cell.line in cell.lines) {
+      observed.synergies = observed.synergies.per.cell.line[cell.line]
+      for (synergy in observed.synergies) {
+        res[cell.line, synergy] = 1
+      }
+    }
+
+    return(res)
+}
