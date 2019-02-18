@@ -316,6 +316,9 @@ get.perf.biomarkers.per.cell.line = function(biomarkers.dirs, type) {
 }
 
 # `biomarkers.dirs` is a vector of the cell lines' biomarker directories
+# Returns a list of cell-line data frames with rows the true positive
+# predicted synergies for each cell line and columns the network nodes (same
+# for all). So, cell line (list) => biomarkers of a synergy (row of data.frame)
 get.synergy.biomarkers.per.cell.line = function(biomarkers.dirs) {
   biomarkers.per.synergy = list()
   for (i in seq_along(biomarkers.dirs)) {

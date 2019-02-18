@@ -1,3 +1,5 @@
+library(dplyr) # version 0.8.0.1
+
 # Input: two vectors with same column names
 # Output: a data frame with 2 vectors:
 #   1) the first input vector only pruned to its unique values
@@ -438,6 +440,13 @@ prune.columns.from.df = function(df, value) {
   return(df[, colSums(df != value) > 0])
 }
 
+# prune rows from a data.frame if all elements
+# of a row have the same integer `value`
+prune.rows.from.df = function(df, value) {
+  if (length(df) == 0) return(df)
+  return(df[rowSums(df != value) > 0, ])
+}
+
 # merge the results of the performance (active and inhibited) biomarkers
 # from each cell line to a common `data.frame` object
 merge.perf.biomarkers =
@@ -478,6 +487,54 @@ merge.observed.synergies =
       observed.synergies = observed.synergies.per.cell.line[cell.line]
       for (synergy in observed.synergies) {
         res[cell.line, synergy] = 1
+      }
+    }
+
+    return(res)
+}
+
+# `df.list` is a list of cell line data frames with rows the true positive
+# predicted synergies for each cell line and columns the network nodes.
+# `observed.synergies.res` is a data.frame with rows the cell lines and columns
+# the observed synergies
+# `predicted.synergies.vector` is a subset of the `observed.synergies.res` column
+# names
+# Returns a list of data frames for each synergy with rows the cell lines and
+# columns the network nodes, so a re-arrangement (and grouping) of the `df.list`
+# object
+arrange.by.synergy =
+  function(df.list, observed.synergies.res, predicted.synergies.vector, node.names) {
+    # prune the observed synergies to predicted and order by increasing number
+    # of cell line predictions
+    stopifnot(all(predicted.synergies.vector %in%
+                  colnames(observed.synergies.res)))
+    observed.synergies.res =
+      select(observed.synergies.res, predicted.synergies.vector)
+    observed.synergies.res =
+      observed.synergies.res[order(colSums(observed.synergies.res))]
+
+    # check that `node.names` is in the correct order
+    for (df in df.list) {
+      stopifnot(all(node.names == colnames(df)))
+    }
+
+    # initialize `res` list (correct dimensions, all values zero)
+    res = list()
+    for (synergy in colnames(observed.synergies.res)) {
+      row.df = select(observed.synergies.res, synergy)
+
+      synergy.res = as.data.frame(matrix(0, ncol = length(node.names),
+                                            nrow = sum(row.df)))
+      colnames(synergy.res) = node.names
+      rownames(synergy.res) = rownames(row.df)[row.df == 1]
+      res[[synergy]] = synergy.res
+    }
+
+    # fill in `res` list
+    for (cell.line in names(df.list)) {
+      df = df.list[cell.line][[1]]
+      for (synergy in rownames(df)) {
+        res[synergy][[1]][cell.line,] = df[synergy, ]
       }
     }
 
