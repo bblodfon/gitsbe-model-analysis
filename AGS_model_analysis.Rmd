@@ -31,12 +31,11 @@ Firstly, we load the required libraries (you need to install them if you don't
 have them):
 ```{r Load libraries, message = FALSE}
 library(rje) # version 1.9
-library(igraph) # version 1.2.2, see (Csardi, 2006)
 library(Ckmeans.1d.dp) # version 4.2.2, see (Wang, 2011)
 library(superheat) # version 1.0.0, see (Barter, 2017)
 ```
 and the relevant helper functions:
-```{r Helper functions}
+```{r Helper functions, message = FALSE}
 # Set the working directory to the gitsbe-model-analysis folder: 
 # setwd("pathTo/gitsbe-model-analysis")
 source("Rscripts/input_functions.R")
@@ -353,6 +352,7 @@ state can influence the true positive prediction performance (from 0 true
 positive synergies to a total of 2):
 ```{r Graphs: Good vs Bad models based on the number of TPs}
 # useful tutorial about network visualization in R: (Ognyanova, 2018)
+# plot.network uses igraph package, see (Csardi, 2006)
 
 plot.network(net, diff.tp.results["(0,1)",], layout = nice.layout,
              title = "Bad models (0 TP) vs Good models (1 TP)")
