@@ -504,10 +504,11 @@ merge.observed.synergies =
 # object
 arrange.by.synergy =
   function(df.list, observed.synergies.res, predicted.synergies.vector, node.names) {
-    # prune the observed synergies to predicted and order by increasing number
-    # of cell line predictions
     stopifnot(all(predicted.synergies.vector %in%
                   colnames(observed.synergies.res)))
+
+    # prune the observed synergies to predicted and order by increasing number
+    # of cell line predictions
     observed.synergies.res =
       select(observed.synergies.res, predicted.synergies.vector)
     observed.synergies.res =
@@ -532,9 +533,9 @@ arrange.by.synergy =
 
     # fill in `res` list
     for (cell.line in names(df.list)) {
-      df = df.list[cell.line][[1]]
+      df = df.list[[cell.line]]
       for (synergy in rownames(df)) {
-        res[synergy][[1]][cell.line,] = df[synergy, ]
+        res[[synergy]][cell.line,] = df[synergy, ]
       }
     }
 
