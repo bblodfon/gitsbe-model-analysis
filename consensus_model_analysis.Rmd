@@ -24,8 +24,15 @@ analysis will be presented step by step in the sections below.
 
 ## Prerequisites
 
-Firstly, we load the relevant helper functions:
-```{r Helper functions}
+Firstly, we load the required libraries (you need to install them if you don't
+have them):
+```{r Load libraries, message = FALSE}
+library(circlize) # version 0.4.5, see (Gu, 2014)
+library(ComplexHeatmap) # version 1.99.5, see (Gu, 2016)
+```
+
+and the relevant helper functions:
+```{r Helper functions, message = FALSE}
 # Set the working directory to the gitsbe-model-analysis folder: 
 # setwd("pathTo/gitsbe-model-analysis")
 source("Rscripts/input_functions.R")
@@ -114,10 +121,12 @@ models.fitness = apply(models.stable.state, 1, function(state) {
   return(get.percentage.of.matches(state, consensus.steady.state)) 
 })
 
+min.fitness = min(models.fitness)
+max.fitness = max(models.fitness)
 string = paste0("Minimum fitness: ", 
-                specify.decimal(min(models.fitness), digits.to.keep = 4), ", ", 
+                specify.decimal(min.fitness, digits.to.keep = 4), ", ", 
                 "Maximum fitness: ", 
-                specify.decimal(max(models.fitness), digits.to.keep = 4))
+                specify.decimal(max.fitness, digits.to.keep = 4))
 pretty.print.string(string)
 
 fitness.range = seq(0, 1, 0.001)
@@ -180,37 +189,41 @@ of the nodes between these models will be different, allowing a more diverse
 attractor landscape to match a specific fitness. To see the difference between 
 the stable states of the produced models relating to fitness, we produce the 
 next heatmap:
-```{r Fitness coloring}
-rbPal = colorRampPalette(c("green", "black", "red"))
-fitness.colors = rbPal(number.of.unique.fitness.values)[
-  as.numeric(cut(models.fitness, breaks = number.of.unique.fitness.values))
-]
-names(fitness.colors) = names(models.fitness)
+```{r Models Stable States Heatmap, fig.height = 7, fig.width = 9, dpi = 300, message = FALSE}
+# coloring
+activity.colors = c("red", "lightyellow")
+activity.col.fun = colorRamp2(breaks = c(0, 1), colors = activity.colors)
+fitness.col.fun = 
+  colorRamp2(breaks = c(min.fitness, (min.fitness + max.fitness)/2, max.fitness), 
+             colors = c("red", "black", "green"))
 
-unique.fitness.colors = rbPal(number.of.unique.fitness.values)
-unique.fitness.values = as.numeric(names(model.count.per.fitness))
+# define the fitness color bar
+fitness.annot = rowAnnotation(
+  fitness = anno_simple(x = models.fitness, col = fitness.col.fun), 
+            show_annotation_name = FALSE)
 
-title = "Color Palette"
-xlab  = "Fitness score"
-make.color.bar.plot(color.vector = unique.fitness.colors, 
-                    number.vector = round(unique.fitness.values, digits = 3), 
-                    title, xlab)
-```
+heatmap.ss = 
+  Heatmap(matrix = models.stable.state, column_title = "Models Stable States",
+    column_title_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize = 4),
+    row_dend_width = unit(1, "inches"), column_dend_height = unit(1, "inches"),
+    col = activity.col.fun, show_row_names = FALSE,
+    left_annotation = fitness.annot, show_heatmap_legend = FALSE,
+    use_raster = TRUE, raster_device = "png", raster_quality = 20)
 
-```{r Heatmap, fig.height=7, fig.width=7, dpi = 300}
-heatmap.ss = heatmap(models.stable.state,
-                     RowSideColors = fitness.colors,
-                     main = "Models Stable States",
-                     scale = "none", labRow = NA,
-                     cexCol = 0.4, margins = c(8,2))
-legend("topright", legend = c("1", "0"),
-    col = c("khaki1", "red"), cex = 0.7,
-    pch = 19 # filled big points
-)
+# define the 2 legends
+activity.state.legend = Legend(title = "Activity State",
+                               labels = c("Inhibited", "Active"),
+                               legend_gp = gpar(fill = activity.colors))
+fitness.legend = Legend(title = "Fitness", col = fitness.col.fun)
+legend.list = packLegend(activity.state.legend, fitness.legend, 
+                         direction = "vertical")
+
+draw(heatmap.ss, annotation_legend_list = legend.list, 
+     annotation_legend_side = "right")
 ```
 
 In the heatmap above, an activity state equal to zero is represented with red 
-color while an activity state equal to 1 with yellow. We note the prevalence of 
+color while an activity state equal to 1 with light yellow. We note the prevalence of 
 the highest fitness models across the heatmap as well their differences regarding
 the activity states of the network nodes. Though this sample of 7500 models 
 represents the *best* models generated through a genetic algorithm that results 
