@@ -237,7 +237,7 @@ In this section, we will produce heatmaps showing the biomarkers across the
 predicted by the cell-specific models. First, we manipulate the biomarker 
 result data to fit our purposes:
 
-```{r }
+```{r Cell-specific biomarker results}
 synergy.biomarkers.cell.specific.res = 
   arrange.by.synergy(synergy.biomarkers.cell.specific, observed.synergies.res, 
                      total.predicted.synergies.cell.specific, node.names)
