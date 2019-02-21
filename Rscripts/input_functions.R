@@ -164,6 +164,7 @@ get.model.names = function(models.dir) {
   return(list.files(models.dir))
 }
 
+# OR => 1, AND => 0
 assign.value.to.equation = function(equation) {
   if (grepl(".*or not.*", equation)) {
     return(1)
