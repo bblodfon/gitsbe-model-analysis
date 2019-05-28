@@ -13,7 +13,7 @@ fi
 if [ $arg == "all" ]; then
   rmd_files=`ls | grep Rmd`
 elif [ $arg == "some" ]; then
-  rmd_files=`ls | grep Rmd | grep -v biomarker | grep -v consensus | grep -v fitness | grep -v prolif`
+  rmd_files=`ls | grep Rmd | grep -v biomarker | grep -v data_prepro | grep -v consensus | grep -v fitness | grep -v prolif`
 else
   echo "Write: 'all' or 'some'!"
   exit 1
