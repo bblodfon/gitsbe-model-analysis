@@ -1,0 +1,69 @@
+---
+title: "Data Preprocessing"
+author: "[John Zobolas](https://github.com/bblodfon)"
+output: 
+  html_document:
+    theme: united
+---
+
+## Intro
+
+The purpose of this R markdown document is to extract from one or multiple 
+**models** directories the models' **stable states** and **boolean link 
+operators** to proper R data structures and save them for later use. This data 
+extraction can take some time and it is better to have the data in simple
+matrices before the analysis is done for each cell line.
+
+## Data Structure and Output
+
+The structure of the data and input to this document should be a 
+single directory (`input.dir`). In this directory there could be one or many 
+cell line directories, each one having a **models** directory (having all the 
+models produced by the `Gitsbe` module in `.gitsbe` format), a **model_predictions** 
+file, an **observed_synergies** file and maybe a **training_data** file. 
+
+The output will be two more files in each cell line directory: **models_stable_state** 
+and **models_equations**.
+
+## Data extraction
+
+```{r Helper functions}
+# Set the working directory to the gitsbe-model-analysis folder: 
+# setwd("pathTo/gitsbe-model-analysis")
+source("Rscripts/input_functions.R")
+source("Rscripts/output_functions.R")
+```
+
+```{r Input}
+# give the relative path to the input data dir
+input.dir = "/cell-lines-2500"
+data.dir = paste0(getwd(), input.dir)
+
+cell.line.dirs = list.dirs(path = data.dir, recursive = FALSE)
+```
+
+```{r Data extraction and saving}
+for (cell.line.dir in cell.line.dirs) {
+  cell.line = basename(cell.line.dir)
+  print(paste0("Saving files for ", cell.line, " cell line..."))
+  models.dir = paste0(cell.line.dir, "/models")
+  
+  model.predictions.file = paste0(cell.line.dir, "/model_predictions")
+  models.stable.state.file = paste0(cell.line.dir, "/models_stable_state")
+  models.equations.file = paste0(cell.line.dir, "/models_equations")
+  
+  # for having the row names in the same order
+  model.predictions = get.model.predictions(model.predictions.file)
+  models = rownames(model.predictions)
+  
+  models.stable.state = get.stable.state.from.models.dir(models.dir)
+  models.stable.state = models.stable.state[models,]
+  save.matrix.to.file(mat = models.stable.state, file = models.stable.state.file)
+  
+  models.equations = get.equations.from.models.dir(
+    models.dir, remove.equations.without.link.operator = TRUE
+  )
+  models.equations = models.equations[models,]
+  save.matrix.to.file(mat = models.equations, file = models.equations.file)
+}
+```
