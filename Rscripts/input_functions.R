@@ -77,6 +77,7 @@ prune.to.common.nodes.and.reorder = function(consensus.steady.state, nodes) {
   return(reordered.consensus.steady.state)
 }
 
+# Return a matrix (nxm): n models, m nodes
 get.stable.state.from.models.dir = function(models.dir) {
   files = list.files(models.dir)
   model.stable.states = character(length(files))
@@ -99,6 +100,7 @@ get.stable.state.from.models.dir = function(models.dir) {
   return(t(df))
 }
 
+# Return a matrix (nxm): n models, m nodes
 get.equations.from.models.dir =
   function(models.dir, remove.equations.without.link.operator) {
     files = list.files(models.dir)

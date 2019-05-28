@@ -225,6 +225,10 @@ save.df.to.file = function(df, file) {
               row.names = TRUE, sep = "\t")
 }
 
+save.matrix.to.file = function(mat, file) {
+  save.df.to.file(mat, file)
+}
+
 # We get the (previously-found) biomarkers from the respective file.
 # There are 3 policies regarding what to do with the 'new' biomarkers
 # when they share common nodes with the 'old' biomarkers. These are
