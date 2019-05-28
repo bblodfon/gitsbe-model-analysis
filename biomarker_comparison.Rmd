@@ -12,7 +12,7 @@ output:
     #self_contained: no
 ---
 
-## Intro
+# Biomarker comparison across 8 cell lines
 
 In this notebook we will compare the biomarker results from 8 different cell 
 lines. These results were obtained through an ensemble model analysis, which was
