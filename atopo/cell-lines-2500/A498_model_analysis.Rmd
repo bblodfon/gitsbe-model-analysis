@@ -6,7 +6,8 @@ output:
     df_print: paged
     theme: united # also good: default, cosmo, readable
     toc: true
-    toc_float: true
+    toc_float:
+      collapsed: false
     toc_depth: 5
     number_sections: false
     #self_contained: no
@@ -21,7 +22,7 @@ models were trained towards a specific steady state signaling pattern that was
 derived based on input data (gene expression, CNV) for the `A498` cell line, the 
 use of the [PARADIGM](https://doi.org/10.1093/bioinformatics/btq182) software and 
 a topology that was build for simulating a cancer cell fate decision network.
-The input for the simulations and the output data are in the `cell-lines-2500` 
+The input for the simulations and the output data are in the `atopo/cell-lines-2500` 
 directory (the 2500 number denotes the number of simulations executed). The 
 analysis will be presented step by step in the sections below.
 
@@ -35,20 +36,13 @@ library(Ckmeans.1d.dp) # version 4.2.2, see (Wang, 2011)
 library(circlize) # version 0.4.5, see (Gu, 2014)
 library(ComplexHeatmap) # version 1.99.5, see (Gu, 2016)
 library(png) # version 0.1.7, for drawing large heatmap
-```
-and the relevant helper functions:
-```{r Helper functions, message = FALSE}
-# Set the working directory to the gitsbe-model-analysis folder: 
-# setwd("pathTo/gitsbe-model-analysis")
-source("Rscripts/input_functions.R")
-source("Rscripts/output_functions.R")
-source("Rscripts/analysis_functions.R")
-source("Rscripts/plot_functions.R")
+library(usefun)
+library(emba)
 ```
 
 The R version used for this analysis is: 
 ```{r R version, results = 'asis'}
-pretty.print.string(R.version.string)
+pretty_print_string(R.version.string)
 ```
 
 ## Input
@@ -58,7 +52,7 @@ directory that has the input files inside the `cell-lines-2500` directory. Our
 analysis in this notebook will be done on the data for the `A498` cell line:
 ```{r Input: cell line}
 cell.line = "A498"
-data.dir = paste0(getwd(), "/cell-lines-2500/", cell.line, "/")
+data.dir = paste0(getwd(), "/", cell.line, "/")
 ```
 **Three inputs** are used in this analysis:
 
@@ -89,10 +83,10 @@ models.dir = paste0(data.dir, "models")
 Now, we parse the data into proper R objects. First the synergy predictions 
 per model:
 ```{r Input: model predictions, results = 'asis'}
-model.predictions = get.model.predictions(model.predictions.file)
+model.predictions = get_model_predictions(model.predictions.file)
 
 # Example: first model's synergy predictions (first 12 drug combinations)
-pretty.print.vector.names.and.values(model.predictions[1,], n = 12)
+pretty_print_vector_names_and_values(model.predictions[1,], n = 12)
 ```
 
 So, the `model.predictions` object has the models as rows and each column is a 
@@ -100,13 +94,13 @@ different drug combination that was tested in our simulations.
 ```{r Model&Drug Stats, results = 'asis'}
 drug.combinations.tested = colnames(model.predictions)
 models                   = rownames(model.predictions)
-nodes                    = get.node.names(models.dir)
+nodes                    = get_node_names(models.dir)
 
 number.of.drug.comb.tested = length(drug.combinations.tested)
 number.of.models           = length(models)
 number.of.nodes            = length(nodes)
 
-print.model.and.drug.stats(number.of.drug.comb.tested, number.of.models, 
+print_model_and_drug_stats(number.of.drug.comb.tested, number.of.models, 
                            number.of.nodes, html.output = TRUE)
 ```
 
@@ -117,7 +111,7 @@ models.stable.state = as.matrix(
 )
 
 # Example: first model's stable state (first 12 nodes)
-pretty.print.vector.names.and.values(models.stable.state[1,], n = 12)
+pretty_print_vector_names_and_values(models.stable.state[1,], n = 12)
 ```
 
 The rows of the `models.stable.state` object represent the models while its 
@@ -131,7 +125,7 @@ models.equations = as.matrix(
 )
 
 # Example: first model's link operators (first 12 nodes)
-pretty.print.vector.names.and.values(models.equations[1,], n = 12)
+pretty_print_vector_names_and_values(models.equations[1,], n = 12)
 ```
 
 For the `models.equations`, if we look at a specific row (a model so to speak), 
@@ -142,7 +136,7 @@ is:
 ```{r General Form of the Logical Regulation Equation, results = 'asis'}
 general.equation = 
   "Target *= (Activator OR Activator OR...) AND NOT (Inhibitor OR Inhibitor OR...)"
-pretty.print.bold.string(general.equation)
+pretty_print_bold_string(general.equation)
 ```
 
 The difference between the models' boolean equations is the *link operator* 
@@ -158,11 +152,11 @@ the equations whose link operators differentiate between the models.
 
 Lastly, the synergies observed for this particular cell line are:
 ```{r Input: observed synergies, results = 'asis'}
-observed.synergies = get.observed.synergies(
+observed.synergies = get_observed_synergies(
   observed.synergies.file, drug.combinations.tested)
 number.of.observed.synergies = length(observed.synergies)
 
-pretty.print.vector.values(observed.synergies, 
+pretty_print_vector_values(observed.synergies, 
                            vector.values.str = "observed synergies")
 ```
 
@@ -177,13 +171,13 @@ combinations that no model in our dataset could predict):
 # Subset the model.data to the observed synergies
 observed.model.predictions = 
   model.predictions[,sapply(drug.combinations.tested, function(drug.comb) {
-    is.correct.synergy(drug.comb, observed.synergies)
+    is_comb_element_of(drug.comb, observed.synergies)
   })]
 
 # Subset the model.data to the unobserved synergies
 unobserved.model.predictions = 
   model.predictions[,sapply(drug.combinations.tested, function(drug.comb) {
-    !is.correct.synergy(drug.comb, observed.synergies)
+    !is_comb_element_of(drug.comb, observed.synergies)
   })]
 
 stopifnot(dim(observed.model.predictions)[2] + 
@@ -196,13 +190,13 @@ predicted.synergies = names(number.of.models.per.observed.synergy)[
 ```
 
 ```{r Print synergy stats, results = 'asis'}
-pretty.print.vector.values(predicted.synergies, 
+pretty_print_vector_values(predicted.synergies, 
                            vector.values.str = "predicted synergies")
 
 predicted.synergies.percentage = 100 * length(predicted.synergies) /
                     number.of.observed.synergies
-pretty.print.string(paste0("Percentage of True Positive predicted synergies: ", 
-                    specify.decimal(predicted.synergies.percentage, 2), "%"))
+pretty_print_string(paste0("Percentage of True Positive predicted synergies: ", 
+                    specify_decimal(predicted.synergies.percentage, 2), "%"))
 ```
 
 So, for this particular cell line, **there were indeed observed synergies that no 
@@ -228,12 +222,12 @@ names(predicted.synergies.powerset) =
   }) 
 synergy.subset.stats = 
   sapply(predicted.synergies.powerset, function(drug.comb.set) {
-    count.models.that.predict.synergy.set(drug.comb.set, observed.model.predictions) 
+    count_models_that_predict_synergies(drug.comb.set, observed.model.predictions) 
 })
 
 # Bar plot of the number of models for every possible observed synergy combination set
 # Tweak the threshold.for.subset.removal and bottom.margin as desired
-make.barplot.on.synergy.subset.stats(synergy.subset.stats,
+make_barplot_on_synergy_subset_stats(synergy.subset.stats,
                                      threshold.for.subset.removal = 1, 
                                      bottom.margin = 9, cell.line)
 ```
@@ -253,10 +247,10 @@ models.synergies.tp = apply(observed.model.predictions, 1, sum, na.rm = T)
 models.synergies.tp.stats = table(models.synergies.tp)
 
 # Bar plot of number of models vs correctly predicted synergies
-make.barplot.on.models.stats(models.synergies.tp.stats, cell.line, 
-                            title = "True Positive Synergy Predictions",
-                            xlab = "Number of maximum correctly predicted synergies",
-                            ylab = "Number of models")
+make_barplot_on_models_stats(models.synergies.tp.stats, cell.line, 
+                             title = "True Positive Synergy Predictions",
+                             xlab = "Number of maximum correctly predicted synergies",
+                             ylab = "Number of models")
 ```
 
 To summarize:
@@ -316,7 +310,7 @@ tp.values = as.numeric(names(models.synergies.tp.stats))
 tp.values.comb = t(combn(tp.values, 2))
 
 diff.tp.results = apply(tp.values.comb, 1, function(comb) {
-  return(get.avg.activity.diff.based.on.tp.predictions(
+  return(get_avg_activity_diff_based_on_tp_predictions(
     models, models.synergies.tp, models.stable.state, 
     num.low = comb[1], num.high = comb[2]))
 })
