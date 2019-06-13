@@ -4,6 +4,9 @@ author: "[John Zobolas](https://github.com/bblodfon)"
 output: 
   html_document:
     theme: united
+    toc: true
+    toc_float:
+      collapsed: false
 ---
 
 ## Intro
@@ -11,8 +14,9 @@ output:
 The purpose of this R markdown document is to extract from one or multiple 
 **models** directories the models' **stable states** and **boolean link 
 operators** to proper R data structures and save them for later use. This data 
-extraction can take some time and it is better to have the data in simple
-matrices before the analysis is done for each cell line.
+extraction can take some time and it is better to have the data in tab delimited
+files, ready to be loaded as matrices before the analysis is done for each cell 
+line.
 
 ## Data Structure and Output
 
@@ -27,16 +31,14 @@ and **models_equations**.
 
 ## Data extraction
 
-```{r Helper functions}
-# Set the working directory to the gitsbe-model-analysis folder: 
-# setwd("pathTo/gitsbe-model-analysis")
-source("Rscripts/input_functions.R")
-source("Rscripts/output_functions.R")
+```{r Load libraries, message = FALSE}
+library(usefun)
+library(emba)
 ```
 
 ```{r Input}
 # give the relative path to the input data dir
-input.dir = "/cell-lines-2500"
+input.dir = "/atopo/cell-lines-2500"
 data.dir = paste0(getwd(), input.dir)
 
 cell.line.dirs = list.dirs(path = data.dir, recursive = FALSE)
@@ -53,17 +55,15 @@ for (cell.line.dir in cell.line.dirs) {
   models.equations.file = paste0(cell.line.dir, "/models_equations")
   
   # for having the row names in the same order
-  model.predictions = get.model.predictions(model.predictions.file)
+  model.predictions = get_model_predictions(model.predictions.file)
   models = rownames(model.predictions)
   
-  models.stable.state = get.stable.state.from.models.dir(models.dir)
+  models.stable.state = get_stable_state_from_models_dir(models.dir)
   models.stable.state = models.stable.state[models,]
-  save.matrix.to.file(mat = models.stable.state, file = models.stable.state.file)
+  save_mat_to_file(mat = models.stable.state, file = models.stable.state.file)
   
-  models.equations = get.equations.from.models.dir(
-    models.dir, remove.equations.without.link.operator = TRUE
-  )
+  models.equations = get_equations_from_models_dir(models.dir)
   models.equations = models.equations[models,]
-  save.matrix.to.file(mat = models.equations, file = models.equations.file)
+  save_mat_to_file(mat = models.equations, file = models.equations.file)
 }
 ```
