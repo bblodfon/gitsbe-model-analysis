@@ -62,7 +62,7 @@ for (cell.line.dir in cell.line.dirs) {
   models.stable.state = models.stable.state[models,]
   save_mat_to_file(mat = models.stable.state, file = models.stable.state.file)
   
-  models.equations = get_equations_from_models_dir(models.dir)
+  models.equations = get_link_operators_from_models_dir(models.dir)
   models.equations = models.equations[models,]
   save_mat_to_file(mat = models.equations, file = models.equations.file)
 }
