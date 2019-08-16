@@ -1,0 +1,15 @@
+bookdown::gitbook:
+  split_bib: false
+  toc_depth: 4
+  config:
+    toc:
+      before: |
+        <li><a href="./">Biomarker atopo analysis</a></li>
+      after: |
+        <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
+    download: no
+    sharing:
+      github: yes
+      twitter: no
+      facebook: no
+      all: no

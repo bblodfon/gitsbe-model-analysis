@@ -1,0 +1,25 @@
+# Session Info {-}
+
+For the main R packages that I used in this analysis see:
+[@Wang2011], [@R-circlize], [@Gu2016], [@R-usefun], [@R-emba].
+
+A very useful tutorial about network visualization in R that I used: [@Ognyanova2019]
+
+We provide for reproducibity purposes the information about the R session that 
+is used throughout this bookdown document:
+
+```{r Load libraries, message = FALSE, echo = FALSE}
+library(Ckmeans.1d.dp)
+library(circlize)
+library(ComplexHeatmap)
+library(png)
+library(usefun)
+library(emba)
+```
+
+```{r session info}
+xfun::session_info()
+```
+
+# References {-}
+
