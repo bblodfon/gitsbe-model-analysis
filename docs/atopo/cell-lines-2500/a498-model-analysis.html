@@ -31,7 +31,7 @@
   
   
 <link rel="prev" href="index.html">
-<link rel="next" href="session-info.html">
+<link rel="next" href="ags-model-analysis.html">
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
@@ -870,6 +870,23 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#biomarker-results"><i class="fa fa-check"></i>Biomarker results</a></li>
 </ul></li>
 </ul></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html"><i class="fa fa-check"></i>AGS Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#input-1"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#performance-statistics-1"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#biomarker-analysis-1"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#intro-methods-1"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#true-positives-based-analysis-1"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#mcc-classification-based-analysis-1"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#performance-related-biomarkers-1"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#equation-based-analysis-1"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#synergy-prediction-based-analysis-1"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#synergy-set-prediction-based-analysis-1"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#bi-d1-synergy"><i class="fa fa-check"></i>BI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#pi-d1-synergy"><i class="fa fa-check"></i>PI-D1 synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#biomarker-results-1"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
 <li class="chapter" data-level="" data-path="session-info.html"><a href="session-info.html"><i class="fa fa-check"></i>Session Info</a></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
@@ -1447,7 +1464,7 @@ object raw-order by the number of <span class="math inline">\(TP\)</span> predic
 <a class="sourceLine" id="cb38-6" title="6"><span class="co"># coloring</span></a>
 <a class="sourceLine" id="cb38-7" title="7">eq.link.colors =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;lightyellow&quot;</span>)</a>
 <a class="sourceLine" id="cb38-8" title="8">eq.link.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="dt">colors =</span> eq.link.colors)</a>
-<a class="sourceLine" id="cb38-9" title="9">tp.values =<span class="st"> </span><span class="kw">unique</span>(models.synergies.tp)</a>
+<a class="sourceLine" id="cb38-9" title="9">tp.values =<span class="st"> </span><span class="kw">sort</span>(<span class="kw">unique</span>(models.synergies.tp))</a>
 <a class="sourceLine" id="cb38-10" title="10">tp.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="kw">min</span>(tp.values), <span class="kw">max</span>(tp.values)), </a>
 <a class="sourceLine" id="cb38-11" title="11">                         <span class="dt">colors =</span> <span class="kw">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;green&quot;</span>))</a>
 <a class="sourceLine" id="cb38-12" title="12"></a>
@@ -1822,7 +1839,7 @@ the performance-related biomarkers</li>
         </div>
       </div>
 <a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="session-info.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="ags-model-analysis.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -1861,7 +1878,7 @@ gitbook.start({
 },
 "download": null,
 "toc": {
-"collapse": "subsection"
+"collapse": "section"
 }
 });
 });
