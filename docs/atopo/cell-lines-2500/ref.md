@@ -18,7 +18,7 @@ xfun::session_info()
 ```
 ## R version 3.6.1 (2019-07-05)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 18.04.2 LTS
+## Running under: Ubuntu 18.04.3 LTS
 ## 
 ## Locale:
 ##   LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
