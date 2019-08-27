@@ -1,5 +1,6 @@
 book_filename: "atopo_analysis"
 output_dir: "../../docs/atopo/cell-lines-2500"
-rmd_files: ["index.Rmd", "A498_model_analysis.Rmd", "ref.Rmd"]
+rmd_files: ["index.Rmd", "A498_model_analysis.Rmd",
+  "AGS_model_analysis.Rmd", "ref.Rmd"]
 new_session: true
 delete_merged_file: true

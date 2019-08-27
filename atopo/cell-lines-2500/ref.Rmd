@@ -12,7 +12,6 @@ is used throughout this bookdown document:
 library(Ckmeans.1d.dp)
 library(circlize)
 library(ComplexHeatmap)
-library(png)
 library(usefun)
 library(emba)
 ```

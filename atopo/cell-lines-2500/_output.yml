@@ -1,10 +1,12 @@
 bookdown::gitbook:
+  #dev: svglite # in case I need svg images
   includes:
     in_header: hide_code.html
   split_bib: false
   toc_depth: 4
   config:
     toc:
+      collapse: section
       before: |
         <li><a href="./">Biomarker atopo analysis</a></li>
       after: |
