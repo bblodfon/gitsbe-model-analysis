@@ -15,7 +15,6 @@ analysis will be presented step by step in the sections below.
 library(Ckmeans.1d.dp)
 library(circlize)
 library(ComplexHeatmap)
-library(png)
 library(usefun)
 library(emba)
 ```
@@ -580,7 +579,7 @@ models.equations.sorted = models.equations[models.sorted, ]
 # coloring
 eq.link.colors = c("red", "lightyellow")
 eq.link.col.fun = colorRamp2(breaks = c(0, 1), colors = eq.link.colors)
-tp.values = unique(models.synergies.tp)
+tp.values = sort(unique(models.synergies.tp))
 tp.col.fun = colorRamp2(breaks = c(min(tp.values), max(tp.values)), 
                          colors = c("red", "green"))
 
