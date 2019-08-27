@@ -1,4 +1,6 @@
 bookdown::gitbook:
+  includes:
+    in_header: hide_code.html
   split_bib: false
   toc_depth: 4
   config:
