@@ -1,12 +1,9 @@
 ---
-title: "Data Preprocessing"
+title: "Ensemble Boolean Model Data Preprocessing"
 author: "[John Zobolas](https://github.com/bblodfon)"
 output: 
   html_document:
     theme: united
-    toc: true
-    toc_float:
-      collapsed: false
 ---
 
 ## Intro
@@ -14,38 +11,49 @@ output:
 The purpose of this R markdown document is to extract from one or multiple 
 **models** directories the models' **stable states** and **boolean link 
 operators** to proper R data structures and save them for later use. This data 
-extraction can take some time and it is better to have the data in tab delimited
+extraction can take some time and it is better to have the data in tab-delimited
 files, ready to be loaded as matrices before the analysis is done for each cell 
 line.
 
 ## Data Structure and Output
 
 The structure of the data and input to this document should be a 
-single directory (`input.dir`). In this directory there could be one or many 
-cell line directories, each one having a **models** directory (having all the 
-models produced by the `Gitsbe` module in `.gitsbe` format), a **model_predictions** 
-file, an **observed_synergies** file and maybe a **training_data** file. 
+single directory (`input.dir`). This directory must have
+one or many `cell line` directories, each one having:
+
+- A **models** directory (the models produced by the `Gitsbe` module in 
+`.gitsbe` format).
+- A **model_predictions** file
+- An **observed_synergies** file 
+- Maybe a **training_data** file!
 
 The output will be two more files in each cell line directory: **models_stable_state** 
 and **models_equations**.
 
 ## Data extraction
 
+Necessary libraries:
 ```{r Load libraries, message = FALSE}
 library(usefun)
 library(emba)
 ```
 
+For input, we provide the relative path to the data dir:
 ```{r Input}
-# give the relative path to the input data dir
 input.dir = "/atopo/cell-lines-2500"
 data.dir = paste0(getwd(), input.dir)
 
 cell.line.dirs = list.dirs(path = data.dir, recursive = FALSE)
 ```
 
-```{r Data extraction and saving}
+Note that below R code does not subset the models to the **unique** ones 
+(those that have the exactly the same boolean equations, i.e. same link 
+operators in our models). Such a processing should be done (if it is desirable) 
+when the models' data is loaded in a seperate analysis document.
+
+```{r Data extraction and saving, eval=FALSE}
 for (cell.line.dir in cell.line.dirs) {
+  # cell line name same as the directory name
   cell.line = basename(cell.line.dir)
   print(paste0("Saving files for ", cell.line, " cell line..."))
   models.dir = paste0(cell.line.dir, "/models")
@@ -54,7 +62,7 @@ for (cell.line.dir in cell.line.dirs) {
   models.stable.state.file = paste0(cell.line.dir, "/models_stable_state")
   models.equations.file = paste0(cell.line.dir, "/models_equations")
   
-  # for having the row names in the same order
+  # for having the row names in the same order as in the 'model_predictions' file
   model.predictions = get_model_predictions(model.predictions.file)
   models = rownames(model.predictions)
   
