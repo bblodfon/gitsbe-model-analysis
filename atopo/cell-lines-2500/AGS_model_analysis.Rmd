@@ -146,8 +146,8 @@ observed.model.predictions =
 unobserved.model.predictions = 
   get_unobserved_model_predictions(model.predictions, observed.synergies)
 
-stopifnot(dim(observed.model.predictions)[2] + 
-          dim(unobserved.model.predictions)[2] == number.of.drug.comb.tested)
+stopifnot(ncol(observed.model.predictions) 
+          + ncol(unobserved.model.predictions) == number.of.drug.comb.tested)
 
 number.of.models.per.observed.synergy = 
   colSums(observed.model.predictions, na.rm = TRUE)
