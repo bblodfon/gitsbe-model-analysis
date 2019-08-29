@@ -16,7 +16,7 @@ library(usefun)
 library(emba)
 ```
 
-```{r session info}
+```{r session info, comment=""}
 xfun::session_info()
 ```
 
