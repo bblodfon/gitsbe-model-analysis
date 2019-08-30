@@ -1,7 +1,7 @@
 ---
 title: "Biomarker Atopo Analysis (2500 models per cell line, 8 cell lines)"
 author: "John Zobolas"
-date: "Last updated: 29 August, 2019"
+date: "Last updated: 30 August, 2019"
 knit: bookdown::render_book # to render the whole book not just this chapter
 site: bookdown::bookdown_site
 description: "Description"
