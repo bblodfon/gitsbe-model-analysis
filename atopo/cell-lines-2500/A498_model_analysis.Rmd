@@ -450,7 +450,7 @@ skewed*. Next, we visualize the average state differences with our network
 coloring method for 2 of the above cases, in order to identify the important 
 nodes whose activity state can influence the prediction performance based on 
 the MCC classification:
-```{r Graphs: Good vs Bad models based on the MCC classification,cache=TRUE}
+```{r Graphs: Good vs Bad models based on the MCC classification, cache=TRUE}
 plot_avg_state_diff_graph(net, diff.mcc.results["(1,2)",], layout = nice.layout, 
              title = "Bad models (MCC Class: 1) vs Good models (MCC Class: 2)")
 plot_avg_state_diff_graph(net, diff.mcc.results["(3,4)",], layout = nice.layout, 
