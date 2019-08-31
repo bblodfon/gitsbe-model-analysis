@@ -4,11 +4,11 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>DU145 Model Analysis | Biomarker Atopo Analysis (2500 models per cell line, 8 cell lines)</title>
+  <title>DU145 Model Analysis | Biomarker Atopo Analysis</title>
   <meta name="description" content="Description" />
   <meta name="generator" content="bookdown 0.12 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="DU145 Model Analysis | Biomarker Atopo Analysis (2500 models per cell line, 8 cell lines)" />
+  <meta property="og:title" content="DU145 Model Analysis | Biomarker Atopo Analysis" />
   <meta property="og:type" content="book" />
   <meta property="og:url" content="https://bblodfon.github.io/gitsbe-model-analysis/" />
   
@@ -16,7 +16,7 @@
   <meta name="github-repo" content="bblodfon/gitsbe-model-analysis" />
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="DU145 Model Analysis | Biomarker Atopo Analysis (2500 models per cell line, 8 cell lines)" />
+  <meta name="twitter:title" content="DU145 Model Analysis | Biomarker Atopo Analysis" />
   
   <meta name="twitter:description" content="Description" />
   
@@ -999,7 +999,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#biomarker-results-7"><i class="fa fa-check"></i>Biomarker results</a></li>
 </ul></li>
 </ul></li>
-<li class="chapter" data-level="" data-path="session-info.html"><a href="session-info.html"><i class="fa fa-check"></i>Session Info</a></li>
+<li class="chapter" data-level="" data-path="r-session-info.html"><a href="r-session-info.html"><i class="fa fa-check"></i>R Session Info</a></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
@@ -1013,7 +1013,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
       <div class="body-inner">
         <div class="book-header" role="navigation">
           <h1>
-            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Biomarker Atopo Analysis (2500 models per cell line, 8 cell lines)</a>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Biomarker Atopo Analysis</a>
           </h1>
         </div>
 
@@ -1833,9 +1833,9 @@ MCC classification-based model analysis:</p>
 <a class="sourceLine" id="cb166-9" title="9"></a>
 <a class="sourceLine" id="cb166-10" title="10"><span class="co"># Biomarkers from section:</span></a>
 <a class="sourceLine" id="cb166-11" title="11"><span class="co"># `Performance-related biomarkers`</span></a>
-<a class="sourceLine" id="cb166-12" title="12">biomarkers.res =<span class="st"> </span><span class="kw">add_row_to_biomarkers_df</span>(biomarkers.synergy.res, </a>
-<a class="sourceLine" id="cb166-13" title="13">                                          biomarkers.perf.active, </a>
-<a class="sourceLine" id="cb166-14" title="14">                                          biomarkers.perf.inhibited)</a>
+<a class="sourceLine" id="cb166-12" title="12">biomarkers.res =<span class="st"> </span></a>
+<a class="sourceLine" id="cb166-13" title="13"><span class="st">  </span><span class="kw">add_row_to_ternary_df</span>(<span class="dt">df =</span> biomarkers.synergy.res, <span class="dt">values.pos =</span> biomarkers.perf.active, </a>
+<a class="sourceLine" id="cb166-14" title="14">                        <span class="dt">values.neg =</span> biomarkers.perf.inhibited, <span class="dt">row.name =</span> <span class="st">&quot;PERF&quot;</span>)</a>
 <a class="sourceLine" id="cb166-15" title="15"></a>
 <a class="sourceLine" id="cb166-16" title="16"><span class="co"># prune nodes which are not found as biomarkers for any predicted synergy or</span></a>
 <a class="sourceLine" id="cb166-17" title="17"><span class="co"># for better model performance</span></a>

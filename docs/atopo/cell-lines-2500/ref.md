@@ -1,11 +1,13 @@
-# Session Info {-}
+# R Session Info {-}
 
 For the main R packages that I used in this analysis see:
 [@Wang2011], [@R-circlize], [@Gu2016], [@R-usefun], [@R-emba].
 
 A very useful tutorial about network visualization in R that I used: [@Ognyanova2019]
 
-We provide for reproducibity purposes the information about the R session that 
+For adding code folding buttons in `bookdown::gitbook` see [@Roche2017Enabl].
+
+I also provide for reproducibity purposes the information about the R session that 
 is used throughout this bookdown document:
 
 
@@ -48,7 +50,7 @@ Package version:
   rjson_0.2.20         rlang_0.4.0          rmarkdown_1.14      
   shape_1.4.4          stats_3.6.1          stringi_1.4.3       
   stringr_1.4.0        tibble_2.1.3         tidyselect_0.2.5    
-  tinytex_0.15         tools_3.6.1          usefun_0.3.3        
+  tinytex_0.15         tools_3.6.1          usefun_0.3.4        
   utf8_1.1.4           utils_3.6.1          vctrs_0.2.0         
   visNetwork_2.0.7     xfun_0.8             yaml_2.2.0          
   zeallot_0.1.0       

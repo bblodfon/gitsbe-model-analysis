@@ -1004,9 +1004,9 @@ save_df_to_file(biomarkers.synergy.res, file =
 
 # Biomarkers from section:
 # `Performance-related biomarkers`
-biomarkers.res = add_row_to_biomarkers_df(biomarkers.synergy.res, 
-                                          biomarkers.perf.active, 
-                                          biomarkers.perf.inhibited)
+biomarkers.res = 
+  add_row_to_ternary_df(df = biomarkers.synergy.res, values.pos = biomarkers.perf.active, 
+                        values.neg = biomarkers.perf.inhibited, row.name = "PERF")
 
 # prune nodes which are not found as biomarkers for any predicted synergy or
 # for better model performance
