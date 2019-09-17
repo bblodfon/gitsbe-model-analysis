@@ -50,7 +50,7 @@ Package version:
   rjson_0.2.20         rlang_0.4.0          rmarkdown_1.14      
   shape_1.4.4          stats_3.6.1          stringi_1.4.3       
   stringr_1.4.0        tibble_2.1.3         tidyselect_0.2.5    
-  tinytex_0.15         tools_3.6.1          usefun_0.3.4        
+  tinytex_0.15         tools_3.6.1          usefun_0.4.0        
   utf8_1.1.4           utils_3.6.1          vctrs_0.2.0         
   visNetwork_2.0.7     xfun_0.8             yaml_2.2.0          
   zeallot_0.1.0       

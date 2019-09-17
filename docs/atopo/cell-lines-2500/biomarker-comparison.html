@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Biomarker comparison | Biomarker Atopo Analysis</title>
+  <meta name="description" content="Description" />
+  <meta name="generator" content="bookdown 0.12 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Biomarker comparison | Biomarker Atopo Analysis" />
+  <meta property="og:type" content="book" />
+  <meta property="og:url" content="https://bblodfon.github.io/gitsbe-model-analysis/" />
+  
+  <meta property="og:description" content="Description" />
+  <meta name="github-repo" content="bblodfon/gitsbe-model-analysis" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Biomarker comparison | Biomarker Atopo Analysis" />
+  
+  <meta name="twitter:description" content="Description" />
+  
+
+<meta name="author" content="John Zobolas" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="mda-mb-468-model-analysis.html">
+<link rel="next" href="r-session-info.html">
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<script>
+/* ========================================================================
+ * Bootstrap: transition.js v3.3.7
+ * http://getbootstrap.com/javascript/#transitions
+ * ========================================================================
+ * Copyright 2011-2016 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ * ======================================================================== */
+
+
++function ($) {
+  'use strict';
+
+  // CSS TRANSITION SUPPORT (Shoutout: http://www.modernizr.com/)
+  // ============================================================
+
+  function transitionEnd() {
+    var el = document.createElement('bootstrap')
+
+    var transEndEventNames = {
+      WebkitTransition : 'webkitTransitionEnd',
+      MozTransition    : 'transitionend',
+      OTransition      : 'oTransitionEnd otransitionend',
+      transition       : 'transitionend'
+    }
+
+    for (var name in transEndEventNames) {
+      if (el.style[name] !== undefined) {
+        return { end: transEndEventNames[name] }
+      }
+    }
+
+    return false // explicit for ie8 (  ._.)
+  }
+
+  // http://blog.alexmaccaw.com/css-transitions
+  $.fn.emulateTransitionEnd = function (duration) {
+    var called = false
+    var $el = this
+    $(this).one('bsTransitionEnd', function () { called = true })
+    var callback = function () { if (!called) $($el).trigger($.support.transition.end) }
+    setTimeout(callback, duration)
+    return this
+  }
+
+  $(function () {
+    $.support.transition = transitionEnd()
+
+    if (!$.support.transition) return
+
+    $.event.special.bsTransitionEnd = {
+      bindType: $.support.transition.end,
+      delegateType: $.support.transition.end,
+      handle: function (e) {
+        if ($(e.target).is(this)) return e.handleObj.handler.apply(this, arguments)
+      }
+    }
+  })
+
+}(jQuery);
+</script>
+<script>
+/* ========================================================================
+ * Bootstrap: collapse.js v3.3.7
+ * http://getbootstrap.com/javascript/#collapse
+ * ========================================================================
+ * Copyright 2011-2016 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ * ======================================================================== */
+
+/* jshint latedef: false */
+
++function ($) {
+  'use strict';
+
+  // COLLAPSE PUBLIC CLASS DEFINITION
+  // ================================
+
+  var Collapse = function (element, options) {
+    this.$element      = $(element)
+    this.options       = $.extend({}, Collapse.DEFAULTS, options)
+    this.$trigger      = $('[data-toggle="collapse"][href="#' + element.id + '"],' +
+                           '[data-toggle="collapse"][data-target="#' + element.id + '"]')
+    this.transitioning = null
+
+    if (this.options.parent) {
+      this.$parent = this.getParent()
+    } else {
+      this.addAriaAndCollapsedClass(this.$element, this.$trigger)
+    }
+
+    if (this.options.toggle) this.toggle()
+  }
+
+  Collapse.VERSION  = '3.3.7'
+
+  Collapse.TRANSITION_DURATION = 350
+
+  Collapse.DEFAULTS = {
+    toggle: true
+  }
+
+  Collapse.prototype.dimension = function () {
+    var hasWidth = this.$element.hasClass('width')
+    return hasWidth ? 'width' : 'height'
+  }
+
+  Collapse.prototype.show = function () {
+    if (this.transitioning || this.$element.hasClass('in')) return
+
+    var activesData
+    var actives = this.$parent && this.$parent.children('.panel').children('.in, .collapsing')
+
+    if (actives && actives.length) {
+      activesData = actives.data('bs.collapse')
+      if (activesData && activesData.transitioning) return
+    }
+
+    var startEvent = $.Event('show.bs.collapse')
+    this.$element.trigger(startEvent)
+    if (startEvent.isDefaultPrevented()) return
+
+    if (actives && actives.length) {
+      Plugin.call(actives, 'hide')
+      activesData || actives.data('bs.collapse', null)
+    }
+
+    var dimension = this.dimension()
+
+    this.$element
+      .removeClass('collapse')
+      .addClass('collapsing')[dimension](0)
+      .attr('aria-expanded', true)
+
+    this.$trigger
+      .removeClass('collapsed')
+      .attr('aria-expanded', true)
+
+    this.transitioning = 1
+
+    var complete = function () {
+      this.$element
+        .removeClass('collapsing')
+        .addClass('collapse in')[dimension]('')
+      this.transitioning = 0
+      this.$element
+        .trigger('shown.bs.collapse')
+    }
+
+    if (!$.support.transition) return complete.call(this)
+
+    var scrollSize = $.camelCase(['scroll', dimension].join('-'))
+
+    this.$element
+      .one('bsTransitionEnd', $.proxy(complete, this))
+      .emulateTransitionEnd(Collapse.TRANSITION_DURATION)[dimension](this.$element[0][scrollSize])
+  }
+
+  Collapse.prototype.hide = function () {
+    if (this.transitioning || !this.$element.hasClass('in')) return
+
+    var startEvent = $.Event('hide.bs.collapse')
+    this.$element.trigger(startEvent)
+    if (startEvent.isDefaultPrevented()) return
+
+    var dimension = this.dimension()
+
+    this.$element[dimension](this.$element[dimension]())[0].offsetHeight
+
+    this.$element
+      .addClass('collapsing')
+      .removeClass('collapse in')
+      .attr('aria-expanded', false)
+
+    this.$trigger
+      .addClass('collapsed')
+      .attr('aria-expanded', false)
+
+    this.transitioning = 1
+
+    var complete = function () {
+      this.transitioning = 0
+      this.$element
+        .removeClass('collapsing')
+        .addClass('collapse')
+        .trigger('hidden.bs.collapse')
+    }
+
+    if (!$.support.transition) return complete.call(this)
+
+    this.$element
+      [dimension](0)
+      .one('bsTransitionEnd', $.proxy(complete, this))
+      .emulateTransitionEnd(Collapse.TRANSITION_DURATION)
+  }
+
+  Collapse.prototype.toggle = function () {
+    this[this.$element.hasClass('in') ? 'hide' : 'show']()
+  }
+
+  Collapse.prototype.getParent = function () {
+    return $(this.options.parent)
+      .find('[data-toggle="collapse"][data-parent="' + this.options.parent + '"]')
+      .each($.proxy(function (i, element) {
+        var $element = $(element)
+        this.addAriaAndCollapsedClass(getTargetFromTrigger($element), $element)
+      }, this))
+      .end()
+  }
+
+  Collapse.prototype.addAriaAndCollapsedClass = function ($element, $trigger) {
+    var isOpen = $element.hasClass('in')
+
+    $element.attr('aria-expanded', isOpen)
+    $trigger
+      .toggleClass('collapsed', !isOpen)
+      .attr('aria-expanded', isOpen)
+  }
+
+  function getTargetFromTrigger($trigger) {
+    var href
+    var target = $trigger.attr('data-target')
+      || (href = $trigger.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') // strip for ie7
+
+    return $(target)
+  }
+
+
+  // COLLAPSE PLUGIN DEFINITION
+  // ==========================
+
+  function Plugin(option) {
+    return this.each(function () {
+      var $this   = $(this)
+      var data    = $this.data('bs.collapse')
+      var options = $.extend({}, Collapse.DEFAULTS, $this.data(), typeof option == 'object' && option)
+
+      if (!data && options.toggle && /show|hide/.test(option)) options.toggle = false
+      if (!data) $this.data('bs.collapse', (data = new Collapse(this, options)))
+      if (typeof option == 'string') data[option]()
+    })
+  }
+
+  var old = $.fn.collapse
+
+  $.fn.collapse             = Plugin
+  $.fn.collapse.Constructor = Collapse
+
+
+  // COLLAPSE NO CONFLICT
+  // ====================
+
+  $.fn.collapse.noConflict = function () {
+    $.fn.collapse = old
+    return this
+  }
+
+
+  // COLLAPSE DATA-API
+  // =================
+
+  $(document).on('click.bs.collapse.data-api', '[data-toggle="collapse"]', function (e) {
+    var $this   = $(this)
+
+    if (!$this.attr('data-target')) e.preventDefault()
+
+    var $target = getTargetFromTrigger($this)
+    var data    = $target.data('bs.collapse')
+    var option  = data ? 'toggle' : $this.data()
+
+    Plugin.call($target, option)
+  })
+
+}(jQuery);
+</script>
+<script>
+window.initializeCodeFolding = function(show) {
+
+  // handlers for show-all and hide all
+  $("#rmd-show-all-code").click(function() {
+    // close the dropdown menu when an option is clicked
+    $("#allCodeButton").dropdown("toggle");
+    $('div.r-code-collapse').each(function() {
+      $(this).collapse('show');
+    });
+  });
+  $("#rmd-hide-all-code").click(function() {
+    // close the dropdown menu when an option is clicked
+    $("#allCodeButton").dropdown("toggle");
+    $('div.r-code-collapse').each(function() {
+      $(this).collapse('hide');
+    });
+  });
+
+  // index for unique code element ids
+  var currentIndex = 1;
+
+  // select all R code blocks
+  var rCodeBlocks = $('pre.sourceCode, pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan');
+  rCodeBlocks.each(function() {
+
+    // create a collapsable div to wrap the code in
+    var div = $('<div class="collapse r-code-collapse"></div>');
+    if (show)
+      div.addClass('in');
+    var id = 'rcode-643E0F36' + currentIndex++;
+    div.attr('id', id);
+    $(this).before(div);
+    $(this).detach().appendTo(div);
+
+    // add a show code button right above
+    var showCodeText = $('<span>' + (show ? 'Hide' : 'Code') + '</span>');
+    var showCodeButton = $('<button type="button" class="btn btn-default btn-xs code-folding-btn pull-right"></button>');
+    showCodeButton.append(showCodeText);
+    showCodeButton
+        .attr('data-toggle', 'collapse')
+        .attr('data-target', '#' + id)
+        .attr('aria-expanded', show)
+        .attr('aria-controls', id);
+
+    var buttonRow = $('<div class="row"></div>');
+    var buttonCol = $('<div class="col-md-12"></div>');
+
+    buttonCol.append(showCodeButton);
+    buttonRow.append(buttonCol);
+
+    div.before(buttonRow);
+
+    // update state of button on show/hide
+    div.on('hidden.bs.collapse', function () {
+      showCodeText.text('Code');
+    });
+    div.on('show.bs.collapse', function () {
+      showCodeText.text('Hide');
+    });
+  });
+
+}
+</script>
+<script>
+/* ========================================================================
+ * Bootstrap: dropdown.js v3.3.7
+ * http://getbootstrap.com/javascript/#dropdowns
+ * ========================================================================
+ * Copyright 2011-2016 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ * ======================================================================== */
+
+
++function ($) {
+  'use strict';
+
+  // DROPDOWN CLASS DEFINITION
+  // =========================
+
+  var backdrop = '.dropdown-backdrop'
+  var toggle   = '[data-toggle="dropdown"]'
+  var Dropdown = function (element) {
+    $(element).on('click.bs.dropdown', this.toggle)
+  }
+
+  Dropdown.VERSION = '3.3.7'
+
+  function getParent($this) {
+    var selector = $this.attr('data-target')
+
+    if (!selector) {
+      selector = $this.attr('href')
+      selector = selector && /#[A-Za-z]/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
+    }
+
+    var $parent = selector && $(selector)
+
+    return $parent && $parent.length ? $parent : $this.parent()
+  }
+
+  function clearMenus(e) {
+    if (e && e.which === 3) return
+    $(backdrop).remove()
+    $(toggle).each(function () {
+      var $this         = $(this)
+      var $parent       = getParent($this)
+      var relatedTarget = { relatedTarget: this }
+
+      if (!$parent.hasClass('open')) return
+
+      if (e && e.type == 'click' && /input|textarea/i.test(e.target.tagName) && $.contains($parent[0], e.target)) return
+
+      $parent.trigger(e = $.Event('hide.bs.dropdown', relatedTarget))
+
+      if (e.isDefaultPrevented()) return
+
+      $this.attr('aria-expanded', 'false')
+      $parent.removeClass('open').trigger($.Event('hidden.bs.dropdown', relatedTarget))
+    })
+  }
+
+  Dropdown.prototype.toggle = function (e) {
+    var $this = $(this)
+
+    if ($this.is('.disabled, :disabled')) return
+
+    var $parent  = getParent($this)
+    var isActive = $parent.hasClass('open')
+
+    clearMenus()
+
+    if (!isActive) {
+      if ('ontouchstart' in document.documentElement && !$parent.closest('.navbar-nav').length) {
+        // if mobile we use a backdrop because click events don't delegate
+        $(document.createElement('div'))
+          .addClass('dropdown-backdrop')
+          .insertAfter($(this))
+          .on('click', clearMenus)
+      }
+
+      var relatedTarget = { relatedTarget: this }
+      $parent.trigger(e = $.Event('show.bs.dropdown', relatedTarget))
+
+      if (e.isDefaultPrevented()) return
+
+      $this
+        .trigger('focus')
+        .attr('aria-expanded', 'true')
+
+      $parent
+        .toggleClass('open')
+        .trigger($.Event('shown.bs.dropdown', relatedTarget))
+    }
+
+    return false
+  }
+
+  Dropdown.prototype.keydown = function (e) {
+    if (!/(38|40|27|32)/.test(e.which) || /input|textarea/i.test(e.target.tagName)) return
+
+    var $this = $(this)
+
+    e.preventDefault()
+    e.stopPropagation()
+
+    if ($this.is('.disabled, :disabled')) return
+
+    var $parent  = getParent($this)
+    var isActive = $parent.hasClass('open')
+
+    if (!isActive && e.which != 27 || isActive && e.which == 27) {
+      if (e.which == 27) $parent.find(toggle).trigger('focus')
+      return $this.trigger('click')
+    }
+
+    var desc = ' li:not(.disabled):visible a'
+    var $items = $parent.find('.dropdown-menu' + desc)
+
+    if (!$items.length) return
+
+    var index = $items.index(e.target)
+
+    if (e.which == 38 && index > 0)                 index--         // up
+    if (e.which == 40 && index < $items.length - 1) index++         // down
+    if (!~index)                                    index = 0
+
+    $items.eq(index).trigger('focus')
+  }
+
+
+  // DROPDOWN PLUGIN DEFINITION
+  // ==========================
+
+  function Plugin(option) {
+    return this.each(function () {
+      var $this = $(this)
+      var data  = $this.data('bs.dropdown')
+
+      if (!data) $this.data('bs.dropdown', (data = new Dropdown(this)))
+      if (typeof option == 'string') data[option].call($this)
+    })
+  }
+
+  var old = $.fn.dropdown
+
+  $.fn.dropdown             = Plugin
+  $.fn.dropdown.Constructor = Dropdown
+
+
+  // DROPDOWN NO CONFLICT
+  // ====================
+
+  $.fn.dropdown.noConflict = function () {
+    $.fn.dropdown = old
+    return this
+  }
+
+
+  // APPLY TO STANDARD DROPDOWN ELEMENTS
+  // ===================================
+
+  $(document)
+    .on('click.bs.dropdown.data-api', clearMenus)
+    .on('click.bs.dropdown.data-api', '.dropdown form', function (e) { e.stopPropagation() })
+    .on('click.bs.dropdown.data-api', toggle, Dropdown.prototype.toggle)
+    .on('keydown.bs.dropdown.data-api', toggle, Dropdown.prototype.keydown)
+    .on('keydown.bs.dropdown.data-api', '.dropdown-menu', Dropdown.prototype.keydown)
+
+}(jQuery);
+</script>
+<style type="text/css">
+.code-folding-btn {
+  margin-bottom: 4px;
+}
+
+.row { display: flex; }
+.collapse { display: none; }
+.in { display:block }
+.pull-right > .dropdown-menu {
+    right: 0;
+    left: auto;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    float: left;
+    min-width: 160px;
+    padding: 5px 0;
+    margin: 2px 0 0;
+    font-size: 14px;
+    text-align: left;
+    list-style: none;
+    background-color: #fff;
+    -webkit-background-clip: padding-box;
+    background-clip: padding-box;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: 4px;
+    -webkit-box-shadow: 0 6px 12px rgba(0,0,0,.175);
+    box-shadow: 0 6px 12px rgba(0,0,0,.175);
+}
+
+.open > .dropdown-menu {
+    display: block;
+    color: #ffffff;
+    background-color: #ffffff;
+    background-image: none;
+    border-color: #92897e;
+}
+
+.dropdown-menu > li > a {
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: 400;
+  line-height: 1.42857143;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.dropdown-menu > li > a:hover,
+.dropdown-menu > li > a:focus {
+  color: #ffffff;
+  text-decoration: none;
+  background-color: #e95420;
+}
+
+.dropdown-menu > .active > a,
+.dropdown-menu > .active > a:hover,
+.dropdown-menu > .active > a:focus {
+  color: #ffffff;
+  text-decoration: none;
+  background-color: #e95420;
+  outline: 0;
+}
+.dropdown-menu > .disabled > a,
+.dropdown-menu > .disabled > a:hover,
+.dropdown-menu > .disabled > a:focus {
+  color: #aea79f;
+}
+
+.dropdown-menu > .disabled > a:hover,
+.dropdown-menu > .disabled > a:focus {
+  text-decoration: none;
+  cursor: not-allowed;
+  background-color: transparent;
+  background-image: none;
+  filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
+}
+
+.btn {
+  display: inline-block;
+  margin-bottom: 1;
+  font-weight: normal;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  -ms-touch-action: manipulation;
+      touch-action: manipulation;
+  cursor: pointer;
+  background-image: none;
+  border: 1px solid transparent;
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1.42857143;
+  border-radius: 4px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.btn:focus,
+.btn:active:focus,
+.btn.active:focus,
+.btn.focus,
+.btn:active.focus,
+.btn.active.focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+.btn:hover,
+.btn:focus,
+.btn.focus {
+  color: #ffffff;
+  text-decoration: none;
+}
+.btn:active,
+.btn.active {
+  background-image: none;
+  outline: 0;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+.btn.disabled,
+.btn[disabled],
+fieldset[disabled] .btn {
+  cursor: not-allowed;
+  filter: alpha(opacity=65);
+  opacity: 0.65;
+  box-shadow: none;
+}
+a.btn.disabled,
+fieldset[disabled] a.btn {
+  pointer-events: none;
+}
+.btn-default {
+  color: #ffffff;
+  background-color: #aea79f; #important
+  border-color: #aea79f;
+}
+
+.btn-default:focus,
+.btn-default.focus {
+  color: #ffffff;
+  background-color: #978e83;
+  border-color: #6f675e;
+}
+
+.btn-default:hover {
+  color: #ffffff;
+  background-color: #978e83;
+  border-color: #92897e;
+}
+.btn-default:active,
+.btn-default.active,
+.btn-group > .btn:not(:first-child):not(:last-child):not(.dropdown-toggle) {
+  border-radius: 0;
+}
+.btn-group > .btn:first-child {
+  margin-left: 0;
+}
+.btn-group > .btn:first-child:not(:last-child):not(.dropdown-toggle) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.btn-group > .btn:last-child:not(:first-child),
+.btn-group > .dropdown-toggle:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.btn-group > .btn-group {
+  float: left;
+}
+.btn-group > .btn-group:not(:first-child):not(:last-child) > .btn {
+  border-radius: 0;
+}
+.btn-group > .btn-group:first-child:not(:last-child) > .btn:last-child,
+.btn-group > .btn-group:first-child:not(:last-child) > .dropdown-toggle {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.btn-group > .btn-group:last-child:not(:first-child) > .btn:first-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.btn-group .dropdown-toggle:active,
+.btn-group.open .dropdown-toggle {
+  outline: 0;
+}
+.btn-group > .btn + .dropdown-toggle {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+.btn-group > .btn-lg + .dropdown-toggle {
+  padding-right: 12px;
+  padding-left: 12px;
+}
+.btn-group.open .dropdown-toggle {
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+.btn-group.open .dropdown-toggle.btn-link {
+  box-shadow: none;
+}
+
+</style>
+<script>
+var str = '<div class="btn-group pull-right" style="position: fixed; right: 50px; top: 10px; z-index: 200"><button type="button" class="btn btn-default btn-xs dropdown-toggle" id="allCodeButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-_extension-text-contrast=""><span>Code</span> <span class="caret"></span></button><ul class="dropdown-menu" style="min-width: 50px;"><li><a id="rmd-show-all-code" href="#">Show All Code</a></li><li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li></ul></div>';
+document.write(str);
+</script>
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "hide");
+});
+</script>
+
+
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Biomarker atopo analysis</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Intro</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html"><i class="fa fa-check"></i>A498 Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#input"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#performance-statistics"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#biomarker-analysis"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#intro-methods"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#true-positives-based-analysis"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#mcc-classification-based-analysis"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#performance-related-biomarkers"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#equation-based-analysis"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#synergy-prediction-based-analysis"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#synergy-set-prediction-based-analysis"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#pd-pi-synergy"><i class="fa fa-check"></i>PD-PI synergy</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#bi-pd-synergy"><i class="fa fa-check"></i>BI-PD synergy</a></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#bi-pi-synergy"><i class="fa fa-check"></i>BI-PI synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#biomarker-results"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html"><i class="fa fa-check"></i>AGS Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#input-1"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#performance-statistics-1"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#biomarker-analysis-1"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#intro-methods-1"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#true-positives-based-analysis-1"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#mcc-classification-based-analysis-1"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#performance-related-biomarkers-1"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#equation-based-analysis-1"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#synergy-prediction-based-analysis-1"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#synergy-set-prediction-based-analysis-1"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#bi-d1-synergy"><i class="fa fa-check"></i>BI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#pi-d1-synergy"><i class="fa fa-check"></i>PI-D1 synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="ags-model-analysis.html"><a href="ags-model-analysis.html#biomarker-results-1"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html"><i class="fa fa-check"></i>DU145 Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#input-2"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#performance-statistics-2"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#biomarker-analysis-2"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#intro-methods-2"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#true-positives-based-analysis-2"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#mcc-classification-based-analysis-2"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#performance-related-biomarkers-2"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#equation-based-analysis-2"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#synergy-prediction-based-analysis-2"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#synergy-set-prediction-based-analysis-2"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#pi-d1-synergy-1"><i class="fa fa-check"></i>PI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#bi-pi-synergy-1"><i class="fa fa-check"></i>BI-PI synergy</a></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#bi-jn-synergy"><i class="fa fa-check"></i>BI-JN synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="du145-model-analysis.html"><a href="du145-model-analysis.html#biomarker-results-2"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html"><i class="fa fa-check"></i>Colo205 Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#input-3"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#performance-statistics-3"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#biomarker-analysis-3"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#intro-methods-3"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#true-positives-based-analysis-3"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#mcc-classification-based-analysis-3"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="0.0.1" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#performance-related-biomarkers-3"><i class="fa fa-check"></i><b>0.0.1</b> Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#equation-based-analysis-3"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#synergy-prediction-based-analysis-3"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#synergy-set-prediction-based-analysis-3"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#bi-pi-synergy-2"><i class="fa fa-check"></i>BI-PI synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="colo205-model-analysis.html"><a href="colo205-model-analysis.html#biomarker-results-3"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html"><i class="fa fa-check"></i>SW620 Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#input-4"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#performance-statistics-4"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#biomarker-analysis-4"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#intro-methods-4"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#true-positives-based-analysis-4"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#mcc-classification-based-analysis-4"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#performance-related-biomarkers-4"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#equation-based-analysis-4"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#synergy-prediction-based-analysis-4"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#synergy-set-prediction-based-analysis-4"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#bi-pi-synergy-3"><i class="fa fa-check"></i>BI-PI synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="sw620-model-analysis.html"><a href="sw620-model-analysis.html#biomarker-results-4"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html"><i class="fa fa-check"></i>SF295 Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#input-5"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#performance-statistics-5"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#biomarker-analysis-5"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#intro-methods-5"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#true-positives-based-analysis-5"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#mcc-classification-based-analysis-5"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#performance-related-biomarkers-5"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#equation-based-analysis-5"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#synergy-prediction-based-analysis-5"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#synergy-set-prediction-based-analysis-5"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#d1-p5-synergy"><i class="fa fa-check"></i>D1-P5 synergy</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#pi-d1-synergy-2"><i class="fa fa-check"></i>PI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#bi-d1-synergy-1"><i class="fa fa-check"></i>BI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#bi-pi-synergy-4"><i class="fa fa-check"></i>BI-PI synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="sf295-model-analysis.html"><a href="sf295-model-analysis.html#biomarker-results-5"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html"><i class="fa fa-check"></i>UACC62 Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#input-6"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#performance-statistics-6"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#biomarker-analysis-6"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#intro-methods-6"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#true-positives-based-analysis-6"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#mcc-classification-based-analysis-6"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#performance-related-biomarkers-6"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#equation-based-analysis-6"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#synergy-prediction-based-analysis-6"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#synergy-set-prediction-based-analysis-6"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#bi-d1-synergy-2"><i class="fa fa-check"></i>BI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#bi-pi-synergy-5"><i class="fa fa-check"></i>BI-PI synergy</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#bi-g2-synergy"><i class="fa fa-check"></i>BI-G2 synergy</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#pi-d1-synergy-3"><i class="fa fa-check"></i>PI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#pi-jn-synergy"><i class="fa fa-check"></i>PI-JN synergy</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#pi-p5-synergy"><i class="fa fa-check"></i>PI-P5 synergy</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#jn-d1-synergy"><i class="fa fa-check"></i>JN-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#d1-p5-synergy-1"><i class="fa fa-check"></i>D1-P5 synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="uacc62-model-analysis.html"><a href="uacc62-model-analysis.html#biomarker-results-6"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html"><i class="fa fa-check"></i>MDA-MB-468 Model Analysis</a><ul>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#input-7"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#performance-statistics-7"><i class="fa fa-check"></i>Performance Statistics</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#biomarker-analysis-7"><i class="fa fa-check"></i>Biomarker analysis</a><ul>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#intro-methods-7"><i class="fa fa-check"></i>Intro-Methods</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#true-positives-based-analysis-7"><i class="fa fa-check"></i>True Positives-based analysis</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#mcc-classification-based-analysis-7"><i class="fa fa-check"></i>MCC classification-based analysis</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#performance-related-biomarkers-7"><i class="fa fa-check"></i>Performance-related biomarkers</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#equation-based-analysis-7"><i class="fa fa-check"></i>Equation-based analysis</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#synergy-prediction-based-analysis-7"><i class="fa fa-check"></i>Synergy-prediction based analysis</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#synergy-set-prediction-based-analysis-7"><i class="fa fa-check"></i>Synergy-set prediction based analysis</a><ul>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#pi-jn-synergy-1"><i class="fa fa-check"></i>PI-JN synergy</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#jn-d1-synergy-1"><i class="fa fa-check"></i>JN-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#d1-p5-synergy-2"><i class="fa fa-check"></i>D1-P5 synergy</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#pi-d1-synergy-4"><i class="fa fa-check"></i>PI-D1 synergy</a></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#bi-pi-synergy-6"><i class="fa fa-check"></i>BI-PI synergy</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mda-mb-468-model-analysis.html"><a href="mda-mb-468-model-analysis.html#biomarker-results-7"><i class="fa fa-check"></i>Biomarker results</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html"><i class="fa fa-check"></i>Biomarker comparison</a><ul>
+<li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#input-8"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#performance-biomarkers"><i class="fa fa-check"></i>Performance Biomarkers</a></li>
+<li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#observed-synergies"><i class="fa fa-check"></i>Observed synergies</a></li>
+<li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#synergy-biomarkers"><i class="fa fa-check"></i>Synergy Biomarkers</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="r-session-info.html"><a href="r-session-info.html"><i class="fa fa-check"></i>R Session Info</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Biomarker Atopo Analysis</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="biomarker-comparison" class="section level1 unnumbered">
+<h1>Biomarker comparison</h1>
+<p>In this chapter we will compare the biomarker results from 8 different cell
+lines. These results were obtained through an ensemble model analysis, which was
+performed on the models generated by the <code>Gitsbe</code> module when running the
+DrugLogics computational pipeline for finding synergistic drug combinations
+(drug pairs). The models in each different cell line setup were trained towards
+a specific signaling activity profile matching the activity state of that
+particular cell line. For more info about <strong>the cell line specific model &amp;
+biomarker analysis, see the respective chapters:</strong></p>
+<ul>
+<li><a href="a498-model-analysis.html#a498-model-analysis">A498 Model Analysis</a></li>
+<li><a href="ags-model-analysis.html#ags-model-analysis">AGS Model Analysis</a></li>
+<li><a href="du145-model-analysis.html#du145-model-analysis">DU145 Model Analysis</a></li>
+<li><a href="colo205-model-analysis.html#colo205-model-analysis">Colo205 Model Analysis</a></li>
+<li><a href="sw620-model-analysis.html#sw620-model-analysis">SW620 Model Analysis</a></li>
+<li><a href="sf295-model-analysis.html#sf295-model-analysis">SF295 Model Analysis</a></li>
+<li><a href="uacc62-model-analysis.html#uacc62-model-analysis">UACC62 Model Analysis</a></li>
+<li><a href="mda-mb-468-model-analysis.html#mda-mb-468-model-analysis">MDA-MB-468 Model Analysis</a></li>
+</ul>
+<p>Note that the biomarkers identified in the aforementioned chapters, were
+classified as:</p>
+<ul>
+<li><strong>Performance-related biomarkers</strong>, which represent important nodes that are essential for our models to achieve a higher model performance classification (the methodology was based on the number of true positives (<span class="math inline">\(TP\)</span>) and the Matthews Correlation Coefficient score (<span class="math inline">\(MCC\)</span>)</li>
+<li><strong>Per synergy predicted biomarkers</strong>, which represent important nodes that are essential for our models to predict some of the synergies that were observed in the lab</li>
+</ul>
+<p>In each category, the biomarkers can be either in <em>an active state</em> or in <em>an
+inhibited state</em>. The input for the simulations and the output data are in the
+<code>cell-lines-2500</code> directory (the 2500 number denotes the number of simulations
+executed). The analysis will be presented step by step in the sections below.</p>
+<div id="input-8" class="section level2 unnumbered">
+<h2>Input</h2>
+<p>Firstly, we define the necessary input (cell line names, directories and files
+of interest, etc.):</p>
+<div class="sourceCode" id="cb551"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb551-1" title="1">cell.lines =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;A498&quot;</span>, <span class="st">&quot;AGS&quot;</span>, <span class="st">&quot;DU145&quot;</span>, <span class="st">&quot;colo205&quot;</span>, <span class="st">&quot;SW620&quot;</span>, <span class="st">&quot;SF295&quot;</span>, <span class="st">&quot;UACC62&quot;</span>, <span class="st">&quot;MDA-MB-468&quot;</span>)</a>
+<a class="sourceLine" id="cb551-2" title="2"></a>
+<a class="sourceLine" id="cb551-3" title="3">cell.line.dirs =<span class="st"> </span><span class="kw">sapply</span>(cell.lines, <span class="cf">function</span>(cell.line) {</a>
+<a class="sourceLine" id="cb551-4" title="4">  <span class="kw">paste0</span>(<span class="kw">getwd</span>(), <span class="st">&quot;/&quot;</span>, cell.line)</a>
+<a class="sourceLine" id="cb551-5" title="5">})</a>
+<a class="sourceLine" id="cb551-6" title="6"></a>
+<a class="sourceLine" id="cb551-7" title="7">biomarkers.dirs =<span class="st"> </span><span class="kw">sapply</span>(cell.line.dirs, <span class="cf">function</span>(cell.line.dir) {</a>
+<a class="sourceLine" id="cb551-8" title="8">  <span class="kw">paste0</span>(cell.line.dir, <span class="st">&quot;/biomarkers&quot;</span>)</a>
+<a class="sourceLine" id="cb551-9" title="9">})</a>
+<a class="sourceLine" id="cb551-10" title="10"></a>
+<a class="sourceLine" id="cb551-11" title="11"><span class="co"># get the drug combinations tested</span></a>
+<a class="sourceLine" id="cb551-12" title="12">model.predictions.file =<span class="st"> </span><span class="kw">paste0</span>(cell.line.dirs[<span class="dv">1</span>], <span class="st">&quot;/model_predictions&quot;</span>)</a>
+<a class="sourceLine" id="cb551-13" title="13">model.predictions =<span class="st"> </span><span class="kw">get_model_predictions</span>(model.predictions.file)</a>
+<a class="sourceLine" id="cb551-14" title="14">drug.combos =<span class="st"> </span><span class="kw">colnames</span>(model.predictions)</a>
+<a class="sourceLine" id="cb551-15" title="15"></a>
+<a class="sourceLine" id="cb551-16" title="16"><span class="co"># get the node names (same topology for all cell lines)</span></a>
+<a class="sourceLine" id="cb551-17" title="17">models.dir =<span class="st"> </span><span class="kw">paste0</span>(cell.line.dirs[<span class="dv">1</span>], <span class="st">&quot;/models&quot;</span>)</a>
+<a class="sourceLine" id="cb551-18" title="18">node.names =<span class="st"> </span><span class="kw">get_node_names</span>(models.dir)</a></code></pre></div>
+</div>
+<div id="performance-biomarkers" class="section level2 unnumbered">
+<h2>Performance Biomarkers</h2>
+<p>Next, we will visualize the performance biomarkers found from the <strong>cell-specific
+model analysis</strong> per cell line:</p>
+<div class="sourceCode" id="cb552"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb552-1" title="1">biomarkers.perf.res =<span class="st"> </span><span class="kw">get_perf_biomarkers_per_cell_line</span>(biomarkers.dirs, node.names)</a>
+<a class="sourceLine" id="cb552-2" title="2"></a>
+<a class="sourceLine" id="cb552-3" title="3"><span class="co"># remove nodes which are not biomarkers for any cell line</span></a>
+<a class="sourceLine" id="cb552-4" title="4">biomarkers.perf.res =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(biomarkers.perf.res, <span class="dt">value =</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb552-5" title="5"></a>
+<a class="sourceLine" id="cb552-6" title="6"><span class="co"># define a coloring</span></a>
+<a class="sourceLine" id="cb552-7" title="7">biomarkers.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>), <span class="kw">c</span>(<span class="st">&quot;tomato&quot;</span>, <span class="st">&quot;grey&quot;</span>, <span class="st">&quot;gold&quot;</span>))</a>
+<a class="sourceLine" id="cb552-8" title="8"></a>
+<a class="sourceLine" id="cb552-9" title="9">perf.biomarkers.heatmap =<span class="st"> </span></a>
+<a class="sourceLine" id="cb552-10" title="10"><span class="st">  </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> <span class="kw">as.matrix</span>(biomarkers.perf.res), <span class="dt">col =</span> biomarkers.col.fun,</a>
+<a class="sourceLine" id="cb552-11" title="11">        <span class="dt">column_title =</span> <span class="st">&quot;Performance biomarkers per cell line&quot;</span>,</a>
+<a class="sourceLine" id="cb552-12" title="12">        <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb552-13" title="13">        <span class="dt">row_title =</span> <span class="st">&quot;Cell Lines&quot;</span>, <span class="dt">row_title_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb552-14" title="14">        <span class="dt">row_dend_side =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">row_names_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb552-15" title="15">        <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">5</span>),</a>
+<a class="sourceLine" id="cb552-16" title="16">        <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
+<a class="sourceLine" id="cb552-17" title="17">        <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="dt">title =</span> <span class="st">&quot;Activity State&quot;</span>,</a>
+<a class="sourceLine" id="cb552-18" title="18">          <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Inhibited&quot;</span>, <span class="st">&quot;Active&quot;</span>), <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>, <span class="dt">ncol =</span> <span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb552-19" title="19">          <span class="dt">title_position =</span> <span class="st">&quot;leftcenter&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;horizontal&quot;</span>))</a>
+<a class="sourceLine" id="cb552-20" title="20"></a>
+<a class="sourceLine" id="cb552-21" title="21"><span class="kw">draw</span>(perf.biomarkers.heatmap, <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;bottom&quot;</span>)</a></code></pre></div>
+<p><img src="biomarker_comparison_files/figure-html/Performance%20Biomarkers%20Heatmap-1.png" width="2400" /></p>
+<ul>
+<li>Across all cell lines, a total of 91 performance
+biomarkers were found</li>
+<li><strong>The three gastrointestinal cell lines</strong> (<code>AGS,SW620,colo205</code>) <strong>have a lot of
+common biomarkers</strong>. These common biomarkers between the cell lines can be in
+either the same activity state (<code>SW620</code> vs <code>AGS</code>) or the reverse (<code>SW620</code> vs
+<code>colo205</code>)</li>
+<li><strong>In general the biomarker results are different between the different type of
+cell lines</strong></li>
+<li>There exist unique biomarkers per cell line which are not shared with any of
+the other cell lines</li>
+</ul>
+<p>We save the results:</p>
+<div class="sourceCode" id="cb553"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb553-1" title="1"><span class="kw">save_df_to_file</span>(<span class="dt">df =</span> biomarkers.perf.res, <span class="dt">file =</span> <span class="st">&quot;perf_biomakrers_per_cell_line&quot;</span>)</a></code></pre></div>
+</div>
+<div id="observed-synergies" class="section level2 unnumbered">
+<h2>Observed synergies</h2>
+<p>Each of the cell lines studied has a different set of observed synergies (drug
+combinations that were found synergistic across all the
+153 tested ones). In this section, we will
+visualize the cell lines’ observed synergies and mark the synergies that were
+also predicted by the cell-specific models. First, we get the biomarkers for
+these synergies from each cell line:</p>
+<div class="sourceCode" id="cb554"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb554-1" title="1">synergy.biomarkers.cell.specific =<span class="st"> </span></a>
+<a class="sourceLine" id="cb554-2" title="2"><span class="st">  </span><span class="kw">get_synergy_biomarkers_per_cell_line</span>(biomarkers.dirs)</a>
+<a class="sourceLine" id="cb554-3" title="3"></a>
+<a class="sourceLine" id="cb554-4" title="4">total.predicted.synergies.cell.specific =</a>
+<a class="sourceLine" id="cb554-5" title="5"><span class="st">  </span><span class="kw">unique</span>(<span class="kw">unlist</span>(<span class="kw">sapply</span>(synergy.biomarkers.cell.specific, <span class="cf">function</span>(df) { <span class="kw">rownames</span>(df) })))</a>
+<a class="sourceLine" id="cb554-6" title="6">total.predicted.synergies.cell.specific.num =<span class="st"> </span></a>
+<a class="sourceLine" id="cb554-7" title="7"><span class="st">  </span><span class="kw">length</span>(total.predicted.synergies.cell.specific)</a></code></pre></div>
+<p>Then, we get the observed synergies from each cell line:</p>
+<div class="sourceCode" id="cb555"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb555-1" title="1">observed.synergies.res =<span class="st"> </span><span class="kw">get_observed_synergies_per_cell_line</span>(cell.line.dirs, drug.combos)</a>
+<a class="sourceLine" id="cb555-2" title="2"></a>
+<a class="sourceLine" id="cb555-3" title="3"><span class="co"># remove drug combinations which are not observed in any of the cell lines</span></a>
+<a class="sourceLine" id="cb555-4" title="4">observed.synergies.res =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(observed.synergies.res, <span class="dt">value =</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb555-5" title="5"></a>
+<a class="sourceLine" id="cb555-6" title="6">total.observed.synergies =<span class="st"> </span><span class="kw">colnames</span>(observed.synergies.res)</a>
+<a class="sourceLine" id="cb555-7" title="7">total.observed.synergies.num =<span class="st"> </span><span class="kw">length</span>(total.observed.synergies)</a></code></pre></div>
+<p>Lastly, we visualize the observed and predicted synergies for all cell lines
+in one heatmap:</p>
+<div class="sourceCode" id="cb556"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb556-1" title="1"><span class="co"># color the cell-specific predicted synergies</span></a>
+<a class="sourceLine" id="cb556-2" title="2">predicted.synergies.colors =<span class="st"> </span><span class="kw">rep</span>(<span class="st">&quot;black&quot;</span>, total.observed.synergies.num)</a>
+<a class="sourceLine" id="cb556-3" title="3"><span class="kw">names</span>(predicted.synergies.colors) =<span class="st"> </span>total.observed.synergies</a>
+<a class="sourceLine" id="cb556-4" title="4">predicted.synergies.colors[total.observed.synergies <span class="op">%in%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb556-5" title="5"><span class="st">                           </span>total.predicted.synergies.cell.specific] =<span class="st"> &quot;blue&quot;</span></a>
+<a class="sourceLine" id="cb556-6" title="6"></a>
+<a class="sourceLine" id="cb556-7" title="7"><span class="co"># define a coloring</span></a>
+<a class="sourceLine" id="cb556-8" title="8">obs.synergies.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="kw">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;green&quot;</span>))</a>
+<a class="sourceLine" id="cb556-9" title="9"></a>
+<a class="sourceLine" id="cb556-10" title="10">observed.synergies.heatmap =<span class="st"> </span></a>
+<a class="sourceLine" id="cb556-11" title="11"><span class="st">  </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> <span class="kw">as.matrix</span>(observed.synergies.res), </a>
+<a class="sourceLine" id="cb556-12" title="12">          <span class="dt">col =</span> obs.synergies.col.fun,</a>
+<a class="sourceLine" id="cb556-13" title="13">          <span class="dt">column_title =</span> <span class="st">&quot;Observed synergies per cell line&quot;</span>,</a>
+<a class="sourceLine" id="cb556-14" title="14">          <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb556-15" title="15">          <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> predicted.synergies.colors),</a>
+<a class="sourceLine" id="cb556-16" title="16">          <span class="dt">row_title =</span> <span class="st">&quot;Cell Lines&quot;</span>, <span class="dt">row_title_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb556-17" title="17">          <span class="dt">row_dend_side =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">row_names_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb556-18" title="18">          <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
+<a class="sourceLine" id="cb556-19" title="19">          <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;YES&quot;</span>, <span class="st">&quot;NO&quot;</span>), </a>
+<a class="sourceLine" id="cb556-20" title="20">            <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>, <span class="dt">title =</span> <span class="st">&quot;Observed&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;vertical&quot;</span>))</a>
+<a class="sourceLine" id="cb556-21" title="21"></a>
+<a class="sourceLine" id="cb556-22" title="22">lgd =<span class="st"> </span><span class="kw">Legend</span>(<span class="dt">at =</span> <span class="st">&quot;Cell-specific&quot;</span>, <span class="dt">title =</span> <span class="st">&quot;Predicted&quot;</span>, </a>
+<a class="sourceLine" id="cb556-23" title="23">             <span class="dt">legend_gp =</span> <span class="kw">gpar</span>(<span class="dt">fill =</span> <span class="st">&quot;blue&quot;</span>))</a>
+<a class="sourceLine" id="cb556-24" title="24"></a>
+<a class="sourceLine" id="cb556-25" title="25"><span class="kw">draw</span>(observed.synergies.heatmap,  <span class="dt">heatmap_legend_list =</span> <span class="kw">list</span>(lgd), </a>
+<a class="sourceLine" id="cb556-26" title="26">     <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;right&quot;</span>)</a></code></pre></div>
+<p><img src="biomarker_comparison_files/figure-html/Observed%20synergies%20heatmap-1.png" width="2700" /></p>
+<ul>
+<li>The <em>cell-specific</em> models predicted 12
+of the 40 observed synergies found across the
+8 cell lines. Thus, the <strong>total true positive coverage for
+the cell-specific models across all cell lines is
+0.3%</strong></li>
+<li>Note that there exist synergies which were observed in all cell lines (<code>AK-BI</code>,
+<code>PI-D1</code>)</li>
+<li>Cell line specific synergies (e.g. <code>PD-PI</code>, <code>AK-PD</code> in the <code>A498</code> cell line)
+were identified only by the cell-specific models (<strong>????? MAYBE! HAVE TO
+CHECK FIRST WITH RANDOM MODEL PREDICTIONS</strong>)</li>
+</ul>
+</div>
+<div id="synergy-biomarkers" class="section level2 unnumbered">
+<h2>Synergy Biomarkers</h2>
+<p>In this section, we will produce heatmaps showing the biomarkers across the
+8 cell lines for every observed synergy that was also
+predicted by the cell-specific models. First, we manipulate the biomarker
+result data to fit our purposes:</p>
+<div class="sourceCode" id="cb557"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb557-1" title="1">synergy.biomarkers.cell.specific.res =<span class="st"> </span><span class="kw">ldf_arrange_by_rownames</span>(synergy.biomarkers.cell.specific)</a>
+<a class="sourceLine" id="cb557-2" title="2"></a>
+<a class="sourceLine" id="cb557-3" title="3"><span class="co"># For every synergy, remove cell lines that didn&#39;t predict the observed synergies</span></a>
+<a class="sourceLine" id="cb557-4" title="4"><span class="co"># at all or for which we couldn&#39;t find any biomarkers (row pruning).</span></a>
+<a class="sourceLine" id="cb557-5" title="5"><span class="co"># Also remove nodes which are not biomarkers for any cell line (column pruning)</span></a>
+<a class="sourceLine" id="cb557-6" title="6"><span class="cf">for</span> (synergy <span class="cf">in</span> <span class="kw">names</span>(synergy.biomarkers.cell.specific.res)) {</a>
+<a class="sourceLine" id="cb557-7" title="7">  df =<span class="st"> </span>synergy.biomarkers.cell.specific.res[[synergy]]</a>
+<a class="sourceLine" id="cb557-8" title="8">  df =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(df, <span class="dt">value =</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb557-9" title="9">  df =<span class="st"> </span><span class="kw">prune_rows_from_df</span>(df, <span class="dt">value =</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb557-10" title="10">  synergy.biomarkers.cell.specific.res[[synergy]] =<span class="st"> </span>df</a>
+<a class="sourceLine" id="cb557-11" title="11">}</a>
+<a class="sourceLine" id="cb557-12" title="12"></a>
+<a class="sourceLine" id="cb557-13" title="13"><span class="co"># re-order result list based on increasing number of cell lines</span></a>
+<a class="sourceLine" id="cb557-14" title="14">synergy.biomarkers.cell.specific.res =<span class="st"> </span>synergy.biomarkers.cell.specific.res[</a>
+<a class="sourceLine" id="cb557-15" title="15">  <span class="kw">names</span>(<span class="kw">sort</span>(<span class="kw">sapply</span>(synergy.biomarkers.cell.specific.res, <span class="cf">function</span>(x) { <span class="kw">nrow</span>(x) })))</a>
+<a class="sourceLine" id="cb557-16" title="16">]</a></code></pre></div>
+<p>Next, we produce the heatmaps (one per synergy predicted):</p>
+<div class="sourceCode" id="cb558"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb558-1" title="1"><span class="cf">for</span> (synergy <span class="cf">in</span> <span class="kw">names</span>(synergy.biomarkers.cell.specific.res)) {</a>
+<a class="sourceLine" id="cb558-2" title="2">  biomarkers.res =<span class="st"> </span><span class="kw">as.matrix</span>(synergy.biomarkers.cell.specific.res[[synergy]])</a>
+<a class="sourceLine" id="cb558-3" title="3">  </a>
+<a class="sourceLine" id="cb558-4" title="4">  <span class="co"># customize some parameters</span></a>
+<a class="sourceLine" id="cb558-5" title="5">  heatmap.height =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">&lt;</span><span class="st"> </span><span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb558-6" title="6">  show.column.dend =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="ot">FALSE</span>, <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb558-7" title="7">  row.title =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="st">&quot;Cell Line&quot;</span>, <span class="st">&quot;Cell Lines&quot;</span>)</a>
+<a class="sourceLine" id="cb558-8" title="8">  </a>
+<a class="sourceLine" id="cb558-9" title="9">  biomarkers.heatmap =<span class="st"> </span></a>
+<a class="sourceLine" id="cb558-10" title="10"><span class="st">    </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> biomarkers.res, <span class="dt">col =</span> biomarkers.col.fun, </a>
+<a class="sourceLine" id="cb558-11" title="11">            <span class="dt">column_title =</span> <span class="kw">paste0</span>(<span class="st">&quot;Biomarkers for Synergy: &quot;</span>, synergy),</a>
+<a class="sourceLine" id="cb558-12" title="12">            <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>, <span class="dt">fontface =</span> <span class="st">&quot;bold&quot;</span>),</a>
+<a class="sourceLine" id="cb558-13" title="13">            <span class="dt">row_title =</span> row.title, <span class="dt">row_title_side =</span> <span class="st">&quot;right&quot;</span>,</a>
+<a class="sourceLine" id="cb558-14" title="14">            <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
+<a class="sourceLine" id="cb558-15" title="15">            <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">10</span>),</a>
+<a class="sourceLine" id="cb558-16" title="16">            <span class="dt">show_column_dend =</span> show.column.dend,</a>
+<a class="sourceLine" id="cb558-17" title="17">            <span class="dt">height =</span> <span class="kw">unit</span>(heatmap.height, <span class="st">&quot;inches&quot;</span>),</a>
+<a class="sourceLine" id="cb558-18" title="18">            <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="dt">title =</span> <span class="st">&quot;Activity State&quot;</span>,</a>
+<a class="sourceLine" id="cb558-19" title="19">              <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Inhibited&quot;</span>, <span class="st">&quot;Active&quot;</span>), <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>,</a>
+<a class="sourceLine" id="cb558-20" title="20">              <span class="dt">title_position =</span> <span class="st">&quot;leftcenter&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;horizontal&quot;</span>, <span class="dt">ncol =</span> <span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb558-21" title="21">  </a>
+<a class="sourceLine" id="cb558-22" title="22">  <span class="kw">draw</span>(biomarkers.heatmap, <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;bottom&quot;</span>)</a>
+<a class="sourceLine" id="cb558-23" title="23">}</a></code></pre></div>
+<p><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-1.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-2.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-3.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-4.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-5.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-6.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-7.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-8.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-9.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-10.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-11.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-12.png" width="2700" /></p>
+<p>The main result here is that we observe common biomarkers across many cell lines
+and in the <em>same activity state</em> for some synergies, which hints that these
+biomarkers may have a <strong>pan-cancer diagnostic value</strong>.</p>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="mda-mb-468-model-analysis.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="r-session-info.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": false,
+"twitter": false,
+"google": false,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"all": false
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"download": null,
+"toc": {
+"collapse": "section"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:" && /^https?:/.test(src))
+      src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

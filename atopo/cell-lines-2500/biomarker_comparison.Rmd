@@ -41,44 +41,32 @@ library(emba)
 Firstly, we define the necessary input (cell line names, directories and files 
 of interest, etc.):
 ```{r Input}
-cell.lines = c("A498", "AGS", "DU145", "colo205", "SW620", "SF295", "MDA-MB-468", "UACC62")
+cell.lines = c("A498", "AGS", "DU145", "colo205", "SW620", "SF295", "UACC62", "MDA-MB-468")
 
-cell.lines.dirs = sapply(cell.lines, function(cell.line) {
+cell.line.dirs = sapply(cell.lines, function(cell.line) {
   paste0(getwd(), "/", cell.line)
 })
 
-biomarkers.dirs = sapply(cell.lines.dirs, function(cell.line.dir) {
+biomarkers.dirs = sapply(cell.line.dirs, function(cell.line.dir) {
   paste0(cell.line.dir, "/biomarkers")
 })
 
-observed.synergies.files = sapply(cell.lines.dirs, function(cell.line.dir) {
-  paste0(cell.line.dir, "/observed_synergies")
-})
-
 # get the drug combinations tested
-model.predictions.file = paste0(cell.lines.dirs[1], "/model_predictions")
+model.predictions.file = paste0(cell.line.dirs[1], "/model_predictions")
 model.predictions = get_model_predictions(model.predictions.file)
-drugs = colnames(model.predictions)
+drug.combos = colnames(model.predictions)
 
 # get the node names (same topology for all cell lines)
-models.dir = paste0(cell.lines.dirs[1], "/models")
+models.dir = paste0(cell.line.dirs[1], "/models")
 node.names = get_node_names(models.dir)
 ```
 
 ## Performance Biomarkers {-}
 
-Next, we will visualize the performance biomarkers found from the cell-specific 
-model analysis per cell line:
-```{r Performance Biomarkers Heatmap, fig.height = 5, fig.width = 8, dpi = 300}
-biomarkers.perf.active = 
-  get_perf_biomarkers_per_cell_line(biomarkers.dirs, type = "active")
-
-biomarkers.perf.inhibited =
-  get_perf_biomarkers_per_cell_line(biomarkers.dirs, type = "inhibited")
-
-biomarkers.perf.res = 
-  merge_perf_biomarkers(node.names, cell.lines, biomarkers.perf.active, 
-                        biomarkers.perf.inhibited)
+Next, we will visualize the performance biomarkers found from the **cell-specific 
+model analysis** per cell line:
+```{r Performance Biomarkers Heatmap, fig.height = 5, fig.width = 8, dpi = 300, cache=TRUE}
+biomarkers.perf.res = get_perf_biomarkers_per_cell_line(biomarkers.dirs, node.names)
 
 # remove nodes which are not biomarkers for any cell line
 biomarkers.perf.res = prune_columns_from_df(biomarkers.perf.res, value = 0)
@@ -107,48 +95,40 @@ biomarkers were found
 common biomarkers**. These common biomarkers between the cell lines can be in 
 either the same activity state (`SW620` vs `AGS`) or the reverse (`SW620` vs 
 `colo205`)
-- In general the biomarker results are different between the different type of 
-cell lines
+- **In general the biomarker results are different between the different type of 
+cell lines**
 - There exist unique biomarkers per cell line which are not shared with any of
 the other cell lines
+
+We save the results:
+```{r save performance biomarkers per cell line}
+save_df_to_file(df = biomarkers.perf.res, file = "perf_biomakrers_per_cell_line")
+```
 
 ## Observed synergies {-}
 
 Each of the cell lines studied has a different set of observed synergies (drug 
 combinations that were found synergistic across all the 
-`r length(drugs)` tested ones). In this section, we will 
+`r length(drug.combos)` tested ones). In this section, we will 
 visualize the cell lines' observed synergies and mark the synergies that were 
 also predicted by the cell-specific models. First, we get the biomarkers for 
 these synergies from each cell line:
 ```{r Total predicted synergies by the cell-specific models}
 synergy.biomarkers.cell.specific = 
-  get.synergy.biomarkers.per.cell.line(biomarkers.dirs)
+  get_synergy_biomarkers_per_cell_line(biomarkers.dirs)
 
-total.predicted.synergies.cell.specific = character(0)
-for (cell.line in cell.lines) {
-  total.predicted.synergies.cell.specific = 
-    c(total.predicted.synergies.cell.specific, 
-      rownames(synergy.biomarkers.cell.specific[[cell.line]]))
-}
-total.predicted.synergies.cell.specific = 
-  unique(total.predicted.synergies.cell.specific)
+total.predicted.synergies.cell.specific =
+  unique(unlist(sapply(synergy.biomarkers.cell.specific, function(df) { rownames(df) })))
 total.predicted.synergies.cell.specific.num = 
   length(total.predicted.synergies.cell.specific)
 ```
 
 Then, we get the observed synergies from each cell line:
 ```{r Observed synergies per cell line, fig.height = 7, fig.width = 9, dpi = 300}
-observed.synergies.per.cell.line = sapply(
-  observed.synergies.files, function(observed.synergies.file) {
-    get.observed.synergies(observed.synergies.file)
-})
-
-observed.synergies.res = 
-  merge.observed.synergies(drugs, cell.lines, 
-                           observed.synergies.per.cell.line)
+observed.synergies.res = get_observed_synergies_per_cell_line(cell.line.dirs, drug.combos)
 
 # remove drug combinations which are not observed in any of the cell lines
-observed.synergies.res = prune.columns.from.df(observed.synergies.res, value = 0)
+observed.synergies.res = prune_columns_from_df(observed.synergies.res, value = 0)
 
 total.observed.synergies = colnames(observed.synergies.res)
 total.observed.synergies.num = length(total.observed.synergies)
@@ -156,7 +136,7 @@ total.observed.synergies.num = length(total.observed.synergies)
 
 Lastly, we visualize the observed and predicted synergies for all cell lines 
 in one heatmap:
-```{r Observed synergies heatmap, fig.height = 5, fig.width = 9, dpi = 300}
+```{r Observed synergies heatmap, fig.height = 5, fig.width = 9, dpi = 300, cache=TRUE}
 # color the cell-specific predicted synergies
 predicted.synergies.colors = rep("black", total.observed.synergies.num)
 names(predicted.synergies.colors) = total.observed.synergies
@@ -188,7 +168,7 @@ draw(observed.synergies.heatmap,  heatmap_legend_list = list(lgd),
 - The *cell-specific* models predicted `r total.predicted.synergies.cell.specific.num` 
 of the `r total.observed.synergies.num` observed synergies found across the 
 `r length(cell.lines)` cell lines. Thus, the **total true positive coverage for 
-the cell-specific modesl across all cell lines is 
+the cell-specific models across all cell lines is 
 `r total.predicted.synergies.cell.specific.num/total.observed.synergies.num`%**
 - Note that there exist synergies which were observed in all cell lines (`AK-BI`,
 `PI-D1`)
@@ -204,17 +184,15 @@ predicted by the cell-specific models. First, we manipulate the biomarker
 result data to fit our purposes:
 
 ```{r Cell-specific biomarker results}
-synergy.biomarkers.cell.specific.res = 
-  arrange.by.synergy(synergy.biomarkers.cell.specific, observed.synergies.res, 
-                     total.predicted.synergies.cell.specific, node.names)
+synergy.biomarkers.cell.specific.res = ldf_arrange_by_rownames(synergy.biomarkers.cell.specific)
 
 # For every synergy, remove cell lines that didn't predict the observed synergies
 # at all or for which we couldn't find any biomarkers (row pruning).
 # Also remove nodes which are not biomarkers for any cell line (column pruning)
 for (synergy in names(synergy.biomarkers.cell.specific.res)) {
   df = synergy.biomarkers.cell.specific.res[[synergy]]
-  df = prune.columns.from.df(df, value = 0)
-  df = prune.rows.from.df(df, value = 0)
+  df = prune_columns_from_df(df, value = 0)
+  df = prune_rows_from_df(df, value = 0)
   synergy.biomarkers.cell.specific.res[[synergy]] = df
 }
 
@@ -225,7 +203,7 @@ synergy.biomarkers.cell.specific.res = synergy.biomarkers.cell.specific.res[
 ```
 
 Next, we produce the heatmaps (one per synergy predicted):
-```{r Biomarker Heatmaps for cell-specific predicted synergies, fig.height = 6, fig.width = 9, dpi = 300}
+```{r Biomarker Heatmaps for cell-specific predicted synergies, fig.height = 6, fig.width = 9, dpi = 300, cache=TRUE}
 for (synergy in names(synergy.biomarkers.cell.specific.res)) {
   biomarkers.res = as.matrix(synergy.biomarkers.cell.specific.res[[synergy]])
   
@@ -253,4 +231,4 @@ for (synergy in names(synergy.biomarkers.cell.specific.res)) {
 
 The main result here is that we observe common biomarkers across many cell lines
 and in the *same activity state* for some synergies, which hints that these 
-biomarkers may have a pan-cancer diagnostic value.
+biomarkers may have a **pan-cancer diagnostic value**.
