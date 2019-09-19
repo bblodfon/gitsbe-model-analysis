@@ -62,16 +62,18 @@ for (cell.line.dir in cell.line.dirs) {
   models.stable.state.file = paste0(cell.line.dir, "/models_stable_state")
   models.equations.file = paste0(cell.line.dir, "/models_equations")
   
-  # for having the row names in the same order as in the 'model_predictions' file
-  model.predictions = get_model_predictions(model.predictions.file)
-  models = rownames(model.predictions)
+  if (file.exists(model.predictions.file)) {
+    # for having the row names in the same order as in the 'model_predictions' file
+    model.predictions = get_model_predictions(model.predictions.file)
+    models = rownames(model.predictions)
   
-  models.stable.state = get_stable_state_from_models_dir(models.dir)
-  models.stable.state = models.stable.state[models,]
-  save_mat_to_file(mat = models.stable.state, file = models.stable.state.file)
+    models.stable.state = get_stable_state_from_models_dir(models.dir)
+    models.stable.state = models.stable.state[models,]
+    save_mat_to_file(mat = models.stable.state, file = models.stable.state.file)
   
-  models.equations = get_link_operators_from_models_dir(models.dir)
-  models.equations = models.equations[models,]
-  save_mat_to_file(mat = models.equations, file = models.equations.file)
+    models.equations = get_link_operators_from_models_dir(models.dir)
+    models.equations = models.equations[models,]
+    save_mat_to_file(mat = models.equations, file = models.equations.file) 
+  }
 }
 ```
