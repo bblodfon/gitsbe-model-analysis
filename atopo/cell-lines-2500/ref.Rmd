@@ -3,7 +3,7 @@
 For the main R packages that I used in this analysis see:
 [@Wang2011], [@R-circlize], [@Gu2016], [@R-usefun], [@R-emba].
 
-A very useful tutorial about network visualization in R that I used: [@Ognyanova2019]
+A very useful tutorial about network visualization in R: [@Ognyanova2019]
 
 For adding code folding buttons in `bookdown::gitbook` see [@Roche2017Enabl].
 

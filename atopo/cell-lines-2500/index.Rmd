@@ -24,7 +24,8 @@ This document includes the analysis of 8 *ensemble boolean datasets*, each one c
 
 The **main purpose of this analysis** is two-fold: 
 
-1. Show how to use the functions of the [emba](https://github.com/bblodfon/emba) R package [@R-emba] on a real dataset. This means that this analysis can be used as a **long-form documentation (vignette)** for the R package itself
+1. Show how to use the functions of the [emba](https://github.com/bblodfon/emba) R package [@R-emba] on a real dataset. This means that this analysis can be used as a **long-form documentation (vignette)** for the R package itself. 
+Also, functions from the [usefun](https://github.com/bblodfon/usefun) R package [@R-usefun] are used in this analysis.
 2. Investigate if there are common biomarkers between the 8 cell lines
 
 Note that in the beginning, this analysis included various functions that I had implemented in multiple R scripts. 
