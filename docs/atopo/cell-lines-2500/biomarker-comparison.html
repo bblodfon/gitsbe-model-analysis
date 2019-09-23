@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Biomarker comparison | Biomarker Atopo Analysis</title>
   <meta name="description" content="Description" />
-  <meta name="generator" content="bookdown 0.12 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.13 and GitBook 2.6.7" />
 
   <meta property="og:title" content="Biomarker comparison | Biomarker Atopo Analysis" />
   <meta property="og:type" content="book" />
@@ -30,8 +30,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="mda-mb-468-model-analysis.html">
-<link rel="next" href="r-session-info.html">
+<link rel="prev" href="mda-mb-468-model-analysis.html"/>
+<link rel="next" href="r-session-info.html"/>
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
@@ -851,7 +851,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="./">Biomarker atopo analysis</a></li>
 
 <li class="divider"></li>
-<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Intro</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Intro</a><ul>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#note"><i class="fa fa-check"></i>Note</a></li>
+</ul></li>
 <li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html"><i class="fa fa-check"></i>A498 Model Analysis</a><ul>
 <li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#input"><i class="fa fa-check"></i>Input</a></li>
 <li class="chapter" data-level="" data-path="a498-model-analysis.html"><a href="a498-model-analysis.html#performance-statistics"><i class="fa fa-check"></i>Performance Statistics</a></li>
@@ -1001,6 +1003,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul></li>
 <li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html"><i class="fa fa-check"></i>Biomarker comparison</a><ul>
 <li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#input-8"><i class="fa fa-check"></i>Input</a></li>
+<li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#random-model-analysis"><i class="fa fa-check"></i>Random Model Analysis</a></li>
 <li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#performance-biomarkers"><i class="fa fa-check"></i>Performance Biomarkers</a></li>
 <li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#observed-synergies"><i class="fa fa-check"></i>Observed synergies</a></li>
 <li class="chapter" data-level="" data-path="biomarker-comparison.html"><a href="biomarker-comparison.html#synergy-biomarkers"><i class="fa fa-check"></i>Synergy Biomarkers</a></li>
@@ -1071,43 +1074,131 @@ of interest, etc.):</p>
 <a class="sourceLine" id="cb551-8" title="8">  <span class="kw">paste0</span>(cell.line.dir, <span class="st">&quot;/biomarkers&quot;</span>)</a>
 <a class="sourceLine" id="cb551-9" title="9">})</a>
 <a class="sourceLine" id="cb551-10" title="10"></a>
-<a class="sourceLine" id="cb551-11" title="11"><span class="co"># get the drug combinations tested</span></a>
-<a class="sourceLine" id="cb551-12" title="12">model.predictions.file =<span class="st"> </span><span class="kw">paste0</span>(cell.line.dirs[<span class="dv">1</span>], <span class="st">&quot;/model_predictions&quot;</span>)</a>
-<a class="sourceLine" id="cb551-13" title="13">model.predictions =<span class="st"> </span><span class="kw">get_model_predictions</span>(model.predictions.file)</a>
-<a class="sourceLine" id="cb551-14" title="14">drug.combos =<span class="st"> </span><span class="kw">colnames</span>(model.predictions)</a>
-<a class="sourceLine" id="cb551-15" title="15"></a>
-<a class="sourceLine" id="cb551-16" title="16"><span class="co"># get the node names (same topology for all cell lines)</span></a>
-<a class="sourceLine" id="cb551-17" title="17">models.dir =<span class="st"> </span><span class="kw">paste0</span>(cell.line.dirs[<span class="dv">1</span>], <span class="st">&quot;/models&quot;</span>)</a>
-<a class="sourceLine" id="cb551-18" title="18">node.names =<span class="st"> </span><span class="kw">get_node_names</span>(models.dir)</a></code></pre></div>
+<a class="sourceLine" id="cb551-11" title="11">observed.synergies.files =<span class="st"> </span><span class="kw">sapply</span>(cell.line.dirs, <span class="cf">function</span>(cell.line.dir) {</a>
+<a class="sourceLine" id="cb551-12" title="12">  <span class="kw">paste0</span>(cell.line.dir, <span class="st">&quot;/observed_synergies&quot;</span>)</a>
+<a class="sourceLine" id="cb551-13" title="13">})</a>
+<a class="sourceLine" id="cb551-14" title="14"></a>
+<a class="sourceLine" id="cb551-15" title="15"><span class="co"># get the drug combinations tested</span></a>
+<a class="sourceLine" id="cb551-16" title="16">model.predictions.file =<span class="st"> </span><span class="kw">paste0</span>(cell.line.dirs[<span class="dv">1</span>], <span class="st">&quot;/model_predictions&quot;</span>)</a>
+<a class="sourceLine" id="cb551-17" title="17">model.predictions =<span class="st"> </span><span class="kw">get_model_predictions</span>(model.predictions.file)</a>
+<a class="sourceLine" id="cb551-18" title="18">drug.combos =<span class="st"> </span><span class="kw">colnames</span>(model.predictions)</a>
+<a class="sourceLine" id="cb551-19" title="19"></a>
+<a class="sourceLine" id="cb551-20" title="20"><span class="co"># get the node names (same topology for all cell lines)</span></a>
+<a class="sourceLine" id="cb551-21" title="21">models.dir =<span class="st"> </span><span class="kw">paste0</span>(cell.line.dirs[<span class="dv">1</span>], <span class="st">&quot;/models&quot;</span>)</a>
+<a class="sourceLine" id="cb551-22" title="22">node.names =<span class="st"> </span><span class="kw">get_node_names</span>(models.dir)</a></code></pre></div>
+</div>
+<div id="random-model-analysis" class="section level2 unnumbered">
+<h2>Random Model Analysis</h2>
+<p>In this section we provide a fast way to obtain the results regarding
+the <strong>random (or topology-based) model analysis</strong>, which is the same for all cell lines: these
+models were generated while trained/fitted to a general <em>cell proliferation phenotype</em>.
+By changing the observed synergies per different cell line and using the general
+analysis functions offered by the <code>emba</code> R package, we can easily get the
+analysis raw results (without extra refinements that were done in each
+subsequent per cell-line model analysis). First, some further input:</p>
+<div class="sourceCode" id="cb552"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb552-1" title="1">random.dir =<span class="st"> </span><span class="kw">paste0</span>(<span class="kw">getwd</span>(), <span class="st">&quot;/random&quot;</span>)</a>
+<a class="sourceLine" id="cb552-2" title="2">random.model.predictions =<span class="st"> </span><span class="kw">get_model_predictions</span>(<span class="kw">paste0</span>(random.dir, <span class="st">&quot;/model_predictions&quot;</span>))</a>
+<a class="sourceLine" id="cb552-3" title="3">random.models.stable.state =<span class="st"> </span><span class="kw">as.matrix</span>(</a>
+<a class="sourceLine" id="cb552-4" title="4">  <span class="kw">read.table</span>(<span class="dt">file =</span> <span class="kw">paste0</span>(random.dir, <span class="st">&quot;/models_stable_state&quot;</span>), <span class="dt">check.names =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb552-5" title="5">)</a>
+<a class="sourceLine" id="cb552-6" title="6"></a>
+<a class="sourceLine" id="cb552-7" title="7">observed.synergies.per.cell.line =<span class="st"> </span><span class="kw">sapply</span>(observed.synergies.files, </a>
+<a class="sourceLine" id="cb552-8" title="8">  <span class="cf">function</span>(file) { </a>
+<a class="sourceLine" id="cb552-9" title="9">    <span class="kw">get_observed_synergies</span>(file)</a>
+<a class="sourceLine" id="cb552-10" title="10">  }</a>
+<a class="sourceLine" id="cb552-11" title="11">)</a></code></pre></div>
+<p>For the performance-related biomarker analysis, we use the <strong>MCC classification</strong> as
+the default strategy for splitting the models to different performance classes.</p>
+<div class="sourceCode" id="cb553"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb553-1" title="1"><span class="co"># Performance Biomarkers for cell proliferation models</span></a>
+<a class="sourceLine" id="cb553-2" title="2">random.mcc.analysis.res =<span class="st"> </span></a>
+<a class="sourceLine" id="cb553-3" title="3"><span class="st">  </span><span class="kw">lapply</span>(observed.synergies.per.cell.line, <span class="cf">function</span>(observed.synergies) {</a>
+<a class="sourceLine" id="cb553-4" title="4">    <span class="kw">biomarker_mcc_analysis</span>(random.model.predictions, </a>
+<a class="sourceLine" id="cb553-5" title="5">                           random.models.stable.state,</a>
+<a class="sourceLine" id="cb553-6" title="6">                           <span class="dt">models.link.operator =</span> <span class="ot">NULL</span>, </a>
+<a class="sourceLine" id="cb553-7" title="7">                           observed.synergies, <span class="dt">threshold =</span> <span class="fl">0.6</span>, </a>
+<a class="sourceLine" id="cb553-8" title="8">                           <span class="dt">num.of.mcc.classes =</span> <span class="dv">5</span>, <span class="dt">include.NaN.mcc.class =</span> <span class="ot">FALSE</span></a>
+<a class="sourceLine" id="cb553-9" title="9">                           )})</a>
+<a class="sourceLine" id="cb553-10" title="10"></a>
+<a class="sourceLine" id="cb553-11" title="11"><span class="co"># Synergy Biomarkers for cell proliferation models</span></a>
+<a class="sourceLine" id="cb553-12" title="12">random.synergy.analysis.res =<span class="st"> </span></a>
+<a class="sourceLine" id="cb553-13" title="13"><span class="st">  </span><span class="kw">lapply</span>(observed.synergies.per.cell.line, <span class="cf">function</span>(observed.synergies) {</a>
+<a class="sourceLine" id="cb553-14" title="14">    <span class="kw">biomarker_synergy_analysis</span>(random.model.predictions, </a>
+<a class="sourceLine" id="cb553-15" title="15">                               random.models.stable.state,</a>
+<a class="sourceLine" id="cb553-16" title="16">                               <span class="dt">models.link.operator =</span> <span class="ot">NULL</span>, </a>
+<a class="sourceLine" id="cb553-17" title="17">                               observed.synergies, <span class="dt">threshold =</span> <span class="fl">0.6</span>)})</a></code></pre></div>
 </div>
 <div id="performance-biomarkers" class="section level2 unnumbered">
 <h2>Performance Biomarkers</h2>
 <p>Next, we will visualize the performance biomarkers found from the <strong>cell-specific
-model analysis</strong> per cell line:</p>
-<div class="sourceCode" id="cb552"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb552-1" title="1">biomarkers.perf.res =<span class="st"> </span><span class="kw">get_perf_biomarkers_per_cell_line</span>(biomarkers.dirs, node.names)</a>
-<a class="sourceLine" id="cb552-2" title="2"></a>
-<a class="sourceLine" id="cb552-3" title="3"><span class="co"># remove nodes which are not biomarkers for any cell line</span></a>
-<a class="sourceLine" id="cb552-4" title="4">biomarkers.perf.res =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(biomarkers.perf.res, <span class="dt">value =</span> <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb552-5" title="5"></a>
-<a class="sourceLine" id="cb552-6" title="6"><span class="co"># define a coloring</span></a>
-<a class="sourceLine" id="cb552-7" title="7">biomarkers.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>), <span class="kw">c</span>(<span class="st">&quot;tomato&quot;</span>, <span class="st">&quot;grey&quot;</span>, <span class="st">&quot;gold&quot;</span>))</a>
-<a class="sourceLine" id="cb552-8" title="8"></a>
-<a class="sourceLine" id="cb552-9" title="9">perf.biomarkers.heatmap =<span class="st"> </span></a>
-<a class="sourceLine" id="cb552-10" title="10"><span class="st">  </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> <span class="kw">as.matrix</span>(biomarkers.perf.res), <span class="dt">col =</span> biomarkers.col.fun,</a>
-<a class="sourceLine" id="cb552-11" title="11">        <span class="dt">column_title =</span> <span class="st">&quot;Performance biomarkers per cell line&quot;</span>,</a>
-<a class="sourceLine" id="cb552-12" title="12">        <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>),</a>
-<a class="sourceLine" id="cb552-13" title="13">        <span class="dt">row_title =</span> <span class="st">&quot;Cell Lines&quot;</span>, <span class="dt">row_title_side =</span> <span class="st">&quot;left&quot;</span>,</a>
-<a class="sourceLine" id="cb552-14" title="14">        <span class="dt">row_dend_side =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">row_names_side =</span> <span class="st">&quot;left&quot;</span>,</a>
-<a class="sourceLine" id="cb552-15" title="15">        <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">5</span>),</a>
-<a class="sourceLine" id="cb552-16" title="16">        <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
-<a class="sourceLine" id="cb552-17" title="17">        <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="dt">title =</span> <span class="st">&quot;Activity State&quot;</span>,</a>
-<a class="sourceLine" id="cb552-18" title="18">          <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Inhibited&quot;</span>, <span class="st">&quot;Active&quot;</span>), <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>, <span class="dt">ncol =</span> <span class="dv">2</span>,</a>
-<a class="sourceLine" id="cb552-19" title="19">          <span class="dt">title_position =</span> <span class="st">&quot;leftcenter&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;horizontal&quot;</span>))</a>
-<a class="sourceLine" id="cb552-20" title="20"></a>
-<a class="sourceLine" id="cb552-21" title="21"><span class="kw">draw</span>(perf.biomarkers.heatmap, <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;bottom&quot;</span>)</a></code></pre></div>
+and random</strong> model analysis combined (per cell line):</p>
+<div class="sourceCode" id="cb554"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb554-1" title="1"><span class="co"># Cell-specific performance biomarkers</span></a>
+<a class="sourceLine" id="cb554-2" title="2">biomarkers.perf.res.cell.specific =<span class="st"> </span><span class="kw">get_perf_biomarkers_per_cell_line</span>(biomarkers.dirs, node.names)</a>
+<a class="sourceLine" id="cb554-3" title="3"></a>
+<a class="sourceLine" id="cb554-4" title="4"><span class="co"># Random models performance biomarkers</span></a>
+<a class="sourceLine" id="cb554-5" title="5">biomarkers.perf.res.random =<span class="st"> </span><span class="kw">as.data.frame</span>(<span class="kw">matrix</span>(<span class="dt">data =</span> <span class="ot">NA</span>, <span class="dt">nrow =</span> <span class="dv">0</span>, <span class="dt">ncol =</span> <span class="kw">length</span>(node.names)))</a>
+<a class="sourceLine" id="cb554-6" title="6"><span class="kw">colnames</span>(biomarkers.perf.res.random) =<span class="st"> </span>node.names</a>
+<a class="sourceLine" id="cb554-7" title="7"></a>
+<a class="sourceLine" id="cb554-8" title="8"><span class="cf">for</span> (cell.line <span class="cf">in</span> cell.lines) {</a>
+<a class="sourceLine" id="cb554-9" title="9">  biomarkers.perf.res.random =<span class="st"> </span></a>
+<a class="sourceLine" id="cb554-10" title="10"><span class="st">    </span><span class="kw">add_row_to_ternary_df</span>(<span class="dt">df =</span> biomarkers.perf.res.random, </a>
+<a class="sourceLine" id="cb554-11" title="11">                          <span class="dt">values.pos =</span> random.mcc.analysis.res[[cell.line]][[<span class="st">&quot;biomarkers.mcc.active&quot;</span>]],</a>
+<a class="sourceLine" id="cb554-12" title="12">                          <span class="dt">values.neg =</span> random.mcc.analysis.res[[cell.line]][[<span class="st">&quot;biomarkers.mcc.inhibited&quot;</span>]],</a>
+<a class="sourceLine" id="cb554-13" title="13">                          <span class="dt">row.name =</span> cell.line)</a>
+<a class="sourceLine" id="cb554-14" title="14">}</a>
+<a class="sourceLine" id="cb554-15" title="15"></a>
+<a class="sourceLine" id="cb554-16" title="16"><span class="co"># Combine results</span></a>
+<a class="sourceLine" id="cb554-17" title="17">biomarkers.perf.res =<span class="st"> </span><span class="kw">as.data.frame</span>(<span class="kw">matrix</span>(<span class="dt">data =</span> <span class="ot">NA</span>, <span class="dt">nrow =</span> <span class="dv">0</span>, <span class="dt">ncol =</span> <span class="kw">length</span>(node.names)))</a>
+<a class="sourceLine" id="cb554-18" title="18"><span class="kw">colnames</span>(biomarkers.perf.res) =<span class="st"> </span>node.names</a>
+<a class="sourceLine" id="cb554-19" title="19"></a>
+<a class="sourceLine" id="cb554-20" title="20">count =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb554-21" title="21"><span class="cf">for</span> (cell.line <span class="cf">in</span> cell.lines) {</a>
+<a class="sourceLine" id="cb554-22" title="22">  <span class="cf">for</span> (node.name <span class="cf">in</span> node.names) {</a>
+<a class="sourceLine" id="cb554-23" title="23">    cell.spec.value =<span class="st"> </span>biomarkers.perf.res.cell.specific[cell.line, node.name]</a>
+<a class="sourceLine" id="cb554-24" title="24">    random.value    =<span class="st"> </span>biomarkers.perf.res.random[cell.line, node.name]</a>
+<a class="sourceLine" id="cb554-25" title="25">    diff =<span class="st"> </span>cell.spec.value <span class="op">-</span><span class="st"> </span>random.value</a>
+<a class="sourceLine" id="cb554-26" title="26">    <span class="cf">if</span> (diff <span class="op">!=</span><span class="st"> </span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb554-27" title="27">      biomarkers.perf.res[cell.line, node.name] =<span class="st"> </span>cell.spec.value <span class="op">+</span><span class="st"> </span>random.value</a>
+<a class="sourceLine" id="cb554-28" title="28">    <span class="cf">else</span> <span class="co"># diff == 2, e.g. (1 vs -1) or (-1 vs 1)</span></a>
+<a class="sourceLine" id="cb554-29" title="29">      { </a>
+<a class="sourceLine" id="cb554-30" title="30">        biomarkers.perf.res[cell.line, node.name] =<span class="st"> </span>random.value</a>
+<a class="sourceLine" id="cb554-31" title="31">        count =<span class="st"> </span>count <span class="op">+</span><span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb554-32" title="32">      }</a>
+<a class="sourceLine" id="cb554-33" title="33">    }</a>
+<a class="sourceLine" id="cb554-34" title="34">  }</a>
+<a class="sourceLine" id="cb554-35" title="35"></a>
+<a class="sourceLine" id="cb554-36" title="36"><span class="co"># remove nodes which are not biomarkers for any cell line</span></a>
+<a class="sourceLine" id="cb554-37" title="37">biomarkers.perf.res =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(biomarkers.perf.res, <span class="dt">value =</span> <span class="dv">0</span>)</a></code></pre></div>
+<p>Note that when a performance biomarker was found at the same state (active or inhibited)
+in both the random and the cell-specific analyses, a value of <span class="math inline">\(2\)</span> or <span class="math inline">\(-2\)</span> respectively
+was kept in the final result. If a biomarker was reported as active/inhibited by
+one analysis but not as a biomarker in the other, we keep it as a biomarker nonetheless
+in the state specified in one of the two analyses.
+Lastly, if the results are complete opposites - meaning that a common biomarker
+was found for a cell line in different states in the two analyses (we have
+4 cases only of this), we keep the state of that biomarker as it is
+reported by the cell-specific analysis (which was a bit more subtle and elaborate).</p>
+<div class="sourceCode" id="cb555"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb555-1" title="1"><span class="co"># define a coloring</span></a>
+<a class="sourceLine" id="cb555-2" title="2">biomarkers.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="kw">c</span>(<span class="op">-</span><span class="dv">2</span>,<span class="op">-</span><span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>,<span class="dv">2</span>), </a>
+<a class="sourceLine" id="cb555-3" title="3">                                <span class="kw">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;tomato&quot;</span>, <span class="st">&quot;grey&quot;</span>, <span class="st">&quot;gold&quot;</span>, <span class="st">&quot;yellow&quot;</span>))</a>
+<a class="sourceLine" id="cb555-4" title="4"></a>
+<a class="sourceLine" id="cb555-5" title="5">perf.biomarkers.heatmap =<span class="st"> </span></a>
+<a class="sourceLine" id="cb555-6" title="6"><span class="st">  </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> <span class="kw">as.matrix</span>(biomarkers.perf.res), <span class="dt">col =</span> biomarkers.col.fun,</a>
+<a class="sourceLine" id="cb555-7" title="7">        <span class="dt">column_title =</span> <span class="st">&quot;Performance biomarkers per cell line&quot;</span>,</a>
+<a class="sourceLine" id="cb555-8" title="8">        <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb555-9" title="9">        <span class="dt">row_title =</span> <span class="st">&quot;Cell Lines&quot;</span>, <span class="dt">row_title_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb555-10" title="10">        <span class="dt">row_dend_side =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">row_names_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb555-11" title="11">        <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">5</span>),</a>
+<a class="sourceLine" id="cb555-12" title="12">        <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
+<a class="sourceLine" id="cb555-13" title="13">        <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="op">-</span><span class="dv">2</span>, <span class="dv">-1</span>, <span class="dv">1</span>, <span class="dv">2</span>), <span class="dt">title =</span> <span class="st">&quot;Activity State&quot;</span>,</a>
+<a class="sourceLine" id="cb555-14" title="14">          <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Inhibited (Cell-specific+Random)&quot;</span>, <span class="st">&quot;Inhibited&quot;</span>, <span class="st">&quot;Active&quot;</span>, </a>
+<a class="sourceLine" id="cb555-15" title="15">                     <span class="st">&quot;Active (Cell-specific+Random)&quot;</span>), </a>
+<a class="sourceLine" id="cb555-16" title="16">          <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>, <span class="dt">ncol =</span> <span class="dv">2</span>, <span class="dt">title_position =</span> <span class="st">&quot;leftcenter&quot;</span>, </a>
+<a class="sourceLine" id="cb555-17" title="17">          <span class="dt">direction =</span> <span class="st">&quot;horizontal&quot;</span>))</a>
+<a class="sourceLine" id="cb555-18" title="18"></a>
+<a class="sourceLine" id="cb555-19" title="19"><span class="kw">draw</span>(perf.biomarkers.heatmap, <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;bottom&quot;</span>)</a></code></pre></div>
 <p><img src="biomarker_comparison_files/figure-html/Performance%20Biomarkers%20Heatmap-1.png" width="2400" /></p>
 <ul>
-<li>Across all cell lines, a total of 91 performance
+<li>Across all cell lines, a total of 94 performance
 biomarkers were found</li>
 <li><strong>The three gastrointestinal cell lines</strong> (<code>AGS,SW620,colo205</code>) <strong>have a lot of
 common biomarkers</strong>. These common biomarkers between the cell lines can be in
@@ -1118,8 +1209,9 @@ cell lines</strong></li>
 <li>There exist unique biomarkers per cell line which are not shared with any of
 the other cell lines</li>
 </ul>
-<p>We save the results:</p>
-<div class="sourceCode" id="cb553"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb553-1" title="1"><span class="kw">save_df_to_file</span>(<span class="dt">df =</span> biomarkers.perf.res, <span class="dt">file =</span> <span class="st">&quot;perf_biomakrers_per_cell_line&quot;</span>)</a></code></pre></div>
+<p>We save the cell-specific and random model analysis results separately:</p>
+<div class="sourceCode" id="cb556"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb556-1" title="1"><span class="kw">save_df_to_file</span>(<span class="dt">df =</span> biomarkers.perf.res.cell.specific, <span class="dt">file =</span> <span class="st">&quot;perf_biomarkers_per_cell_line&quot;</span>)</a>
+<a class="sourceLine" id="cb556-2" title="2"><span class="kw">save_df_to_file</span>(<span class="dt">df =</span> biomarkers.perf.res.random, <span class="dt">file =</span> <span class="st">&quot;./random/perf_biomarkers_per_cell_line&quot;</span>)</a></code></pre></div>
 </div>
 <div id="observed-synergies" class="section level2 unnumbered">
 <h2>Observed synergies</h2>
@@ -1127,115 +1219,179 @@ the other cell lines</li>
 combinations that were found synergistic across all the
 153 tested ones). In this section, we will
 visualize the cell lines’ observed synergies and mark the synergies that were
-also predicted by the cell-specific models. First, we get the biomarkers for
-these synergies from each cell line:</p>
-<div class="sourceCode" id="cb554"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb554-1" title="1">synergy.biomarkers.cell.specific =<span class="st"> </span></a>
-<a class="sourceLine" id="cb554-2" title="2"><span class="st">  </span><span class="kw">get_synergy_biomarkers_per_cell_line</span>(biomarkers.dirs)</a>
-<a class="sourceLine" id="cb554-3" title="3"></a>
-<a class="sourceLine" id="cb554-4" title="4">total.predicted.synergies.cell.specific =</a>
-<a class="sourceLine" id="cb554-5" title="5"><span class="st">  </span><span class="kw">unique</span>(<span class="kw">unlist</span>(<span class="kw">sapply</span>(synergy.biomarkers.cell.specific, <span class="cf">function</span>(df) { <span class="kw">rownames</span>(df) })))</a>
-<a class="sourceLine" id="cb554-6" title="6">total.predicted.synergies.cell.specific.num =<span class="st"> </span></a>
-<a class="sourceLine" id="cb554-7" title="7"><span class="st">  </span><span class="kw">length</span>(total.predicted.synergies.cell.specific)</a></code></pre></div>
+also predicted by the cell-specific models and the random-generated ones.
+First, we get the biomarkers for these synergies from each cell line:</p>
+<div class="sourceCode" id="cb557"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb557-1" title="1">synergy.biomarkers.cell.specific =<span class="st"> </span></a>
+<a class="sourceLine" id="cb557-2" title="2"><span class="st">  </span><span class="kw">get_synergy_biomarkers_per_cell_line</span>(biomarkers.dirs)</a>
+<a class="sourceLine" id="cb557-3" title="3"></a>
+<a class="sourceLine" id="cb557-4" title="4">total.predicted.synergies.cell.specific =</a>
+<a class="sourceLine" id="cb557-5" title="5"><span class="st">  </span><span class="kw">unique</span>(<span class="kw">unlist</span>(<span class="kw">sapply</span>(synergy.biomarkers.cell.specific, <span class="cf">function</span>(df) { <span class="kw">rownames</span>(df) })))</a>
+<a class="sourceLine" id="cb557-6" title="6">total.predicted.synergies.cell.specific.num =<span class="st"> </span></a>
+<a class="sourceLine" id="cb557-7" title="7"><span class="st">  </span><span class="kw">length</span>(total.predicted.synergies.cell.specific)</a></code></pre></div>
+<p>The same for the random models:</p>
+<div class="sourceCode" id="cb558"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb558-1" title="1">synergy.biomarkers.random =<span class="st"> </span></a>
+<a class="sourceLine" id="cb558-2" title="2"><span class="st">  </span><span class="kw">sapply</span>(cell.lines, <span class="cf">function</span>(cell.line) {</a>
+<a class="sourceLine" id="cb558-3" title="3">    random.synergy.analysis.res[[cell.line]][[<span class="st">&#39;activity.biomarkers&#39;</span>]]</a>
+<a class="sourceLine" id="cb558-4" title="4">  }, <span class="dt">simplify =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb558-5" title="5"></a>
+<a class="sourceLine" id="cb558-6" title="6">total.predicted.synergies.random =</a>
+<a class="sourceLine" id="cb558-7" title="7"><span class="st">  </span><span class="kw">unique</span>(<span class="kw">unlist</span>(<span class="kw">sapply</span>(synergy.biomarkers.random, <span class="cf">function</span>(df) { <span class="kw">rownames</span>(df) })))</a>
+<a class="sourceLine" id="cb558-8" title="8">total.predicted.synergies.random.num =<span class="st"> </span><span class="kw">length</span>(total.predicted.synergies.random)</a></code></pre></div>
 <p>Then, we get the observed synergies from each cell line:</p>
-<div class="sourceCode" id="cb555"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb555-1" title="1">observed.synergies.res =<span class="st"> </span><span class="kw">get_observed_synergies_per_cell_line</span>(cell.line.dirs, drug.combos)</a>
-<a class="sourceLine" id="cb555-2" title="2"></a>
-<a class="sourceLine" id="cb555-3" title="3"><span class="co"># remove drug combinations which are not observed in any of the cell lines</span></a>
-<a class="sourceLine" id="cb555-4" title="4">observed.synergies.res =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(observed.synergies.res, <span class="dt">value =</span> <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb555-5" title="5"></a>
-<a class="sourceLine" id="cb555-6" title="6">total.observed.synergies =<span class="st"> </span><span class="kw">colnames</span>(observed.synergies.res)</a>
-<a class="sourceLine" id="cb555-7" title="7">total.observed.synergies.num =<span class="st"> </span><span class="kw">length</span>(total.observed.synergies)</a></code></pre></div>
+<div class="sourceCode" id="cb559"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb559-1" title="1">observed.synergies.res =<span class="st"> </span><span class="kw">get_observed_synergies_per_cell_line</span>(cell.line.dirs, drug.combos)</a>
+<a class="sourceLine" id="cb559-2" title="2"></a>
+<a class="sourceLine" id="cb559-3" title="3"><span class="co"># remove drug combinations which are not observed in any of the cell lines</span></a>
+<a class="sourceLine" id="cb559-4" title="4">observed.synergies.res =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(observed.synergies.res, <span class="dt">value =</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb559-5" title="5"></a>
+<a class="sourceLine" id="cb559-6" title="6">total.observed.synergies =<span class="st"> </span><span class="kw">colnames</span>(observed.synergies.res)</a>
+<a class="sourceLine" id="cb559-7" title="7">total.observed.synergies.num =<span class="st"> </span><span class="kw">length</span>(total.observed.synergies)</a></code></pre></div>
 <p>Lastly, we visualize the observed and predicted synergies for all cell lines
 in one heatmap:</p>
-<div class="sourceCode" id="cb556"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb556-1" title="1"><span class="co"># color the cell-specific predicted synergies</span></a>
-<a class="sourceLine" id="cb556-2" title="2">predicted.synergies.colors =<span class="st"> </span><span class="kw">rep</span>(<span class="st">&quot;black&quot;</span>, total.observed.synergies.num)</a>
-<a class="sourceLine" id="cb556-3" title="3"><span class="kw">names</span>(predicted.synergies.colors) =<span class="st"> </span>total.observed.synergies</a>
-<a class="sourceLine" id="cb556-4" title="4">predicted.synergies.colors[total.observed.synergies <span class="op">%in%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb556-5" title="5"><span class="st">                           </span>total.predicted.synergies.cell.specific] =<span class="st"> &quot;blue&quot;</span></a>
-<a class="sourceLine" id="cb556-6" title="6"></a>
-<a class="sourceLine" id="cb556-7" title="7"><span class="co"># define a coloring</span></a>
-<a class="sourceLine" id="cb556-8" title="8">obs.synergies.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="kw">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;green&quot;</span>))</a>
-<a class="sourceLine" id="cb556-9" title="9"></a>
-<a class="sourceLine" id="cb556-10" title="10">observed.synergies.heatmap =<span class="st"> </span></a>
-<a class="sourceLine" id="cb556-11" title="11"><span class="st">  </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> <span class="kw">as.matrix</span>(observed.synergies.res), </a>
-<a class="sourceLine" id="cb556-12" title="12">          <span class="dt">col =</span> obs.synergies.col.fun,</a>
-<a class="sourceLine" id="cb556-13" title="13">          <span class="dt">column_title =</span> <span class="st">&quot;Observed synergies per cell line&quot;</span>,</a>
-<a class="sourceLine" id="cb556-14" title="14">          <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>),</a>
-<a class="sourceLine" id="cb556-15" title="15">          <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> predicted.synergies.colors),</a>
-<a class="sourceLine" id="cb556-16" title="16">          <span class="dt">row_title =</span> <span class="st">&quot;Cell Lines&quot;</span>, <span class="dt">row_title_side =</span> <span class="st">&quot;left&quot;</span>,</a>
-<a class="sourceLine" id="cb556-17" title="17">          <span class="dt">row_dend_side =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">row_names_side =</span> <span class="st">&quot;left&quot;</span>,</a>
-<a class="sourceLine" id="cb556-18" title="18">          <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
-<a class="sourceLine" id="cb556-19" title="19">          <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;YES&quot;</span>, <span class="st">&quot;NO&quot;</span>), </a>
-<a class="sourceLine" id="cb556-20" title="20">            <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>, <span class="dt">title =</span> <span class="st">&quot;Observed&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;vertical&quot;</span>))</a>
-<a class="sourceLine" id="cb556-21" title="21"></a>
-<a class="sourceLine" id="cb556-22" title="22">lgd =<span class="st"> </span><span class="kw">Legend</span>(<span class="dt">at =</span> <span class="st">&quot;Cell-specific&quot;</span>, <span class="dt">title =</span> <span class="st">&quot;Predicted&quot;</span>, </a>
-<a class="sourceLine" id="cb556-23" title="23">             <span class="dt">legend_gp =</span> <span class="kw">gpar</span>(<span class="dt">fill =</span> <span class="st">&quot;blue&quot;</span>))</a>
-<a class="sourceLine" id="cb556-24" title="24"></a>
-<a class="sourceLine" id="cb556-25" title="25"><span class="kw">draw</span>(observed.synergies.heatmap,  <span class="dt">heatmap_legend_list =</span> <span class="kw">list</span>(lgd), </a>
-<a class="sourceLine" id="cb556-26" title="26">     <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;right&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb560"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb560-1" title="1"><span class="co"># color the cell-specific predicted synergies</span></a>
+<a class="sourceLine" id="cb560-2" title="2">predicted.synergies.colors =<span class="st"> </span><span class="kw">rep</span>(<span class="st">&quot;black&quot;</span>, total.observed.synergies.num)</a>
+<a class="sourceLine" id="cb560-3" title="3"><span class="kw">names</span>(predicted.synergies.colors) =<span class="st"> </span>total.observed.synergies</a>
+<a class="sourceLine" id="cb560-4" title="4">common.predicted.synergies =<span class="st"> </span><span class="kw">intersect</span>(total.predicted.synergies.cell.specific,</a>
+<a class="sourceLine" id="cb560-5" title="5">                                       total.predicted.synergies.random)</a>
+<a class="sourceLine" id="cb560-6" title="6">cell.specific.only.predicted.synergies =<span class="st"> </span></a>
+<a class="sourceLine" id="cb560-7" title="7"><span class="st">  </span>total.predicted.synergies.cell.specific[<span class="op">!</span>total.predicted.synergies.cell.specific <span class="op">%in%</span><span class="st"> </span>total.predicted.synergies.random]</a>
+<a class="sourceLine" id="cb560-8" title="8">random.only.predicted.synergies =<span class="st"> </span></a>
+<a class="sourceLine" id="cb560-9" title="9"><span class="st">  </span>total.predicted.synergies.random[<span class="op">!</span>total.predicted.synergies.random <span class="op">%in%</span><span class="st"> </span>total.predicted.synergies.cell.specific]</a>
+<a class="sourceLine" id="cb560-10" title="10"></a>
+<a class="sourceLine" id="cb560-11" title="11">predicted.synergies.colors[total.observed.synergies <span class="op">%in%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb560-12" title="12"><span class="st">                           </span>common.predicted.synergies] =<span class="st"> &quot;blue&quot;</span></a>
+<a class="sourceLine" id="cb560-13" title="13">predicted.synergies.colors[total.observed.synergies <span class="op">%in%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb560-14" title="14"><span class="st">                           </span>cell.specific.only.predicted.synergies] =<span class="st"> &quot;orange&quot;</span></a>
+<a class="sourceLine" id="cb560-15" title="15">predicted.synergies.colors[total.observed.synergies <span class="op">%in%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb560-16" title="16"><span class="st">                           </span>random.only.predicted.synergies] =<span class="st"> &quot;purple&quot;</span></a>
+<a class="sourceLine" id="cb560-17" title="17"></a>
+<a class="sourceLine" id="cb560-18" title="18"><span class="co"># define a coloring</span></a>
+<a class="sourceLine" id="cb560-19" title="19">obs.synergies.col.fun =<span class="st"> </span><span class="kw">colorRamp2</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="kw">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;green&quot;</span>))</a>
+<a class="sourceLine" id="cb560-20" title="20"></a>
+<a class="sourceLine" id="cb560-21" title="21">observed.synergies.heatmap =<span class="st"> </span></a>
+<a class="sourceLine" id="cb560-22" title="22"><span class="st">  </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> <span class="kw">as.matrix</span>(observed.synergies.res), </a>
+<a class="sourceLine" id="cb560-23" title="23">          <span class="dt">col =</span> obs.synergies.col.fun,</a>
+<a class="sourceLine" id="cb560-24" title="24">          <span class="dt">column_title =</span> <span class="st">&quot;Observed synergies per cell line&quot;</span>,</a>
+<a class="sourceLine" id="cb560-25" title="25">          <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb560-26" title="26">          <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> predicted.synergies.colors),</a>
+<a class="sourceLine" id="cb560-27" title="27">          <span class="dt">row_title =</span> <span class="st">&quot;Cell Lines&quot;</span>, <span class="dt">row_title_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb560-28" title="28">          <span class="dt">row_dend_side =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">row_names_side =</span> <span class="st">&quot;left&quot;</span>,</a>
+<a class="sourceLine" id="cb560-29" title="29">          <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
+<a class="sourceLine" id="cb560-30" title="30">          <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;YES&quot;</span>, <span class="st">&quot;NO&quot;</span>), </a>
+<a class="sourceLine" id="cb560-31" title="31">            <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>, <span class="dt">title =</span> <span class="st">&quot;Observed&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;vertical&quot;</span>))</a>
+<a class="sourceLine" id="cb560-32" title="32"></a>
+<a class="sourceLine" id="cb560-33" title="33">lgd =<span class="st"> </span><span class="kw">Legend</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="st">&quot;Cell-specific&quot;</span>, <span class="st">&quot;Random&quot;</span>, <span class="st">&quot;Both&quot;</span>), <span class="dt">title =</span> <span class="st">&quot;Predicted&quot;</span>, </a>
+<a class="sourceLine" id="cb560-34" title="34">             <span class="dt">legend_gp =</span> <span class="kw">gpar</span>(<span class="dt">fill =</span> <span class="kw">c</span>(<span class="st">&quot;orange&quot;</span>, <span class="st">&quot;purple&quot;</span>, <span class="st">&quot;blue&quot;</span>)))</a>
+<a class="sourceLine" id="cb560-35" title="35"></a>
+<a class="sourceLine" id="cb560-36" title="36"><span class="kw">draw</span>(observed.synergies.heatmap,  <span class="dt">heatmap_legend_list =</span> <span class="kw">list</span>(lgd), </a>
+<a class="sourceLine" id="cb560-37" title="37">     <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;right&quot;</span>)</a></code></pre></div>
 <p><img src="biomarker_comparison_files/figure-html/Observed%20synergies%20heatmap-1.png" width="2700" /></p>
 <ul>
 <li>The <em>cell-specific</em> models predicted 12
 of the 40 observed synergies found across the
-8 cell lines. Thus, the <strong>total true positive coverage for
-the cell-specific models across all cell lines is
-0.3%</strong></li>
+8 cell lines, whereas the <em>random</em> models predicted
+11 of the them.
+Thus, the <strong>total true positive coverage for all the models across all cell lines is
+0.325%</strong></li>
 <li>Note that there exist synergies which were observed in all cell lines (<code>AK-BI</code>,
 <code>PI-D1</code>)</li>
-<li>Cell line specific synergies (e.g. <code>PD-PI</code>, <code>AK-PD</code> in the <code>A498</code> cell line)
-were identified only by the cell-specific models (<strong>????? MAYBE! HAVE TO
-CHECK FIRST WITH RANDOM MODEL PREDICTIONS</strong>)</li>
+<li><code>BI-JN</code> is an observed synergy across almost all cell lines and only the
+cell-specific models could predict it.</li>
+<li>The synergies <code>PD-G2</code> and <code>AK-PD</code> in the <code>A498</code> cell line were identified
+only by the random and cell-specific models respectively (and these synergies
+were observed in no other cell line). This shows us that a <strong>complimentary
+approach</strong> is needed when searching for biomarkers as the two different kind of
+models (trained to a specific activity state profile vs trained to proliferation)
+although they share common true positives regarding the synergies they predict,
+there are also synergies only a specific class of models could predict.</li>
 </ul>
 </div>
 <div id="synergy-biomarkers" class="section level2 unnumbered">
 <h2>Synergy Biomarkers</h2>
 <p>In this section, we will produce heatmaps showing the biomarkers across the
 8 cell lines for every observed synergy that was also
-predicted by the cell-specific models. First, we manipulate the biomarker
-result data to fit our purposes:</p>
-<div class="sourceCode" id="cb557"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb557-1" title="1">synergy.biomarkers.cell.specific.res =<span class="st"> </span><span class="kw">ldf_arrange_by_rownames</span>(synergy.biomarkers.cell.specific)</a>
-<a class="sourceLine" id="cb557-2" title="2"></a>
-<a class="sourceLine" id="cb557-3" title="3"><span class="co"># For every synergy, remove cell lines that didn&#39;t predict the observed synergies</span></a>
-<a class="sourceLine" id="cb557-4" title="4"><span class="co"># at all or for which we couldn&#39;t find any biomarkers (row pruning).</span></a>
-<a class="sourceLine" id="cb557-5" title="5"><span class="co"># Also remove nodes which are not biomarkers for any cell line (column pruning)</span></a>
-<a class="sourceLine" id="cb557-6" title="6"><span class="cf">for</span> (synergy <span class="cf">in</span> <span class="kw">names</span>(synergy.biomarkers.cell.specific.res)) {</a>
-<a class="sourceLine" id="cb557-7" title="7">  df =<span class="st"> </span>synergy.biomarkers.cell.specific.res[[synergy]]</a>
-<a class="sourceLine" id="cb557-8" title="8">  df =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(df, <span class="dt">value =</span> <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb557-9" title="9">  df =<span class="st"> </span><span class="kw">prune_rows_from_df</span>(df, <span class="dt">value =</span> <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb557-10" title="10">  synergy.biomarkers.cell.specific.res[[synergy]] =<span class="st"> </span>df</a>
-<a class="sourceLine" id="cb557-11" title="11">}</a>
-<a class="sourceLine" id="cb557-12" title="12"></a>
-<a class="sourceLine" id="cb557-13" title="13"><span class="co"># re-order result list based on increasing number of cell lines</span></a>
-<a class="sourceLine" id="cb557-14" title="14">synergy.biomarkers.cell.specific.res =<span class="st"> </span>synergy.biomarkers.cell.specific.res[</a>
-<a class="sourceLine" id="cb557-15" title="15">  <span class="kw">names</span>(<span class="kw">sort</span>(<span class="kw">sapply</span>(synergy.biomarkers.cell.specific.res, <span class="cf">function</span>(x) { <span class="kw">nrow</span>(x) })))</a>
-<a class="sourceLine" id="cb557-16" title="16">]</a></code></pre></div>
-<p>Next, we produce the heatmaps (one per synergy predicted):</p>
-<div class="sourceCode" id="cb558"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb558-1" title="1"><span class="cf">for</span> (synergy <span class="cf">in</span> <span class="kw">names</span>(synergy.biomarkers.cell.specific.res)) {</a>
-<a class="sourceLine" id="cb558-2" title="2">  biomarkers.res =<span class="st"> </span><span class="kw">as.matrix</span>(synergy.biomarkers.cell.specific.res[[synergy]])</a>
-<a class="sourceLine" id="cb558-3" title="3">  </a>
-<a class="sourceLine" id="cb558-4" title="4">  <span class="co"># customize some parameters</span></a>
-<a class="sourceLine" id="cb558-5" title="5">  heatmap.height =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">&lt;</span><span class="st"> </span><span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb558-6" title="6">  show.column.dend =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="ot">FALSE</span>, <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb558-7" title="7">  row.title =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="st">&quot;Cell Line&quot;</span>, <span class="st">&quot;Cell Lines&quot;</span>)</a>
-<a class="sourceLine" id="cb558-8" title="8">  </a>
-<a class="sourceLine" id="cb558-9" title="9">  biomarkers.heatmap =<span class="st"> </span></a>
-<a class="sourceLine" id="cb558-10" title="10"><span class="st">    </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> biomarkers.res, <span class="dt">col =</span> biomarkers.col.fun, </a>
-<a class="sourceLine" id="cb558-11" title="11">            <span class="dt">column_title =</span> <span class="kw">paste0</span>(<span class="st">&quot;Biomarkers for Synergy: &quot;</span>, synergy),</a>
-<a class="sourceLine" id="cb558-12" title="12">            <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>, <span class="dt">fontface =</span> <span class="st">&quot;bold&quot;</span>),</a>
-<a class="sourceLine" id="cb558-13" title="13">            <span class="dt">row_title =</span> row.title, <span class="dt">row_title_side =</span> <span class="st">&quot;right&quot;</span>,</a>
-<a class="sourceLine" id="cb558-14" title="14">            <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
-<a class="sourceLine" id="cb558-15" title="15">            <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">10</span>),</a>
-<a class="sourceLine" id="cb558-16" title="16">            <span class="dt">show_column_dend =</span> show.column.dend,</a>
-<a class="sourceLine" id="cb558-17" title="17">            <span class="dt">height =</span> <span class="kw">unit</span>(heatmap.height, <span class="st">&quot;inches&quot;</span>),</a>
-<a class="sourceLine" id="cb558-18" title="18">            <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="dt">title =</span> <span class="st">&quot;Activity State&quot;</span>,</a>
-<a class="sourceLine" id="cb558-19" title="19">              <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Inhibited&quot;</span>, <span class="st">&quot;Active&quot;</span>), <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>,</a>
-<a class="sourceLine" id="cb558-20" title="20">              <span class="dt">title_position =</span> <span class="st">&quot;leftcenter&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;horizontal&quot;</span>, <span class="dt">ncol =</span> <span class="dv">2</span>))</a>
-<a class="sourceLine" id="cb558-21" title="21">  </a>
-<a class="sourceLine" id="cb558-22" title="22">  <span class="kw">draw</span>(biomarkers.heatmap, <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;bottom&quot;</span>)</a>
-<a class="sourceLine" id="cb558-23" title="23">}</a></code></pre></div>
-<p><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-1.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-2.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-3.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-4.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-5.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-6.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-7.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-8.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-9.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-10.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-11.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20predicted%20synergies-12.png" width="2700" /></p>
-<p>The main result here is that we observe common biomarkers across many cell lines
+predicted by the cell-specific and/or random models. First, we manipulate the
+biomarker result data to fit our purposes:</p>
+<div class="sourceCode" id="cb561"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb561-1" title="1">synergy.biomarkers.cell.specific.res =<span class="st"> </span><span class="kw">ldf_arrange_by_rownames</span>(synergy.biomarkers.cell.specific)</a>
+<a class="sourceLine" id="cb561-2" title="2">synergy.biomarkers.random.res =<span class="st"> </span><span class="kw">ldf_arrange_by_rownames</span>(synergy.biomarkers.random)</a>
+<a class="sourceLine" id="cb561-3" title="3"></a>
+<a class="sourceLine" id="cb561-4" title="4">synergy.biomarkers.res =<span class="st"> </span>synergy.biomarkers.cell.specific.res</a>
+<a class="sourceLine" id="cb561-5" title="5"></a>
+<a class="sourceLine" id="cb561-6" title="6"><span class="cf">for</span> (synergy <span class="cf">in</span> <span class="kw">names</span>(synergy.biomarkers.random.res)) {</a>
+<a class="sourceLine" id="cb561-7" title="7">  df =<span class="st"> </span>synergy.biomarkers.random.res[[synergy]]</a>
+<a class="sourceLine" id="cb561-8" title="8">  <span class="cf">if</span> (<span class="op">!</span><span class="kw">is.null</span>(df) <span class="op">&amp;&amp;</span><span class="st"> </span><span class="kw">ncol</span>(df) <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>) {</a>
+<a class="sourceLine" id="cb561-9" title="9">    row.df =<span class="st"> </span>df[<span class="dv">1</span>, ] <span class="co"># models do not differ per cell line so biomarkers are the same for all rows</span></a>
+<a class="sourceLine" id="cb561-10" title="10">    <span class="kw">rownames</span>(row.df) =<span class="st"> &quot;Random&quot;</span></a>
+<a class="sourceLine" id="cb561-11" title="11">    <span class="cf">if</span> (synergy <span class="op">%in%</span><span class="st"> </span><span class="kw">names</span>(synergy.biomarkers.res)) {</a>
+<a class="sourceLine" id="cb561-12" title="12">      synergy.biomarkers.res[[synergy]] =<span class="st"> </span></a>
+<a class="sourceLine" id="cb561-13" title="13"><span class="st">        </span><span class="kw">rbind</span>(synergy.biomarkers.res[[synergy]], row.df)</a>
+<a class="sourceLine" id="cb561-14" title="14">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb561-15" title="15">      synergy.biomarkers.res[[synergy]] =<span class="st"> </span>row.df</a>
+<a class="sourceLine" id="cb561-16" title="16">    }</a>
+<a class="sourceLine" id="cb561-17" title="17">  }</a>
+<a class="sourceLine" id="cb561-18" title="18">}</a>
+<a class="sourceLine" id="cb561-19" title="19"></a>
+<a class="sourceLine" id="cb561-20" title="20"><span class="co"># For every synergy, remove cell lines (or the Random-specific analysis results) </span></a>
+<a class="sourceLine" id="cb561-21" title="21"><span class="co"># that didn&#39;t predict the observed synergies at all or for which we couldn&#39;t </span></a>
+<a class="sourceLine" id="cb561-22" title="22"><span class="co"># find any biomarkers (row pruning).</span></a>
+<a class="sourceLine" id="cb561-23" title="23"><span class="co"># Also remove nodes which are not biomarkers for any cell line (column pruning)</span></a>
+<a class="sourceLine" id="cb561-24" title="24"><span class="cf">for</span> (synergy <span class="cf">in</span> <span class="kw">names</span>(synergy.biomarkers.res)) {</a>
+<a class="sourceLine" id="cb561-25" title="25">  df =<span class="st"> </span>synergy.biomarkers.res[[synergy]]</a>
+<a class="sourceLine" id="cb561-26" title="26">  df =<span class="st"> </span><span class="kw">prune_columns_from_df</span>(df, <span class="dt">value =</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb561-27" title="27">  df =<span class="st"> </span><span class="kw">prune_rows_from_df</span>(df, <span class="dt">value =</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb561-28" title="28">  synergy.biomarkers.res[[synergy]] =<span class="st"> </span>df</a>
+<a class="sourceLine" id="cb561-29" title="29">}</a>
+<a class="sourceLine" id="cb561-30" title="30"></a>
+<a class="sourceLine" id="cb561-31" title="31"><span class="co"># re-order result list based on increasing number of rows (cell lines)</span></a>
+<a class="sourceLine" id="cb561-32" title="32">synergy.biomarkers.res =<span class="st"> </span>synergy.biomarkers.res[</a>
+<a class="sourceLine" id="cb561-33" title="33">  <span class="kw">names</span>(<span class="kw">sort</span>(<span class="kw">sapply</span>(synergy.biomarkers.res, <span class="cf">function</span>(x) { <span class="kw">nrow</span>(x) })))</a>
+<a class="sourceLine" id="cb561-34" title="34">]</a></code></pre></div>
+<p>Next, we produce the biomarker heatmaps (one per synergy predicted) found from
+the cell-specific and/or random models. The synergy biomarkers found from the
+random-models are not cell-line specific, so they are depicted as <em>Random</em> Cell
+Lines/rows in the subsequent heatmaps. If the <em>Random</em> row is missing for a particular synergy, then
+either the random models didn’t predicted it (<code>AK-PD</code> and <code>BI-JN</code> cases) or no
+biomarkers were found (e.g. <code>PD-PI</code>). Also, note that in the case of the synergy
+<code>PD-G2</code> there are no cell line names because the cell-specific models didn’t
+predict it (in any cell line).</p>
+<div class="sourceCode" id="cb562"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb562-1" title="1"><span class="cf">for</span> (synergy <span class="cf">in</span> <span class="kw">names</span>(synergy.biomarkers.res)) {</a>
+<a class="sourceLine" id="cb562-2" title="2">  biomarkers.res =<span class="st"> </span><span class="kw">as.matrix</span>(synergy.biomarkers.res[[synergy]])</a>
+<a class="sourceLine" id="cb562-3" title="3">  </a>
+<a class="sourceLine" id="cb562-4" title="4">  <span class="co"># customize some parameters</span></a>
+<a class="sourceLine" id="cb562-5" title="5">  heatmap.height =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">&lt;</span><span class="st"> </span><span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb562-6" title="6">  show.column.dend =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="ot">FALSE</span>, <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb562-7" title="7">  row.title =<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">nrow</span>(biomarkers.res) <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="st">&quot;Cell Line&quot;</span>, <span class="st">&quot;Cell Lines&quot;</span>)</a>
+<a class="sourceLine" id="cb562-8" title="8"></a>
+<a class="sourceLine" id="cb562-9" title="9">  biomarkers.heatmap =<span class="st"> </span></a>
+<a class="sourceLine" id="cb562-10" title="10"><span class="st">    </span><span class="kw">Heatmap</span>(<span class="dt">matrix =</span> biomarkers.res, <span class="dt">col =</span> biomarkers.col.fun, </a>
+<a class="sourceLine" id="cb562-11" title="11">          <span class="dt">column_title =</span> <span class="kw">paste0</span>(<span class="st">&quot;Biomarkers for Synergy: &quot;</span>, synergy),</a>
+<a class="sourceLine" id="cb562-12" title="12">          <span class="dt">column_title_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">20</span>, <span class="dt">fontface =</span> <span class="st">&quot;bold&quot;</span>),</a>
+<a class="sourceLine" id="cb562-13" title="13">          <span class="dt">row_title =</span> row.title, <span class="dt">row_title_side =</span> <span class="st">&quot;right&quot;</span>,</a>
+<a class="sourceLine" id="cb562-14" title="14">          <span class="dt">rect_gp =</span> <span class="kw">gpar</span>(<span class="dt">col =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">lwd =</span> <span class="fl">0.3</span>),</a>
+<a class="sourceLine" id="cb562-15" title="15">          <span class="dt">column_names_gp =</span> <span class="kw">gpar</span>(<span class="dt">fontsize =</span> <span class="dv">10</span>),</a>
+<a class="sourceLine" id="cb562-16" title="16">          <span class="dt">show_column_dend =</span> show.column.dend,</a>
+<a class="sourceLine" id="cb562-17" title="17">          <span class="dt">height =</span> <span class="kw">unit</span>(heatmap.height, <span class="st">&quot;inches&quot;</span>),</a>
+<a class="sourceLine" id="cb562-18" title="18">          <span class="dt">heatmap_legend_param =</span> <span class="kw">list</span>(<span class="dt">at =</span> <span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="dt">title =</span> <span class="st">&quot;Activity State&quot;</span>,</a>
+<a class="sourceLine" id="cb562-19" title="19">            <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Inhibited&quot;</span>, <span class="st">&quot;Active&quot;</span>), <span class="dt">color_bar =</span> <span class="st">&quot;discrete&quot;</span>,</a>
+<a class="sourceLine" id="cb562-20" title="20">            <span class="dt">title_position =</span> <span class="st">&quot;leftcenter&quot;</span>, <span class="dt">direction =</span> <span class="st">&quot;horizontal&quot;</span>, <span class="dt">ncol =</span> <span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb562-21" title="21"></a>
+<a class="sourceLine" id="cb562-22" title="22">  <span class="kw">draw</span>(biomarkers.heatmap, <span class="dt">heatmap_legend_side =</span> <span class="st">&quot;bottom&quot;</span>)</a>
+<a class="sourceLine" id="cb562-23" title="23">}</a></code></pre></div>
+<p><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-1.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-2.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-3.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-4.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-5.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-6.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-7.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-8.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-9.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-10.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-11.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-12.png" width="2700" /><img src="biomarker_comparison_files/figure-html/Biomarker%20Heatmaps%20for%20cell-specific%20and%20random-model%20predicted%20synergies-13.png" width="2700" /></p>
+<p>Last remarks:</p>
+<ul>
+<li>The main result here is that we observe common biomarkers across many cell lines
 and in the <em>same activity state</em> for some synergies, which hints that these
-biomarkers may have a <strong>pan-cancer diagnostic value</strong>.</p>
+biomarkers may have a <strong>pan-cancer diagnostic value</strong>.</li>
+<li>There are fewer biomarkers in general found for the random model analysis comparing to the
+cell-specific models. The <code>biomarker_synergy_analysis</code> general function
+that was used to find these biomarkers from the random models does not incorporate
+the <strong>synergy-set prediction based analysis</strong> that was
+done for each cell line model analysis (and which was used to better identify and/or refine
+the biomarkers responsible for allowing the models to predict one extra
+synergy from a specific (observed) synergy set).</li>
+<li>The random models biomarkers are in most cases found also by the cell-specific
+models in one or more cell-lines.</li>
+</ul>
 
 </div>
 </div>
@@ -1297,8 +1453,9 @@ gitbook.start({
     script.type = "text/javascript";
     var src = "true";
     if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
-    if (location.protocol !== "file:" && /^https?:/.test(src))
-      src = src.replace(/^https?:/, '');
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
     script.src = src;
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
