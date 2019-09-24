@@ -25,7 +25,7 @@ one or many `cell line` directories, each one having:
 `.gitsbe` format).
 - A **model_predictions** file
 - An **observed_synergies** file 
-- Maybe a **training_data** file!
+- Maybe a **training_data** or **steady_state** file!
 
 The output will be two more files in each cell line directory: **models_stable_state** 
 and **models_equations**.
