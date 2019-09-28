@@ -49,8 +49,12 @@ This input is provided per cell line and not for the random models since they ar
 
 ```{r Load libraries, message = FALSE, echo = FALSE}
 library(DT)
-library(usefun)
+library(ggpubr)
 library(emba)
+library(usefun)
+library(ComplexHeatmap)
+library(circlize)
+library(dplyr)
 ```
 
 ## Input {-}
@@ -97,6 +101,17 @@ models.stable.state.per.cell.line = lapply(models.stable.state.files,
   }
 )
 
+# Models Link Operators
+models.link.operator.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/models_equations")
+})
+
+models.link.operators.per.cell.line = lapply(models.link.operator.files,
+  function(file) {
+    as.matrix(read.table(file, check.names = FALSE))
+  }
+)
+
 # the node names used in our analysis
 node.names = colnames(models.stable.state.per.cell.line[[1]])
 
@@ -132,6 +147,9 @@ random.model.predictions = get_model_predictions(paste0(random.dir, "/model_pred
 random.models.stable.state = as.matrix(
   read.table(file = paste0(random.dir, "/models_stable_state"), check.names = FALSE)
 )
+
+random.models.link.operator =
+  as.matrix(read.table(file = paste0(random.dir, "/models_equations"), check.names = FALSE))
 ```
 
 ## Model Analysis {-}
@@ -356,265 +374,129 @@ All in all, we will use the **random models data**, contrasted to the steady
 state of the `A498` cell line (see Table 2). This dataset has the largest 
 fitness, MCC and TP value range combined in both tables above.
 
-## Statistical Analysis {-}
+```{r Save best dataset}
+best.cell.line = "A498"
 
-- TP-classfication
-
-- MCC-classfication
-
-How many classes to split the models in MCC (2 - many?) and how many fitness 
-values to choose from each class? (solved in previous code with the samples)
-
-```{r Stats, eval=FALSE, include=FALSE}
-# Subset the model.data to the observed synergies
-observed.model.predictions = 
-  model.predictions[,sapply(drug.combinations.tested, function(drug.comb) {
-    is.correct.synergy(drug.comb, observed.synergies)
-  })]
-
-# Subset the model.data to the unobserved synergies
-unobserved.model.predictions = 
-  model.predictions[,sapply(drug.combinations.tested, function(drug.comb) {
-    !is.correct.synergy(drug.comb, observed.synergies)
-  })]
-
-stopifnot(dim(observed.model.predictions)[2] + 
-          dim(unobserved.model.predictions)[2] == number.of.drug.comb.tested)
-
-# Count the predictions of the observed synergies per model (TP)
-models.synergies.tp = apply(observed.model.predictions, 1, sum, na.rm = T)
-models.synergies.tp.stats = table(models.synergies.tp)
-tp.values = as.numeric(names(models.synergies.tp.stats))
-
-# Bar plot of number of models vs correctly predicted synergies
-make.barplot.on.models.stats(models.synergies.tp.stats, cell.line, 
-                            title = "True Positive Synergy Predictions",
-                            xlab = "Number of maximum correctly predicted synergies",
-                            ylab = "Number of models")
+fit = random.models.fitness.per.cell.line[[best.cell.line]]
+tp  = random.models.tp.per.cell.line[[best.cell.line]]
+mcc = random.models.mcc.per.cell.line[[best.cell.line]]
 ```
 
+## Statistical Analysis {-}
 
-```{r TP-classification of fitness values, eval=FALSE, include=FALSE}
-fitness.tp = list(length(tp.values))
+### Data preprocessing
 
-i = 0
-for (value in tp.values) {
-  i = i + 1
-  fitness.tp[[i]] = models.fitness[models.synergies.tp == value]
-}
-names(fitness.tp) = tp.values
+We will sample the data (stabilizing the seed number for reproducibility purposes)
+by taking a random part of specific size of the unique models - those that have 
+strictly different boolean equations:
+```{r}
+# For reproducibility
+set.seed(0)
+sample.size = 1000
+
+unique.models = rownames(unique(random.models.link.operator))
+unique.models.sample = sample(unique.models, size = sample.size)
+
+fit.unique = fit[names(fit) %in% unique.models.sample]
+tp.unique  = tp[names(tp) %in% unique.models.sample]
+mcc.unique = mcc[names(mcc) %in% unique.models.sample]
+
+df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
+```
+
+### Correlation Plots
+
+First, we check if the our data is normally distributed (using the Shapiro-Wilk
+test for normality and the Q-Q plots):
+```{r plots1}
+ggqqplot(data = df, x = "fit.unique", ylab = "Fitness") # not normal but close
+ggqqplot(data = df, x = "mcc.unique", ylab = "MMC") # surely not normal
+ggqqplot(data = df, x = "tp.unique", ylab = "True Positives") # surely not normal
+
+shapiro.test(x = sample(fit.unique, size = 100)) # close: maybe normal
+shapiro.test(x = sample(mcc.unique, size = 100)) # surely not normal
+shapiro.test(x = sample(tp.unique, size = 100)) # surely not normal
+```
+
+From the above results we observe that the fitness value data are close to normal
+(but it is not statistically significant), while the TP and MCC values are surely
+not normally distributed. Thus, we will use **non-parametric 
+correlation** scores, namely the **Spearman and Kendall rank-based correlation tests**,
+to check the correlation between the models fitness values and their corresponding
+number of True Positive predictions or MCC score:
+```{r Rank correlation plots: Fitness vs MCC}
+ggscatter(df, x = "mcc.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (MCC) - Spearman Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "spearman",
+          xlab = "MCC scores", ylab = "Fitness Values")
+ggscatter(df, x = "mcc.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (MCC) - Kendall Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "kendall",
+          xlab = "MCC scores", ylab = "Fitness Values")
+```
+
+```{r Rank correlation plots: Fitness vs TP}
+ggscatter(df, x = "tp.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (TP) - Spearman Correlation",
+          add = "reg.line", conf.int = TRUE,
+          cor.coef = TRUE, cor.method = "spearman",
+          xlab = "True Positives (TP)", ylab = "Fitness Values")
+ggscatter(df, x = "tp.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (TP) - Kendall Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "kendall",
+          xlab = "True Positives (TP)", ylab = "Fitness Values")
+```
+
+From the correlation plots above, we observe a mild positive correlation between
+performance and fitness to the steady state.
+
+### Correlation of fitness between different TP-classes
+
+```{r TP-classification of fitness values}
+# Box plots
+ggboxplot(df, x = "tp.unique", y = "fit.unique", color = usefun:::colors.100[1:length(unique(tp.unique))],
+          xlab = "True Positives (TP)", ylab = "Fitness values")
 
 # Hypothesis testing
-kruskal.test(fitness.tp)
+kruskal.test(x = df[,"fit.unique"], g = df[, "tp.unique"])
 
-# ploting data (values and density estimations)
-cols = brewer.pal(length(tp.values), "Set1")
-boxplot(fitness.tp, main = "Fitness vs Performance (TP)", 
-        xlab = "Number of TP predictions",
-        ylab = "Fitness score",
-        col = cols)
+# As the p-value is less than the significance level 0.05, we can conclude 
+# that there are significant differences between the different groups of fitness 
+# values. To see exactly which pair of groups are different we perform pairwise
+# Wilcoxon rank sum tests:
 
-densities = lapply(fitness.tp, density)
-make.multiple.density.plot(densities, legend.title = "#TP",
+res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "tp.unique"], p.adjust.method = "BH")
+p.value.mat = res$p.value
+
+col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
+ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
+  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
+  row_title = "TP", row_title_rot = 0, row_names_side = "left",
+  column_title = "P-values (Pairwise Wilcoxon tests) - TP-classified fitnesses", column_title_gp = gpar(fontsize = 20),
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (!is.na(p.value.mat[i,j]))
+        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 10))
+})
+draw(ht)
+
+# Density Plots
+densities = list()
+for (tp.num in sort(unique(tp.unique))) {
+  x = df %>%
+    filter(tp.unique == tp.num) %>%
+    select_at(.vars = c("fit.unique"))
+  den = density(x$fit.unique)
+  densities[[paste0(tp.num, " (", den$n, ")")]] = den
+}
+
+make_multiple_density_plot(densities, legend.title = "TP classes (#models)",
         title = "Density Estimation", x.axis.label = "Fitness score")
 ```
 
-
-```{r Correlation Fitness vs number of TP predictions, fig.height=15, fig.width=7, eval=FALSE, include=FALSE}
-
-SOS: No correlation between fitness and number of TP predictions:
-
-
-sample.size = 100
-number.of.samples = 5
-
-par(mfrow = c(number.of.samples, 2))
-for (num in 1:number.of.samples) {
-  # sampling data
-  fitness.tp.sampled = lapply(fitness.tp, function(fit.vector) {
-    return(sample(fit.vector, size = sample.size, replace = FALSE))
-  })
-  
-  # Null hypothesis testing: the location parameters of the distribution
-  # of `fitness.tp.sampled` are the same in each group (sample)
-  kw.test.res = kruskal.test(fitness.tp.sampled)
-  
-  # ploting data (values and density estimations)
-  cols = brewer.pal(length(tp.values), "Set1")
-  boxplot(fitness.tp.sampled, main = "Fitness vs Performance (TP)", 
-          xlab = "Number of TP predictions",
-          ylab = "Fitness score",
-          col = cols)
-  
-  densities = lapply(fitness.tp.sampled, density)
-  make.multiple.density.plot(densities, legend.title = "#TP",
-          title = "Density Estimation", x.axis.label = "Fitness score")
-  legend("topleft", legend = 
-          paste("p-value =", specify.decimal(kw.test.res$p.value, 3)))
-}
-```
-
-
-```{r Calculate MCC, eval=FALSE, include=FALSE}
-# Count the false negatives (FN)
-models.synergies.fn = apply(observed.model.predictions, 1, function(x) {
-  sum( x == 0 | is.na(x) )
-})
-
-# P = TP + FN (Positives)
-positives = ncol(observed.model.predictions)
-models.synergies.p = models.synergies.tp + models.synergies.fn
-
-# Count the predictions of the non-observed synergies per model (FP)
-models.synergies.fp = apply(unobserved.model.predictions, 1, sum, na.rm = T)
-
-# Count the True Negatives (TN)
-models.synergies.tn = apply(unobserved.model.predictions, 1, function(x) {
-  sum( x == 0 | is.na(x))
-})
-
-# N = FP + TN (Negatives)
-negatives = ncol(unobserved.model.predictions)
-models.synergies.n = models.synergies.fp + models.synergies.tn
-
-# checks
-stopifnot(models.synergies.p == positives)
-stopifnot(models.synergies.n == negatives)
-stopifnot(positives + negatives == number.of.drug.comb.tested)
-
-# Calculate Matthews Correlation Coefficient (MCC)
-models.mcc = calculate.mcc(models.synergies.tp, models.synergies.tn, 
-                           models.synergies.fp, models.synergies.fn,
-                           positives, negatives)
-models.mcc.stats = table(models.mcc, useNA = "ifany")
-print("MCC value range:")
-range(models.mcc, na.rm = TRUE)
-
-# NaN MCC score
-sum(models.synergies.tp + models.synergies.fp == 0)
-
-# MCC stats
-# show only mcc values >= 100
-make.barplot.on.models.stats(models.mcc.stats, cell.line, title = "MCC scores", 
-                             xlab = "MCC value", ylab = "Number of models", 
-                             cont.values = TRUE, threshold = 99)
-
-# MCC classification
-mcc.values = as.numeric(names(models.mcc.stats))
-
-# split into classes with a 0.2 MCC value range each
-mcc.intervals = get.mcc.intervals(mcc.values, interval.size = 0.2)
-
-# add NaN category (if applicable)
-if (sum(is.na(mcc.values)) > 0) {
-  mcc.intervals = rbind(c(NaN, NaN), mcc.intervals)
-}
-
-mcc.classes = get.mcc.classes(mcc.intervals)
-print.mcc.classification.info(mcc.classes)
-```
-
-
-```{r Calculate other measures of performance evaluation, eval=FALSE, include=FALSE}
-# False Positive Rate (FPR), Accuracy
-models.tpr = models.synergies.tp / models.synergies.p # Sensitivity/Recall
-models.tnr = models.synergies.tn / models.synergies.n # Specificity
-models.ppv = models.synergies.tp / (models.synergies.tp + models.synergies.fp) # precision
-models.fpr = models.synergies.fp / models.synergies.n
-models.accuracy = (models.synergies.tp + models.synergies.tn) / 
-                  (models.synergies.p + models.synergies.n)
-models.balanced.accuracy = (models.tpr + models.tnr)/2
-```
-
-```{r Graphs: Fitness vs Evaluation metrics, eval=FALSE, include=FALSE}
-fitness.vs.avg.fp = 
-  get.average.over.unique.values(models.fitness, models.synergies.fp)
-fitness.vs.avg.tp = 
-  get.average.over.unique.values(models.fitness, models.synergies.tp)
-fitness.vs.avg.fn = 
-  get.average.over.unique.values(models.fitness, models.synergies.fn)
-fitness.vs.avg.tn = 
-  get.average.over.unique.values(models.fitness, models.synergies.tn)
-
-x = fitness.vs.avg.fp[,1]
-avg = fitness.vs.avg.fp[,2]
-sdev = fitness.vs.avg.fp[,3]
-plot(fitness.vs.avg.fp, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "Number of FP predictions",
-     main = "Average FP per unique fitness score")
-#arrows(x, avg-sdev, x, avg+sdev, length=0.05, angle=90, code=3)
-
-
-x = fitness.vs.avg.tp[,1]
-avg = fitness.vs.avg.tp[,2]
-sdev = fitness.vs.avg.tp[,3]
-plot(fitness.vs.avg.tp, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "Number of TP predictions",
-     main = "Average TP per unique fitness score")
-
-x = fitness.vs.avg.tn[,1]
-avg = fitness.vs.avg.tn[,2]
-sdev = fitness.vs.avg.tn[,3]
-plot(fitness.vs.avg.tn, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "Number of TN predictions",
-     main = "Average TN per unique fitness score")
-
-x = fitness.vs.avg.fn[,1]
-avg = fitness.vs.avg.fn[,2]
-sdev = fitness.vs.avg.fn[,3]
-plot(fitness.vs.avg.fn, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "Number of FN predictions",
-     main = "Average FN per unique fitness score")
-```
-
-```{r, eval=FALSE, include=FALSE}
-fitness.vs.avg.tpr = 
-  get.average.over.unique.values(models.fitness, models.tpr)
-fitness.vs.avg.tnr = 
-  get.average.over.unique.values(models.fitness, models.tnr)
-fitness.vs.avg.ppv = 
-  get.average.over.unique.values(models.fitness, models.ppv)
-fitness.vs.avg.fpr = 
-  get.average.over.unique.values(models.fitness, models.fpr)
-fitness.vs.avg.accuracy = 
-  get.average.over.unique.values(models.fitness, models.accuracy)
-
-x = fitness.vs.avg.tpr[,1]
-avg = fitness.vs.avg.tpr[,2]
-sdev = fitness.vs.avg.tpr[,3]
-plot(fitness.vs.avg.tpr, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "TPR",
-     main = "Average TPR per unique fitness score")
-
-x = fitness.vs.avg.tnr[,1]
-avg = fitness.vs.avg.tnr[,2]
-sdev = fitness.vs.avg.tnr[,3]
-plot(fitness.vs.avg.tnr, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "TNR",
-     main = "Average TNR per unique fitness score")
-
-# Nan problem
-
-# x = fitness.vs.avg.ppv[,1]
-# avg = fitness.vs.avg.ppv[,2]
-# sdev = fitness.vs.avg.ppv[,3]
-# plot(fitness.vs.avg.ppv, ylim=range(c(avg-sdev, avg+sdev)), 
-#      xlab = "Fitness Score", ylab = "PPV")
-
-x = fitness.vs.avg.fpr[,1]
-avg = fitness.vs.avg.fpr[,2]
-sdev = fitness.vs.avg.fpr[,3]
-plot(fitness.vs.avg.fpr, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "FPR",
-     main = "Average FPR per unique fitness score")
-
-x = fitness.vs.avg.accuracy[,1]
-avg = fitness.vs.avg.accuracy[,2]
-sdev = fitness.vs.avg.accuracy[,3]
-plot(fitness.vs.avg.accuracy, ylim=range(c(avg-sdev, avg+sdev)), 
-     xlab = "Fitness Score", ylab = "Accuracy",
-     main = "Average Accuracy per unique fitness score")
-```
+### Correlation of fitness between different MCC-classes
 
 ## R session info {-}
 
