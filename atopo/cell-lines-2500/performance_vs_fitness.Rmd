@@ -12,6 +12,10 @@ output:
     code_download: true
 ---
 
+```{r Render command, eval=FALSE, include=FALSE}
+#rmarkdown::render(input = "./performance_vs_fitness.Rmd", output_format = "html_document", output_dir = "../../docs/atopo/cell-lines-2500/")
+```
+
 ## Intro {-}
 
 The purpose of this analysis is to find a correlation between the boolean models
@@ -55,6 +59,7 @@ library(usefun)
 library(ComplexHeatmap)
 library(circlize)
 library(dplyr)
+library(Ckmeans.1d.dp)
 ```
 
 ## Input {-}
@@ -386,10 +391,10 @@ mcc = random.models.mcc.per.cell.line[[best.cell.line]]
 
 ### Data preprocessing
 
-We will sample the data (stabilizing the seed number for reproducibility purposes)
-by taking a random part of specific size of the unique models - those that have 
-strictly different boolean equations:
-```{r}
+Firstly, we filter the data by finding the **unique models** - those that have 
+strictly different boolean equations. Then, we take a random sample out of these 
+(while stabilizing the seed number for reproducibility purposes):
+```{r Sample best dataset}
 # For reproducibility
 set.seed(0)
 sample.size = 1000
@@ -406,9 +411,9 @@ df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
 
 ### Correlation Plots
 
-First, we check if the our data is normally distributed (using the Shapiro-Wilk
+Then, we check if the our data is normally distributed (using the Shapiro-Wilk
 test for normality and the Q-Q plots):
-```{r plots1}
+```{r plots1, comment=""}
 ggqqplot(data = df, x = "fit.unique", ylab = "Fitness") # not normal but close
 ggqqplot(data = df, x = "mcc.unique", ylab = "MMC") # surely not normal
 ggqqplot(data = df, x = "tp.unique", ylab = "True Positives") # surely not normal
@@ -421,7 +426,7 @@ shapiro.test(x = sample(tp.unique, size = 100)) # surely not normal
 From the above results we observe that the fitness value data are close to normal
 (but it is not statistically significant), while the TP and MCC values are surely
 not normally distributed. Thus, we will use **non-parametric 
-correlation** scores, namely the **Spearman and Kendall rank-based correlation tests**,
+correlation scores, namely the Spearman and Kendall rank-based correlation tests**,
 to check the correlation between the models fitness values and their corresponding
 number of True Positive predictions or MCC score:
 ```{r Rank correlation plots: Fitness vs MCC}
@@ -450,37 +455,21 @@ ggscatter(df, x = "tp.unique", y = "fit.unique",
           xlab = "True Positives (TP)", ylab = "Fitness Values")
 ```
 
-From the correlation plots above, we observe a mild positive correlation between
-performance and fitness to the steady state.
+From the correlation plots above, we observe a **weak/small positive correlation between
+performance and fitness to the steady state** (0.1 - 0.2). We will next proceed 
+with a more elaborate analysis, where the models will be split to different 
+performance classes (TP or MCC score-derived) and the statistical correlation between the 
+infividual groups will be tested (with regards to their fitness scores).
 
-### Correlation of fitness between different TP-classes
+### Correlation of fitness and TP-class
 
-```{r TP-classification of fitness values}
+First, some box and density plots to see practically **what and where is the difference 
+between the models fitness values belonging to different TP-classes**:
+```{r TP-classification: Plots}
 # Box plots
-ggboxplot(df, x = "tp.unique", y = "fit.unique", color = usefun:::colors.100[1:length(unique(tp.unique))],
+ggboxplot(df, x = "tp.unique", y = "fit.unique", color = "tp.unique",
+          palette = usefun:::colors.100[1:length(unique(tp.unique))],
           xlab = "True Positives (TP)", ylab = "Fitness values")
-
-# Hypothesis testing
-kruskal.test(x = df[,"fit.unique"], g = df[, "tp.unique"])
-
-# As the p-value is less than the significance level 0.05, we can conclude 
-# that there are significant differences between the different groups of fitness 
-# values. To see exactly which pair of groups are different we perform pairwise
-# Wilcoxon rank sum tests:
-
-res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "tp.unique"], p.adjust.method = "BH")
-p.value.mat = res$p.value
-
-col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
-ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
-  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
-  row_title = "TP", row_title_rot = 0, row_names_side = "left",
-  column_title = "P-values (Pairwise Wilcoxon tests) - TP-classified fitnesses", column_title_gp = gpar(fontsize = 20),
-  cell_fun = function(j, i, x, y, width, height, fill) {
-    if (!is.na(p.value.mat[i,j]))
-        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 10))
-})
-draw(ht)
 
 # Density Plots
 densities = list()
@@ -496,7 +485,124 @@ make_multiple_density_plot(densities, legend.title = "TP classes (#models)",
         title = "Density Estimation", x.axis.label = "Fitness score")
 ```
 
-### Correlation of fitness between different MCC-classes
+As we can see from the above plots, there is positive correlation between the 
+classes that predicted 0,1 and 2 TP synergies as well as between the 0 TP class
+and the 3,4,5-TP classes.
+Mathematically, we show that **the group distributions are indeed different using the Kruskal-Wallis Rank Sum Test**:
+
+```{r TP-classification: Kruskal Test, comment=""}
+# Hypothesis testing: Are the location parameters of the distribution of x the same in each group?
+kruskal.test(x = df[,"fit.unique"], g = df[, "tp.unique"])
+```
+
+As the p-value is less than the significance level $0.05$, we can conclude 
+that there are significant differences between the different groups of fitness 
+values. To see exactly which pair of groups are different **we perform pairwise
+Wilcoxon rank sum tests and we draw a heatmap of the each test's p-value**:
+```{r TP-classification: Pairwise Wilcox Tests, warning=FALSE}
+res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "tp.unique"], p.adjust.method = "BH")
+p.value.mat = res$p.value
+```
+
+```{r TP-classification: p-value Heatmap of Pairwise Wilcox Tests, warning=FALSE, fig.width=9, dpi=300}
+col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
+ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
+  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
+  row_title = "TP", row_title_rot = 0, row_names_side = "left",
+  column_title = "P-values (Pairwise Wilcoxon tests) - TP-classified fitnesses", column_title_gp = gpar(fontsize = 20),
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (!is.na(p.value.mat[i,j]))
+        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 16))
+})
+draw(ht)
+```
+
+As we can see above there is significant difference between groups of fitness
+values belonging to models that predicted $0$, $1$ and $2$ TP synergies, but
+not between these and the larger performant groups ($TP=3,4,5$) - with the exception
+of the group with $TP=2$. 
+
+Note that the **number of true positive predictions is an one-dimensional metric** and by 
+excluding the TN, FP and FNs we have a less-informant (and arguably incorrect) 
+picture of the models performance classification. 
+That's why we will proceed with the more balanced MCC score for classifing the models fitnesses 
+to different performance groups.
+
+### Correlation of fitness and MCC-class
+
+Firstly, we perform a *univariate k-means clustering* to 
+**split the models MCC values to different classes** and plot the data histogram.
+The **number of MCC classes** to split the data can be arbitrarily chosen and so
+we chose one less than the maximum number of TPs predicted:
+```{r MCC-classification: Find the clusters}
+num.of.mcc.classes = 5
+mcc.class.ids = 1:num.of.mcc.classes
+
+# find the clusters
+res = Ckmeans.1d.dp(x = df[,"mcc.unique"], k = num.of.mcc.classes)
+mcc.class.id = res$cluster
+df = cbind(df, mcc.class.id)
+
+plot_mcc_classes_hist(df[,"mcc.unique"], df[,"mcc.class.id"],
+                      num.of.mcc.classes, mcc.class.ids)
+```
+
+Then we show some box and density plots to see practically **what and where is 
+the difference between the models fitness values belonging to different MCC-classes**:
+```{r MCC-classification: Plots}
+# Box plots
+ggboxplot(df, x = "mcc.class.id", y = "fit.unique", color = "mcc.class.id",
+          palette = usefun:::colors.100[1:num.of.mcc.classes],
+          xlab = "MCC class", ylab = "Fitness values")
+
+# Density Plots
+densities = list()
+for (id in mcc.class.ids) {
+  x = df %>%
+    filter(mcc.class.id == id) %>%
+    select_at(.vars = c("fit.unique"))
+  den = density(x$fit.unique)
+  densities[[paste0(id, " (", res$size[id], ")")]] = den
+}
+
+make_multiple_density_plot(densities, legend.title = "MCC classes (#models)",
+        title = "Density Estimation", x.axis.label = "Fitness score")
+```
+
+As we can see from the above plots, **there is positive correlation between the 
+distribution of MCC scores in each class and the respective fitness scores**, 
+though not between the 3rd class and the 4th or 5th (it's negative). 
+Note also that the 5th class has a lot less models than the rest.
+Mathematically, we show that **the group distributions are indeed different 
+using the Kruskal-Wallis Rank Sum Test**:
+```{r MCC-classification: Kruskal Test, comment=""}
+# Hypothesis testing: Are the location parameters of the distribution of x the same in each group?
+kruskal.test(x = df[,"fit.unique"], g = df[, "mcc.class.id"])
+```
+
+As the p-value is less than the significance level $0.05$, we can conclude 
+that there are significant differences between the different groups of fitness 
+values.
+
+Next, to show that most of the groups are statistically different, **we perform 
+pairwise Wilcoxon rank sum tests and draw a heatmap of the each test’s p-value**:
+```{r MCC-classification: Pairwise Wilcox Tests, warning=FALSE}
+pair.res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "mcc.class.id"], p.adjust.method = "BH")
+p.value.mat = pair.res$p.value
+```
+
+```{r MCC-classification: p-value Heatmap of Pairwise Wilcox Tests, warning=FALSE, fig.width=9, dpi=300}
+col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
+ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
+  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
+  row_title = "MCC class id", row_title_rot = 90, row_names_side = "left",
+  column_title = "P-values (Pairwise Wilcoxon tests) - MCC-classified fitnesses", column_title_gp = gpar(fontsize = 20),
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (!is.na(p.value.mat[i,j]))
+        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 20))
+})
+draw(ht)
+```
 
 ## R session info {-}
 
