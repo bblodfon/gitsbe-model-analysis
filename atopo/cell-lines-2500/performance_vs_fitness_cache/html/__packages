@@ -1,4 +1,10 @@
 base
 DT
-usefun
+ggplot2
+magrittr
+ggpubr
 emba
+usefun
+ComplexHeatmap
+circlize
+dplyr
