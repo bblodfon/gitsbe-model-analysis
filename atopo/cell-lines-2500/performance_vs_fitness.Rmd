@@ -6,7 +6,9 @@ output:
   html_document:
     theme: united
     toc: true
-    toc_float: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
     number_sections: false
     code_folding: hide
     code_download: true
