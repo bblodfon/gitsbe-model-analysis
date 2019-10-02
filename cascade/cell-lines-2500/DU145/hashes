@@ -1,0 +1,5 @@
+ROC: http://localhost:1900/SINTEF/ROC/DU145_783128a2f3e07057bdfeefc53601bae9 
+observed_synergies: DU145_d6d3ab6e9af60b50622e2bcb12fd4055 (exclude SF drug)
+steady_state: DU145_72b0dc9df4dbf3f0bd200fbdf397ec00
+gitsbe (models dir): DU145_ffebf893c7d9611189db55a05fb34a3e
+drabme (model_predictions): DU145_b6f4345f519aafbdd19f5a1a710525e1

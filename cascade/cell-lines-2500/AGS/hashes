@@ -1,0 +1,5 @@
+ROC: http://localhost:1900/SINTEF/ROC/SW620_4043b7174f410c06de018a24411061ca
+observed_synergies: AGS_a220767cf1c7ab962694a2ba35a4d27d (exclude SF drug)
+steady_state: AGS_1f984e0c4fbf65546f38b020b1943017
+gitsbe (models dir): AGS_e95b2b0eab8ebba7124a0917927c99d2
+drabme (model_predictions): AGS_ca72fc8b750d340a498ae31c0a07fef3 

@@ -1,0 +1,5 @@
+ROC: http://localhost:1900/SINTEF/ROC/UACC62_cf3699130c2bcba7571981dcdba22af3
+observed_synergies: UACC62_72e10ae7224d889bfa2632a6c6778d6c (exclude SF drug)
+steady_state: UACC62_ff6b4e567b8f4c6457b0f7bf1e5dfe26
+gitsbe (models dir): UACC62_d5a74e7afa0a6ad451712cee828293db
+drabme (model_predictions): UACC62_0c18c63ba27bc89ca8b76d4a23b57073

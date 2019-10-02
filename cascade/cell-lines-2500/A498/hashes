@@ -1,0 +1,5 @@
+ROC: http://localhost:1900/SINTEF/ROC/A498_f398fb8b5d00efe1344fd02ab8b6d4ee
+observed_synergies: A498_71abff784b73678fe548c0997e6c81f8 (exclude SF drug)
+steady_state: A498_cc731a5dea7a2ff9880988edae662d42
+gitsbe (models dir): A498_7f2b32e7a7629b6f4f426b8176d23e44
+drabme (model_predictions): A498_8622688ea725f7cbf808b98c6bf11268

@@ -1,0 +1,5 @@
+ROC: http://localhost:1900/SINTEF/ROC/Colo205_bd78b5a6d446dad069532747b8dcbec1
+observed_synergies: Colo205_7ad963094956875159e7c88269b9bdd6 (exclude SF drug)
+steady_state: Colo205_530955f5f2304a177c3e8b7d37227bde
+gitsbe (models dir): Colo205_c46f8a1edbf5b1240de5e2776b3aef42
+drabme (model_predictions): Colo205_8c6e644e3a4824d00610e7a95f7fb847
