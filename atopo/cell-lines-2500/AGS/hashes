@@ -1,2 +1,5 @@
-http://localhost:8090/SINTEF/ROC/AGS_6862f9daa8c3985e5896ba4d7fcd1c52
-http://localhost:8090/SINTEF/ROC/AGS_6862f9daa8c3985e5896ba4d7fcd1c52/info
+ROC: http://localhost:1900/SINTEF/ROC/AGS_623a44552e13aee19bdee7edaacb2a1d
+observed_synergies: AGS_875ea4ac66e7e66116b5d697372f2033 (exclude SF drug)
+steady_state: AGS_e29248c7ad2f9bc026f8286f0d60b823
+gitsbe (models dir): AGS_43631eaa3033a18fda96246e64b92f88
+drabme (model_predictions): AGS_64dc6b91fcb84d6599c54cf0fb5500ea

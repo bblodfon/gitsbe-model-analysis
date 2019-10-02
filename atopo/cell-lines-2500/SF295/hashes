@@ -1,2 +1,5 @@
-http://localhost:8090/SINTEF/ROC/SF295_675ecf177936d6d6805fda713b8cacec
-http://localhost:8090/SINTEF/ROC/SF295_675ecf177936d6d6805fda713b8cacec/info
+ROC: http://localhost:1900/SINTEF/ROC/SF295_16b18110bb2e9cfac076effef3e958b4
+observed_synergies: SF295_35c5dd93ed4b7ae72087f3dff2880e9c (exclude SF drug)
+steady_state: SF295_18031c28228c460b606c01192328b293
+gitsbe (models dir): SF295_95cb961c479d846b58e93dfba1c31318
+drabme (model_predictions): SF295_5ba5da38e93168d8b72dcb67b80542a9

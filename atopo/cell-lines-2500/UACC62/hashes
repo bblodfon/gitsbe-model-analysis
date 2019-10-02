@@ -1,2 +1,5 @@
-http://localhost:8090/SINTEF/ROC/UACC62_61ed7a9ac6fdcbaa56abda062442ec7c
-http://localhost:8090/SINTEF/ROC/UACC62_61ed7a9ac6fdcbaa56abda062442ec7c/info
+ROC: http://localhost:1900/SINTEF/ROC/UACC62_ddafa2f9d6480c0188a4591264ddd316
+observed_synergies: UACC62_aff936c307a5bdae4d9b19cec71438fa (exclude SF drug)
+steady_state: UACC62_29802e4ab65c3eb6d8f6ab7894812c0b
+gitsbe (models dir): UACC62_f5cc34dd701d099ed2e792aa5ec67683
+drabme (model_predictions): UACC62_9328613265fbd7352323e82eb35c4486

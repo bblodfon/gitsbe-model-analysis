@@ -1,2 +1,5 @@
-http://localhost:8090/SINTEF/ROC/MDA-MB-468_9742fa2d1e59449b983803bbf117ea90
-http://localhost:8090/SINTEF/ROC/MDA-MB-468_9742fa2d1e59449b983803bbf117ea90/info
+ROC: http://localhost:1900/SINTEF/ROC/MDA-MB-468_bac36b690227d1d796b2eaf1db5b4cbe
+observed_synergies: MDA-MB-468_99060beda19d636c6fcf219b8430377f (exclude SF drug)
+steady_state: MDA-MB-468_8c491a4ba7c17bbb50eac0df55aab101
+gitsbe (models dir): MDA-MB-468_72aa61b095cc2ec26089ca51228a8f88
+drabme (model_predictions): MDA-MB-468_8d8ea24930c43469884a9adbf72d90de

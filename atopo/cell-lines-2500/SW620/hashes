@@ -1,2 +1,5 @@
-http://localhost:8090/SINTEF/ROC/SW620_e54320a3893b930be0f31c4e2f0fbe22
-http://localhost:8090/SINTEF/ROC/SW620_e54320a3893b930be0f31c4e2f0fbe22/info
+ROC: http://localhost:1900/SINTEF/ROC/SW620_e7bbdc827484bc88a5c80f1ee74bbb0a
+observed_synergies: SW620_69c8eba032207cded73111708f78679 (exclude SF drug)
+steady_state: SW620_dd28a13345d1f532adc584b4c94ea64a
+gitsbe (models dir): SW620_49ababa0b614ad7cecbdc1572ed0d2ae
+drabme (model_predictions): SW620_ac1d45da834d2736a517a9640d182405

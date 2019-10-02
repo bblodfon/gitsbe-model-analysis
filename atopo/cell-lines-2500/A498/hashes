@@ -1,2 +1,5 @@
-http://localhost:8090/SINTEF/ROC/A498_008700babcc86877cfd6e2e8f027b7e8
-http://localhost:8090/SINTEF/ROC/A498_008700babcc86877cfd6e2e8f027b7e8/info
+ROC: http://localhost:1900/SINTEF/ROC/A498_8ede8bb2bfec00f386681d40318b8c86
+observed_synergies: A498_c2ddd838f19cdf39f0f8083e5974d97d (exclude SF drug)
+steady_state: A498_ee8e3a29a943efbcadde6595d7c76e1b
+gitsbe (models dir): A498_4dab6d06c2a61d77430ec0679e25aeea
+drabme (model_predictions): A498_3b1b425207f8ed43248df7307b6de3a2
