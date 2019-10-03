@@ -28,7 +28,7 @@ one or many `cell line` directories, each one having:
 - Maybe a **training_data** or **steady_state** file!
 
 The output will be two more files in each cell line directory: **models_stable_state** 
-and **models_equations**.
+and **models_equations** or **models_link_operator**.
 
 ## Data extraction
 
@@ -40,7 +40,8 @@ library(emba)
 
 For input, we provide the relative path to the data dir:
 ```{r Input}
-input.dir = "/atopo/cell-lines-2500"
+#input.dir = "/atopo/cell-lines-2500"
+input.dir = "/cascade/cell-lines-2500"
 data.dir = paste0(getwd(), input.dir)
 
 cell.line.dirs = list.dirs(path = data.dir, recursive = FALSE)
@@ -60,7 +61,8 @@ for (cell.line.dir in cell.line.dirs) {
   
   model.predictions.file = paste0(cell.line.dir, "/model_predictions")
   models.stable.state.file = paste0(cell.line.dir, "/models_stable_state")
-  models.equations.file = paste0(cell.line.dir, "/models_equations")
+  #models.equations.file = paste0(cell.line.dir, "/models_equations")
+  models.equations.file = paste0(cell.line.dir, "/models_link_operator")
   
   if (file.exists(model.predictions.file)) {
     # for having the row names in the same order as in the 'model_predictions' file
