@@ -8,3 +8,6 @@ usefun
 ComplexHeatmap
 circlize
 dplyr
+Ckmeans.1d.dp
+tibble
+RColorBrewer

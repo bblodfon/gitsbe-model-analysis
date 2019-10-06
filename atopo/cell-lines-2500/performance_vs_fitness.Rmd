@@ -50,7 +50,7 @@ in a fitness of 1).
 observed as synergistic for each cell line.
 - The **steady state** file which lists the network nodes (protein, gene, complexes
 names, etc) and their activity value (0 or 1, representing an inhibited or active
-node respectvely). 
+node respectively). 
 This input is provided per cell line and not for the random models since they are just trained to a profileration state.
 
 ```{r Load libraries, message = FALSE, echo = FALSE}
@@ -61,6 +61,7 @@ library(usefun)
 library(ComplexHeatmap)
 library(circlize)
 library(dplyr)
+library(tibble)
 library(Ckmeans.1d.dp)
 ```
 
@@ -161,50 +162,43 @@ random.models.link.operator =
 
 ## Model Analysis {-}
 
-In order to find the number of true positive predicted synergies, MCC scores and fitness scores for each of the models in each of the 9 datasets, we use the generic analysis functions from the [emba](https://github.com/bblodfon/emba) R package.
+In order to find the number of true positive (TP) predicted synergies, MCC scores and fitness scores for each of the models in each of the 9 datasets, we use functions from the [emba](https://github.com/bblodfon/emba) R package.
 
 ### Cell-specific {-}
 
-The full analysis results for each cell line:
-```{r Cell-specific Model Analysis (MCC and TP-based), cache=TRUE}
-# Performance Biomarkers for cell specific models (MCC)
-cell.specific.mcc.analysis.res = list()
-for (cell.line in cell.lines) {
-  cell.specific.mcc.analysis.res[[cell.line]] =
-    biomarker_mcc_analysis(model.predictions = model.predictions.per.cell.line[[cell.line]],
-                           models.stable.state = models.stable.state.per.cell.line[[cell.line]],
-                           models.link.operator = NULL,
-                           observed.synergies = observed.synergies.per.cell.line[[cell.line]],
-                           threshold = 0.7, num.of.mcc.classes = 5,
-                           include.NaN.mcc.class = FALSE)
-  }
-
-# Performance Biomarkers for cell specific models (TP)
-cell.specific.tp.analysis.res = list()
-for (cell.line in cell.lines) {
-  cell.specific.tp.analysis.res[[cell.line]] =
-    biomarker_tp_analysis(model.predictions = model.predictions.per.cell.line[[cell.line]],
-                          models.stable.state = models.stable.state.per.cell.line[[cell.line]],
-                          models.link.operator = NULL,
-                          observed.synergies = observed.synergies.per.cell.line[[cell.line]],
-                          threshold = 0.7)
-  }
-```
-
-Finding the MCC, TP and fitness values for each model from the above result (note
+We find the MCC, TP and fitness values for each model per cell line (note
 that each model's stable state in a specific cell line is matched against the 
 steady state from that cell line):
 ```{r Cell-specific Models TP + MCC + fitness per cell line}
 models.mcc.per.cell.line = list()
 for (cell.line in cell.lines) {
+  model.predictions = model.predictions.per.cell.line[[cell.line]]
+  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
+  number.of.drug.comb.tested = ncol(model.predictions.per.cell.line[[cell.line]])
+  
+  # Split model.predictions to positive (observed) and negative (non-observed) results
+  observed.model.predictions =
+    get_observed_model_predictions(model.predictions, observed.synergies)
+  unobserved.model.predictions =
+    get_unobserved_model_predictions(model.predictions, observed.synergies)
+  
+  # Calculate Matthews Correlation Coefficient (MCC) for every model
   models.mcc.per.cell.line[[cell.line]] = 
-    cell.specific.mcc.analysis.res[[cell.line]][["models.mcc"]]
+    calculate_models_mcc(observed.model.predictions,
+                         unobserved.model.predictions,
+                         number.of.drug.comb.tested)
 }
 
 models.tp.per.cell.line = list()
 for (cell.line in cell.lines) {
-  models.tp.per.cell.line[[cell.line]] = 
-    cell.specific.tp.analysis.res[[cell.line]][["models.synergies.tp"]]
+  model.predictions = model.predictions.per.cell.line[[cell.line]]
+  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
+  
+  observed.model.predictions =
+    get_observed_model_predictions(model.predictions, observed.synergies)
+  
+  # Count the predictions of the observed synergies per model (TP)
+  models.tp.per.cell.line[[cell.line]] = calculate_models_synergies_tp(observed.model.predictions)
 }
 
 models.fitness.per.cell.line = list()
@@ -217,44 +211,39 @@ for (cell.line in cell.lines) {
 
 ### Random Models {-}
 
-The full analysis results for the random models (what changes here is only 
-the **observed synergies** per cell line):
-```{r Random Model Analysis (MCC and TP-based), cache=TRUE}
-# Performance Biomarkers for cell proliferation models (MCC)
-random.mcc.analysis.res = 
-  lapply(observed.synergies.per.cell.line, function(observed.synergies) {
-    biomarker_mcc_analysis(random.model.predictions, 
-                           random.models.stable.state,
-                           models.link.operator = NULL, 
-                           observed.synergies, threshold = 0.6, 
-                           num.of.mcc.classes = 5, include.NaN.mcc.class = FALSE
-                           )})
-
-# Performance Biomarkers for cell proliferation models (TP)
-random.tp.analysis.res = 
-  lapply(observed.synergies.per.cell.line, function(observed.synergies) {
-    biomarker_tp_analysis(random.model.predictions, 
-                          random.models.stable.state,
-                          models.link.operator = NULL, 
-                          observed.synergies, threshold = 0.6
-                          )})
-```
-
-Finding the MCC, TP and fitness values for each model from the above result (note
-that each model's stable state in a specific cell line is matched against the 
-steady state from that cell line and that the random models' stable state data
+Next, we find the MCC, TP and fitness values for each random model per cell line 
+(note that each random model's stable state in a specific cell line is matched against 
+the steady state from that cell line and that the random models' stable state data
 does not change per cell line, i.e. same `random.models.stable.state` object):
 ```{r Random Models TP + MCC + fitness per cell line}
 random.models.mcc.per.cell.line = list()
 for (cell.line in cell.lines) {
+  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
+  number.of.drug.comb.tested = ncol(random.model.predictions)
+  
+  # Split model.predictions to positive (observed) and negative (non-observed) results
+  observed.model.predictions =
+    get_observed_model_predictions(random.model.predictions, observed.synergies)
+  unobserved.model.predictions =
+    get_unobserved_model_predictions(random.model.predictions, observed.synergies)
+  
+  # Calculate Matthews Correlation Coefficient (MCC) for every model
   random.models.mcc.per.cell.line[[cell.line]] = 
-    random.mcc.analysis.res[[cell.line]][["models.mcc"]]
+    calculate_models_mcc(observed.model.predictions,
+                         unobserved.model.predictions,
+                         number.of.drug.comb.tested)
 }
 
 random.models.tp.per.cell.line = list()
 for (cell.line in cell.lines) {
+  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
+  
+  observed.model.predictions =
+    get_observed_model_predictions(random.model.predictions, observed.synergies)
+  
+  # Count the predictions of the observed synergies per model (TP)
   random.models.tp.per.cell.line[[cell.line]] = 
-    random.tp.analysis.res[[cell.line]][["models.synergies.tp"]]
+    calculate_models_synergies_tp(observed.model.predictions)
 }
 
 random.models.fitness.per.cell.line = list()
@@ -268,9 +257,9 @@ for (cell.line in cell.lines) {
 ## Choosing best dataset for analysis {-}
 
 We now want to **find the best dataset & cell line** for our subsequent analysis - that is to show the performance vs fitness correlation. 
-The argument here is that we want to choose a boolean dataset that has a **large enough fitness value range** along with a large **TP and/or MCC value range**, since with smaller value ranges it would be harder to distinguish the difference of the estimated distributions of the fitness scores belonging to different performance classes (i.e. models' fitnesses that belong to different classification groups with the metric being either the number of TPs or the MCC score).
+The argument here is that we want to choose a boolean model dataset that has a **large enough fitness value range** combined with a large **TP and/or MCC value range**, since with smaller value ranges it would be harder to distinguish the difference of the estimated distributions of the fitness scores belonging to different performance classes (i.e. models' fitnesses that belong to different classification groups with the metric being either the number of TPs or the MCC score).
 
-The next two tables will help us determine exactly which cell line and dataset
+The next tables and box-plots will help us determine exactly which cell line and dataset
 to use:
 ```{r Cell-specific Models TP + MCC + fitness per cell line stats}
 cell.specific.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 8)
@@ -364,7 +353,43 @@ datatable(data = random.model.data,
   formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
 ```
 
-In general, we observe that the **random models offer a larger range of 
+We also compare the MCC values and fitness scores across all cell lines between
+the cell-specific models (trained to steady state) and the random ones (trained to proliferation):
+
+```{r Compine data into one data frame}
+num.of.models = nrow(random.models.stable.state)
+data.list = list()
+
+for (cell.line in cell.lines) {
+  cell.line.vec = as.data.frame(rep(cell.line, num.of.models), stringsAsFactors = FALSE)
+  models.mcc.cell.specific = remove_rownames(as.data.frame(models.mcc.per.cell.line[[cell.line]]))
+  models.mcc.random        = remove_rownames(as.data.frame(random.models.mcc.per.cell.line[[cell.line]]))
+  
+  models.fitness.cell.specific = remove_rownames(as.data.frame(models.fitness.per.cell.line[[cell.line]]))
+  models.fitness.random        = remove_rownames(as.data.frame(random.models.fitness.per.cell.line[[cell.line]]))
+  
+  data.list[[cell.line]] = bind_cols(cell.line.vec, models.mcc.cell.specific, 
+    models.mcc.random, models.fitness.cell.specific, models.fitness.random)
+}
+
+data = bind_rows(data.list)
+colnames(data) = c("cell.line", "MCC cell-specific", "MCC random", 
+                   "fitness cell-specific", "fitness random")
+```
+
+```{r Boxplots: MCC and fitness values between cell-specific and random models, fig.width=9, warning=FALSE, cache=TRUE}
+# Note the cell-specific models have NaN MCC values
+ggboxplot(data, x = "cell.line", y = c("MCC cell-specific", "MCC random"),
+          palette = brewer.pal(3, "Set1"), merge = "asis",
+          xlab = "Cell Lines", ylab = "MCC values", add = "point")
+ggboxplot(data, x = "cell.line", y = c("fitness cell-specific", "fitness random"),
+          palette = brewer.pal(3, "Set1"), merge = "asis",
+          xlab = "Cell Lines", ylab = "Fitness values", add = "point")
+```
+
+So, from the two tables and the two box plots above we conclude that:
+
+- In general, the **random models offer a larger range of 
 fitness values** when their stable states are matched against the steady state 
 of each particular cell line. 
 This is something we expected since these models weren't fitted to a 
@@ -373,9 +398,10 @@ specific cell-line steady state (meaning that they weren't chosen from the
 as best as possible) but rather to a more generic state of proliferation. 
 Thus, they represent a set of models with larger variation in terms of 
 structure (boolean model equations) compared to the cell-specific generated ones.
-
-Also, note that the **maximum fitness value** is almost always larger in the 
-cell-specific models vs the random ones for each respective cell line.
+- **The cell-specific models have always a larger maximum fitness value and in
+general larger overall fitness values** than the random ones for each respective cell line.
+- In each cell line (with the expection of SW620) **there are always cell-specific 
+models that show better performance than the random ones (have a higher MCC value)**
 
 All in all, we will use the **random models data**, contrasted to the steady 
 state of the `A498` cell line (see Table 2). This dataset has the largest 
