@@ -58,11 +58,14 @@ library(DT)
 library(ggpubr)
 library(emba)
 library(usefun)
+library(nnet)
+library(pscl)
 library(ComplexHeatmap)
 library(circlize)
 library(dplyr)
 library(tibble)
 library(Ckmeans.1d.dp)
+library(RColorBrewer)
 ```
 
 ## Input {-}
@@ -259,36 +262,37 @@ for (cell.line in cell.lines) {
 We now want to **find the best dataset & cell line** for our subsequent analysis - that is to show the performance vs fitness correlation. 
 The argument here is that we want to choose a boolean model dataset that has a **large enough fitness value range** combined with a large **TP and/or MCC value range**, since with smaller value ranges it would be harder to distinguish the difference of the estimated distributions of the fitness scores belonging to different performance classes (i.e. models' fitnesses that belong to different classification groups with the metric being either the number of TPs or the MCC score).
 
-The next tables and box-plots will help us determine exactly which cell line and dataset
+The next summary statistics tables and box-plots will help us determine exactly which cell line and dataset
 to use:
 ```{r Cell-specific Models TP + MCC + fitness per cell line stats}
-cell.specific.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 8)
+cell.specific.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 11)
 rownames(cell.specific.model.data) = cell.lines
 colnames(cell.specific.model.data) = c("fitness range", "Min fitness", 
-  "Max fitness", "MCC range", "Min MCC", "Max MCC", "TP range", "Max TP")
+  "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
+  "Max MCC", "Mean MCC", "Median MCC", "Max TP")
 
 for (cell.line in cell.lines) {
   models.fitness = models.fitness.per.cell.line[[cell.line]]
-  range.fitness = range(models.fitness)
-  
-  models.tp = models.tp.per.cell.line[[cell.line]]
-  range.tp = range(models.tp)
-  
   models.mcc = models.mcc.per.cell.line[[cell.line]]
-  # TP + FP = 0 for some of the models (see each respective model analysis)
-  # so we need to remove NaNs
-  range.mcc = range(models.mcc, na.rm = TRUE)
+  models.tp = models.tp.per.cell.line[[cell.line]]
   
-  cell.specific.model.data[cell.line, "fitness range"] = range.fitness[2] - range.fitness[1]
-  cell.specific.model.data[cell.line, "Min fitness"] = range.fitness[1]
-  cell.specific.model.data[cell.line, "Max fitness"] = range.fitness[2]
+  fit.summary = unclass(summary(models.fitness))
+  mcc.summary = unclass(summary(models.mcc))
+  max.tp = max(models.tp)
   
-  cell.specific.model.data[cell.line, "MCC range"] = range.mcc[2] - range.mcc[1]
-  cell.specific.model.data[cell.line, "Min MCC"] = range.mcc[1]
-  cell.specific.model.data[cell.line, "Max MCC"] = range.mcc[2]
+  cell.specific.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
+  cell.specific.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
+  cell.specific.model.data[cell.line, "Max fitness"] = fit.summary["Max."]
+  cell.specific.model.data[cell.line, "Mean fitness"] = fit.summary["Mean"]
+  cell.specific.model.data[cell.line, "Median fitness"] = fit.summary["Median"]
   
-  cell.specific.model.data[cell.line, "TP range"] = range.tp[2] - range.tp[1]
-  cell.specific.model.data[cell.line, "Max TP"] = range.tp[2]
+  cell.specific.model.data[cell.line, "MCC range"] = mcc.summary["Max."] - mcc.summary["Min."]
+  cell.specific.model.data[cell.line, "Min MCC"] = mcc.summary["Min."]
+  cell.specific.model.data[cell.line, "Max MCC"] = mcc.summary["Max."]
+  cell.specific.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
+  cell.specific.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
+  
+  cell.specific.model.data[cell.line, "Max TP"] = max.tp
 }
 
 # color columns
@@ -303,37 +307,40 @@ caption.title = "Table 1: Fitness, MCC scores and TP (True positives) for the Ce
 datatable(data = cell.specific.model.data, 
           options = list(dom = "t"), # just show the table
           caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(c(1,2,3,4,5,6), digits = 3) %>%
+  formatRound(1:10, digits = 3) %>%
   formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
   formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
 ```
 
 ```{r Random Models TP + MCC + fitness per cell line stats}
-random.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 8)
+random.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 11)
 rownames(random.model.data) = cell.lines
-colnames(random.model.data) = c("fitness range", "Min fitness", "Max fitness", 
-  "MCC range", "Min MCC", "Max MCC", "TP range", "Max TP")
+colnames(random.model.data) = c("fitness range", "Min fitness", 
+  "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
+  "Max MCC", "Mean MCC", "Median MCC", "Max TP")
 
 for (cell.line in cell.lines) {
   models.fitness = random.models.fitness.per.cell.line[[cell.line]]
-  range.fitness = range(models.fitness)
-  
-  models.tp = random.models.tp.per.cell.line[[cell.line]]
-  range.tp = range(models.tp)
-  
   models.mcc = random.models.mcc.per.cell.line[[cell.line]]
-  range.mcc = range(models.mcc)
+  models.tp = random.models.tp.per.cell.line[[cell.line]]
   
-  random.model.data[cell.line, "fitness range"] = range.fitness[2] - range.fitness[1]
-  random.model.data[cell.line, "Min fitness"] = range.fitness[1]
-  random.model.data[cell.line, "Max fitness"] = range.fitness[2]
+  fit.summary = unclass(summary(models.fitness))
+  mcc.summary = unclass(summary(models.mcc))
+  max.tp = max(models.tp)
   
-  random.model.data[cell.line, "MCC range"] = range.mcc[2] - range.mcc[1]
-  random.model.data[cell.line, "Min MCC"] = range.mcc[1]
-  random.model.data[cell.line, "Max MCC"] = range.mcc[2]
+  random.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
+  random.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
+  random.model.data[cell.line, "Max fitness"] = fit.summary["Max."]
+  random.model.data[cell.line, "Mean fitness"] = fit.summary["Mean"]
+  random.model.data[cell.line, "Median fitness"] = fit.summary["Median"]
   
-  random.model.data[cell.line, "TP range"] = range.tp[2] - range.tp[1]
-  random.model.data[cell.line, "Max TP"] = range.tp[2]
+  random.model.data[cell.line, "MCC range"] = mcc.summary["Max."] - mcc.summary["Min."]
+  random.model.data[cell.line, "Min MCC"] = mcc.summary["Min."]
+  random.model.data[cell.line, "Max MCC"] = mcc.summary["Max."]
+  random.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
+  random.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
+  
+  random.model.data[cell.line, "Max TP"] = max.tp
 }
 
 # color columns
@@ -348,12 +355,12 @@ caption.title = "Table 2: Fitness, MCC scores and TP (True positives) for the ra
 datatable(data = random.model.data, 
           options = list(dom = "t"), # just show the table
           caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(c(1,2,3,4,5,6), digits = 3) %>%
+  formatRound(1:10, digits = 3) %>%
   formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
   formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
 ```
 
-We also compare the MCC values and fitness scores across all cell lines between
+The below box plots compare the MCC values and fitness scores across all cell lines between
 the cell-specific models (trained to steady state) and the random ones (trained to proliferation):
 
 ```{r Compine data into one data frame}
@@ -381,10 +388,10 @@ colnames(data) = c("cell.line", "MCC cell-specific", "MCC random",
 # Note the cell-specific models have NaN MCC values
 ggboxplot(data, x = "cell.line", y = c("MCC cell-specific", "MCC random"),
           palette = brewer.pal(3, "Set1"), merge = "asis",
-          xlab = "Cell Lines", ylab = "MCC values", add = "point")
+          xlab = "Cell Lines", ylab = "MCC values", add = "point", add.params = list(size = 0.5))
 ggboxplot(data, x = "cell.line", y = c("fitness cell-specific", "fitness random"),
           palette = brewer.pal(3, "Set1"), merge = "asis",
-          xlab = "Cell Lines", ylab = "Fitness values", add = "point")
+          xlab = "Cell Lines", ylab = "Fitness values", add = "point", add.params = list(size = 0.5))
 ```
 
 So, from the two tables and the two box plots above we conclude that:
@@ -398,8 +405,8 @@ specific cell-line steady state (meaning that they weren't chosen from the
 as best as possible) but rather to a more generic state of proliferation. 
 Thus, they represent a set of models with larger variation in terms of 
 structure (boolean model equations) compared to the cell-specific generated ones.
-- **The cell-specific models have always a larger maximum fitness value and in
-general larger overall fitness values** than the random ones for each respective cell line.
+- **The cell-specific models have always a larger maximum fitness and median value** 
+compared to the random ones for each respective cell line.
 - In each cell line (with the expection of SW620) **there are always cell-specific 
 models that show better performance than the random ones (have a higher MCC value)**
 
@@ -437,6 +444,9 @@ mcc.unique = mcc[names(mcc) %in% unique.models.sample]
 df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
 ```
 
+Note that the **fitness and MCC score are continuous variables while the number 
+of true positives (TP) is discrete**.
+
 ### Correlation Plots
 
 Then, we check if the our data is normally distributed (using the Shapiro-Wilk
@@ -444,50 +454,56 @@ test for normality and the Q-Q plots):
 ```{r plots1, comment=""}
 ggqqplot(data = df, x = "fit.unique", ylab = "Fitness") # not normal but close
 ggqqplot(data = df, x = "mcc.unique", ylab = "MMC") # surely not normal
-ggqqplot(data = df, x = "tp.unique", ylab = "True Positives") # surely not normal
 
 shapiro.test(x = sample(fit.unique, size = 100)) # close: maybe normal
 shapiro.test(x = sample(mcc.unique, size = 100)) # surely not normal
-shapiro.test(x = sample(tp.unique, size = 100)) # surely not normal
 ```
 
 From the above results we observe that the fitness value data are close to normal
-(but it is not statistically significant), while the TP and MCC values are surely
-not normally distributed. Thus, we will use **non-parametric 
-correlation scores, namely the Spearman and Kendall rank-based correlation tests**,
-to check the correlation between the models fitness values and their corresponding
-number of True Positive predictions or MCC score:
+(but it is not statistically significant), while the MCC values are surely
+not normally distributed.
+Thus, we will use **non-parametric correlation scores, namely the Spearman and Kendall rank-based correlation tests**,
+to check the correlation between the two continuous variables (models fitness 
+values and their corresponding MCC score):
 ```{r Rank correlation plots: Fitness vs MCC}
 ggscatter(df, x = "mcc.unique", y = "fit.unique", 
           title = "Fitness vs Performance (MCC) - Spearman Correlation",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "spearman",
+          cor.coef = TRUE, cor.coeff.args = list(method = "spearman", label.x.npc = 0.7, label.y.npc = 1),
           xlab = "MCC scores", ylab = "Fitness Values")
 ggscatter(df, x = "mcc.unique", y = "fit.unique", 
           title = "Fitness vs Performance (MCC) - Kendall Correlation",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "kendall",
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall", label.x.npc = 0.7, label.y.npc = 1),
           xlab = "MCC scores", ylab = "Fitness Values")
 ```
 
-```{r Rank correlation plots: Fitness vs TP}
-ggscatter(df, x = "tp.unique", y = "fit.unique", 
-          title = "Fitness vs Performance (TP) - Spearman Correlation",
-          add = "reg.line", conf.int = TRUE,
-          cor.coef = TRUE, cor.method = "spearman",
-          xlab = "True Positives (TP)", ylab = "Fitness Values")
-ggscatter(df, x = "tp.unique", y = "fit.unique", 
-          title = "Fitness vs Performance (TP) - Kendall Correlation",
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "kendall",
-          xlab = "True Positives (TP)", ylab = "Fitness Values")
+From the correlation plots above, we observe a **weak/small positive correlation between
+performance and fitness to the steady state**.
+
+To assess the **correlation between the number of TP predictions of the models 
+(discrete variable) and the models fitness (continuous variable)**, we construct a 
+predictor of the categorical variable from the continuous variable: if the 
+resulting classifier has a **high degree of fit** we can conclude the two variables 
+share a relationship and are indeed correlated. Since there are more than 2 TP
+classes (values) in the dataset, we will use **Multinomial Logistic Regression**
+and fit log-linear models via neural networks:
+
+```{r Multinomial Logistic Regression: TP ~ Fitness, comment=""}
+model.classifier = multinom(data = df, formula = tp.unique ~ fit.unique)
+pseudo.r2.measures = pR2(model.classifier)
+pseudo.r2.measures["McFadden"]
 ```
 
-From the correlation plots above, we observe a **weak/small positive correlation between
-performance and fitness to the steady state** (0.1 - 0.2). We will next proceed 
-with a more elaborate analysis, where the models will be split to different 
+To measure the goodness-of-fit for our model, there are several measures proposed 
+for logistic regression. We emphasize on the McFaddens's pseudo-$R^2$ measure 
+for our classifier, for which a value of $0.2-0.4$ would indicate an excellent fit [[source](https://stats.stackexchange.com/questions/82105/mcfaddens-pseudo-r2-interpretation)].
+Since we found less, we can also assume that there is only a weak/positive 
+**correlation between the number of TP and the fitness score of the models**.
+
+Next, we will next proceed with a more elaborate analysis, where the models will be split to different 
 performance classes (TP or MCC score-derived) and the statistical correlation between the 
-infividual groups will be tested (with regards to their fitness scores).
+individual groups will be tested (with regards to their fitness scores).
 
 ### Correlation of fitness and TP-class
 
