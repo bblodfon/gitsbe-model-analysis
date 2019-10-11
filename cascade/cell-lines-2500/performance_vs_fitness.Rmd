@@ -1,0 +1,597 @@
+---
+title: "Performance vs Fitness Model Analysis"
+author: "[John Zobolas](https://github.com/bblodfon)"
+date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+    code_folding: hide
+    code_download: true
+---
+
+```{r Render command, eval=FALSE, include=FALSE}
+#rmarkdown::render(input = "./performance_vs_fitness.Rmd", output_format = "html_document", output_dir = "../../docs/cascade/cell-lines-2500/")
+```
+
+## Intro {-}
+
+The purpose of this analysis is to find a correlation between the boolean models
+**fitness to a steady state activity profile** and their **performance** in terms of the
+number of *True Positive* (TP) synergies predicted and/or the overall *MCC score*
+(Matthews Correlation Coefficient score). We want to show that **a closer fitness 
+to the steady state suggests more predictive models**, corroborating thus our proof of concept of using an ensemble-based approach where models are trained towards a 
+specific steady state signaling pattern for drug combination predictions.
+
+The boolean model datasets we will use are in total $9$: one for each cell line 
+of interest (8 cell lines) where the models were **fitted to a specific steady state** in each 
+case and one for the so-called **random models** which were generated *randomly* in 
+the sense that were fitted only to a proliferation state (simulations were done using 
+the DrugLogics software modules `Gitsbe` and `Drabme`).
+
+Each boolean model dataset constitues of:
+
+- The **model predictions** file which has for each model the prediction for 
+each drug combination tested (*0* = no synergy predicted, *1* = synergy 
+predicted, *NA* = couldn't find stable states in either the drug combination 
+inhibited model or in any of the two single-drug inhibited models)
+- The **models stable state** (one per model). A **fitness score**
+for each model can easily be calculated then by matching the model's stable 
+state (which is something inherent in the boolean's model structure, a unique 
+fixpoint attractor) with the steady state of interest, node per node.
+A **higher fitness score** would mean a better match of a model's 
+stable state to the cell line derived steady state (a perfect match would result 
+in a fitness of 1).
+- The **models link operators** which is a representation of the boolean equations
+of each model. Each boolean equation is in the form: **Target *= (Activator OR Activator OR...) AND NOT (Inhibitor OR Inhibitor OR...)** and the difference between the models can be found in the 
+*link operator* (*1* = 'OR NOT', *0* = 'AND NOT', or absent) which has been 
+mutated (changed) through the genetic algorithm in `Gitsbe`. Note that the equations that do 
+not have link operators are *the same for every model* and are thus discarded.
+- The **observed synergies** file which lists the drug combinations that were 
+observed as synergistic for each cell line.
+- The **steady state** file which lists the network nodes (protein, gene, complexes
+names, etc) and their activity value (0 or 1, representing an inhibited or active
+node respectively). 
+This input is provided per cell line and not for the random models since they are just trained to a profileration state.
+
+```{r Load libraries, message = FALSE, echo = FALSE}
+library(DT)
+library(ggpubr)
+library(emba)
+library(usefun)
+library(nnet)
+library(pscl)
+library(ComplexHeatmap)
+library(circlize)
+library(dplyr)
+library(tibble)
+library(Ckmeans.1d.dp)
+library(RColorBrewer)
+```
+
+## Input {-}
+
+First we load the cell-specific input data:
+```{r Cell-specific Input}
+# Cell Lines
+cell.lines = c("A498", "AGS", "DU145", "colo205", "SW620", "SF295", "UACC62", "MDA-MB-468")
+
+cell.line.dirs = sapply(cell.lines, function(cell.line) {
+  paste0(getwd(), "/", cell.line)
+})
+
+# Model predictions
+model.predictions.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/model_predictions")
+})
+
+model.predictions.per.cell.line = lapply(model.predictions.files, 
+  function(file) {
+    get_model_predictions(file)
+  }
+)
+
+# Observed synergies
+observed.synergies.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/observed_synergies")
+})
+
+observed.synergies.per.cell.line = lapply(observed.synergies.files, 
+  function(file) {
+    get_observed_synergies(file)
+  }
+)
+
+# Models Stable State (1 per model)
+models.stable.state.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/models_stable_state")
+})
+
+models.stable.state.per.cell.line = lapply(models.stable.state.files,
+  function(file) {
+    as.matrix(read.table(file, check.names = FALSE))
+  }
+)
+
+# Models Link Operators
+models.link.operator.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/models_link_operator")
+})
+
+models.link.operators.per.cell.line = lapply(models.link.operator.files,
+  function(file) {
+    as.matrix(read.table(file, check.names = FALSE))
+  }
+)
+
+# the node names used in our analysis
+node.names = colnames(models.stable.state.per.cell.line[[1]])
+
+# Steady States
+steady.state.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/steady_state")
+})
+
+steady.state.per.cell.line = lapply(steady.state.files,
+  function(file) {
+    ss.df = read.table(file, sep = "\t", stringsAsFactors = FALSE)
+    steady.state = ss.df[,2]
+    names(steady.state) = ss.df[,1]
+    
+    # change value to NA for nodes for which there was no activity found (dash)
+    steady.state[steady.state == "-"] = NA
+    
+    # keep only the nodes that are included in the analysis
+    steady.state = prune_and_reorder_vector(steady.state, node.names)
+    
+    # check
+    stopifnot(names(steady.state) %in% node.names)
+    
+    # return an integer vector since the activity values are binarized (0,1)
+    return(sapply(steady.state, as.integer))
+  }
+)
+```
+
+The random model input data:
+```{r Random model Input}
+random.dir = paste0(getwd(), "/random")
+random.model.predictions = get_model_predictions(paste0(random.dir, "/model_predictions"))
+
+random.models.stable.state = as.matrix(
+  read.table(file = paste0(random.dir, "/models_stable_state"), check.names = FALSE)
+)
+
+random.models.link.operator =
+  as.matrix(read.table(file = paste0(random.dir, "/models_link_operator"), check.names = FALSE))
+```
+
+## Model Analysis {-}
+
+In order to find the number of true positive predicted synergies, MCC scores and fitness scores for each of the models in each of the 9 datasets, we use functions from the [emba](https://github.com/bblodfon/emba) R package.
+
+### Cell-specific {-}
+
+We find the MCC, TP and fitness values for each model per cell line (note
+that each model's stable state in a specific cell line is matched against the 
+steady state from that cell line):
+```{r Cell-specific Models TP + MCC + fitness per cell line}
+models.tp.per.cell.line = list()
+models.mcc.per.cell.line = list()
+models.fitness.per.cell.line = list()
+
+for (cell.line in cell.lines) {
+  model.predictions = model.predictions.per.cell.line[[cell.line]]
+  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
+  number.of.drug.comb.tested = ncol(model.predictions.per.cell.line[[cell.line]])
+  
+  # Split model.predictions to positive (observed) and negative (non-observed) results
+  observed.model.predictions =
+    get_observed_model_predictions(model.predictions, observed.synergies)
+  unobserved.model.predictions =
+    get_unobserved_model_predictions(model.predictions, observed.synergies)
+  
+  # Count the predictions of the observed synergies per model (TP)
+  models.tp.per.cell.line[[cell.line]] = calculate_models_synergies_tp(observed.model.predictions)
+  
+  # Calculate Matthews Correlation Coefficient (MCC) for every model
+  models.mcc.per.cell.line[[cell.line]] = 
+    calculate_models_mcc(observed.model.predictions,
+                         unobserved.model.predictions,
+                         number.of.drug.comb.tested)
+  # Fitness per model contrasted to steady state from cell line
+  models.fitness.per.cell.line[[cell.line]] = 
+    apply(models.stable.state.per.cell.line[[cell.line]], 1, get_percentage_of_matches, 
+          steady.state.per.cell.line[[cell.line]])
+}
+```
+
+### Random Models {-}
+
+Finding the MCC, TP and fitness values for each model from the above result (note
+that each model's stable state in a specific cell line is matched against the 
+steady state from that cell line and that the random models' stable state data
+does not change per cell line, i.e. same `random.models.stable.state` object):
+```{r Random Models TP + MCC + fitness per cell line}
+random.models.mcc.per.cell.line = list()
+random.models.tp.per.cell.line = list()
+random.models.fitness.per.cell.line = list()
+
+for (cell.line in cell.lines) {
+  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
+  number.of.drug.comb.tested = ncol(random.model.predictions)
+  
+  # Split model.predictions to positive (observed) and negative (non-observed) results
+  observed.model.predictions =
+    get_observed_model_predictions(random.model.predictions, observed.synergies)
+  unobserved.model.predictions =
+    get_unobserved_model_predictions(random.model.predictions, observed.synergies)
+  
+   # Count the predictions of the observed synergies per model (TP)
+  random.models.tp.per.cell.line[[cell.line]] = 
+    calculate_models_synergies_tp(observed.model.predictions)
+  
+  # Calculate Matthews Correlation Coefficient (MCC) for every model
+  random.models.mcc.per.cell.line[[cell.line]] = 
+    calculate_models_mcc(observed.model.predictions,
+                         unobserved.model.predictions,
+                         number.of.drug.comb.tested)
+  
+  # Fitness per model contrasted to steady state from cell line 
+  random.models.fitness.per.cell.line[[cell.line]] = 
+    apply(random.models.stable.state, 1, get_percentage_of_matches, 
+          steady.state.per.cell.line[[cell.line]])
+}
+```
+
+## Choosing best dataset for analysis {-}
+
+We now want to **find the best dataset & cell line** for our subsequent analysis - that is to show the performance vs fitness correlation. 
+The argument here is that we want to choose a boolean dataset that has a **large enough fitness value range** along with a large **TP and/or MCC value range**, since with smaller value ranges it would be harder to distinguish the difference of the estimated distributions of the fitness scores belonging to different performance classes (i.e. models' fitnesses that belong to different classification groups with the metric being either the number of TPs or the MCC score).
+
+The next two tables will help us determine exactly which cell line and dataset
+to use:
+```{r Cell-specific Models TP + MCC + fitness per cell line stats}
+cell.specific.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 11)
+rownames(cell.specific.model.data) = cell.lines
+colnames(cell.specific.model.data) = c("fitness range", "Min fitness", 
+  "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
+  "Max MCC", "Mean MCC", "Median MCC", "Max TP")
+
+for (cell.line in cell.lines) {
+  models.fitness = models.fitness.per.cell.line[[cell.line]]
+  models.mcc = models.mcc.per.cell.line[[cell.line]]
+  models.tp = models.tp.per.cell.line[[cell.line]]
+  
+  fit.summary = unclass(summary(models.fitness))
+  mcc.summary = unclass(summary(models.mcc))
+  max.tp = max(models.tp)
+  
+  cell.specific.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
+  cell.specific.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
+  cell.specific.model.data[cell.line, "Max fitness"] = fit.summary["Max."]
+  cell.specific.model.data[cell.line, "Mean fitness"] = fit.summary["Mean"]
+  cell.specific.model.data[cell.line, "Median fitness"] = fit.summary["Median"]
+  
+  cell.specific.model.data[cell.line, "MCC range"] = mcc.summary["Max."] - mcc.summary["Min."]
+  cell.specific.model.data[cell.line, "Min MCC"] = mcc.summary["Min."]
+  cell.specific.model.data[cell.line, "Max MCC"] = mcc.summary["Max."]
+  cell.specific.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
+  cell.specific.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
+  
+  cell.specific.model.data[cell.line, "Max TP"] = max.tp
+}
+
+# color columns
+fit.breaks = quantile(cell.specific.model.data[,"fitness range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+fit.colors = round(seq(255, 40, length.out = length(fit.breaks) + 1), 0) %>%
+  {paste0("rgb(255,", ., ",", ., ")")} # red
+mcc.breaks = quantile(cell.specific.model.data[,"MCC range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+mcc.colors = round(seq(255, 40, length.out = length(mcc.breaks) + 1), 0) %>%
+  {paste0("rgb(", ., ",255,", ., ")")} # green
+
+caption.title = "Table 1: Fitness, MCC scores and TP (True positives) for the Cell-specific model predictions across 8 Cell Lines"
+datatable(data = cell.specific.model.data, 
+          options = list(dom = "t"), # just show the table
+          caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
+  formatRound(1:10, digits = 3) %>%
+  formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
+  formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
+```
+
+```{r Random Models TP + MCC + fitness per cell line stats}
+random.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 8)
+rownames(random.model.data) = cell.lines
+colnames(random.model.data) = c("fitness range", "Min fitness", "Max fitness", 
+  "MCC range", "Min MCC", "Max MCC", "TP range", "Max TP")
+
+for (cell.line in cell.lines) {
+  models.fitness = random.models.fitness.per.cell.line[[cell.line]]
+  range.fitness = range(models.fitness)
+  
+  models.tp = random.models.tp.per.cell.line[[cell.line]]
+  range.tp = range(models.tp)
+  
+  models.mcc = random.models.mcc.per.cell.line[[cell.line]]
+  range.mcc = range(models.mcc)
+  
+  random.model.data[cell.line, "fitness range"] = range.fitness[2] - range.fitness[1]
+  random.model.data[cell.line, "Min fitness"] = range.fitness[1]
+  random.model.data[cell.line, "Max fitness"] = range.fitness[2]
+  
+  random.model.data[cell.line, "MCC range"] = range.mcc[2] - range.mcc[1]
+  random.model.data[cell.line, "Min MCC"] = range.mcc[1]
+  random.model.data[cell.line, "Max MCC"] = range.mcc[2]
+  
+  random.model.data[cell.line, "TP range"] = range.tp[2] - range.tp[1]
+  random.model.data[cell.line, "Max TP"] = range.tp[2]
+}
+
+# color columns
+fit.breaks = quantile(random.model.data[,"fitness range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+fit.colors = round(seq(255, 40, length.out = length(fit.breaks) + 1), 0) %>%
+  {paste0("rgb(255,", ., ",", ., ")")} # red
+mcc.breaks = quantile(random.model.data[,"MCC range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+mcc.colors = round(seq(255, 40, length.out = length(mcc.breaks) + 1), 0) %>%
+  {paste0("rgb(", ., ",255,", ., ")")} # green
+
+caption.title = "Table 2: Fitness, MCC scores and TP (True positives) for the random model predictions across 8 Cell Lines"
+datatable(data = random.model.data, 
+          options = list(dom = "t"), # just show the table
+          caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
+  formatRound(c(1,2,3,4,5,6), digits = 3) %>%
+  formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
+  formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
+```
+
+In general, we observe that the **random models offer a larger range of 
+fitness values** when their stable states are matched against the steady state 
+of each particular cell line. 
+This is something we expected since these models weren't fitted to a 
+specific cell-line steady state (meaning that they weren't chosen from the 
+`Gitsbe` module as the 3 best from each simulation that match that steady state 
+as best as possible) but rather to a more generic state of proliferation. 
+Thus, they represent a set of models with larger variation in terms of 
+structure (boolean model equations) compared to the cell-specific generated ones.
+
+Also, note that the **maximum fitness value** is almost always larger in the 
+cell-specific models vs the random ones for each respective cell line.
+
+All in all, we will use the **random models data**, contrasted to the steady 
+state of the `A498` cell line (see Table 2). This dataset has the largest 
+fitness, MCC and TP value range combined in both tables above.
+
+```{r Save best dataset}
+best.cell.line = "A498"
+
+fit = random.models.fitness.per.cell.line[[best.cell.line]]
+tp  = random.models.tp.per.cell.line[[best.cell.line]]
+mcc = random.models.mcc.per.cell.line[[best.cell.line]]
+```
+
+## Statistical Analysis {-}
+
+### Data preprocessing
+
+Firstly, we filter the data by finding the **unique models** - those that have 
+strictly different boolean equations. Then, we take a random sample out of these 
+(while stabilizing the seed number for reproducibility purposes):
+```{r Sample best dataset}
+# For reproducibility
+set.seed(0)
+sample.size = 1000
+
+unique.models = rownames(unique(random.models.link.operator))
+unique.models.sample = sample(unique.models, size = sample.size)
+
+fit.unique = fit[names(fit) %in% unique.models.sample]
+tp.unique  = tp[names(tp) %in% unique.models.sample]
+mcc.unique = mcc[names(mcc) %in% unique.models.sample]
+
+df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
+```
+
+### Correlation Plots
+
+Then, we check if the our data is normally distributed (using the Shapiro-Wilk
+test for normality and the Q-Q plots):
+```{r plots1, comment=""}
+ggqqplot(data = df, x = "fit.unique", ylab = "Fitness") # not normal but close
+ggqqplot(data = df, x = "mcc.unique", ylab = "MMC") # surely not normal
+ggqqplot(data = df, x = "tp.unique", ylab = "True Positives") # surely not normal
+
+shapiro.test(x = sample(fit.unique, size = 100)) # close: maybe normal
+shapiro.test(x = sample(mcc.unique, size = 100)) # surely not normal
+shapiro.test(x = sample(tp.unique, size = 100)) # surely not normal
+```
+
+From the above results we observe that the fitness value data are close to normal
+(but it is not statistically significant), while the TP and MCC values are surely
+not normally distributed. Thus, we will use **non-parametric 
+correlation scores, namely the Spearman and Kendall rank-based correlation tests**,
+to check the correlation between the models fitness values and their corresponding
+number of True Positive predictions or MCC score:
+```{r Rank correlation plots: Fitness vs MCC}
+ggscatter(df, x = "mcc.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (MCC) - Spearman Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "spearman",
+          xlab = "MCC scores", ylab = "Fitness Values")
+ggscatter(df, x = "mcc.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (MCC) - Kendall Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "kendall",
+          xlab = "MCC scores", ylab = "Fitness Values")
+```
+
+```{r Rank correlation plots: Fitness vs TP}
+ggscatter(df, x = "tp.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (TP) - Spearman Correlation",
+          add = "reg.line", conf.int = TRUE,
+          cor.coef = TRUE, cor.method = "spearman",
+          xlab = "True Positives (TP)", ylab = "Fitness Values")
+ggscatter(df, x = "tp.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (TP) - Kendall Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "kendall",
+          xlab = "True Positives (TP)", ylab = "Fitness Values")
+```
+
+From the correlation plots above, we observe a **weak/small positive correlation between
+performance and fitness to the steady state** (0.1 - 0.2). We will next proceed 
+with a more elaborate analysis, where the models will be split to different 
+performance classes (TP or MCC score-derived) and the statistical correlation between the 
+infividual groups will be tested (with regards to their fitness scores).
+
+### Correlation of fitness and TP-class
+
+First, some box and density plots to see practically **what and where is the difference 
+between the models fitness values belonging to different TP-classes**:
+```{r TP-classification: Plots}
+# Box plots
+ggboxplot(df, x = "tp.unique", y = "fit.unique", color = "tp.unique",
+          palette = usefun:::colors.100[1:length(unique(tp.unique))],
+          xlab = "True Positives (TP)", ylab = "Fitness values")
+
+# Density Plots
+densities = list()
+for (tp.num in sort(unique(tp.unique))) {
+  x = df %>%
+    filter(tp.unique == tp.num) %>%
+    select_at(.vars = c("fit.unique"))
+  den = density(x$fit.unique)
+  densities[[paste0(tp.num, " (", den$n, ")")]] = den
+}
+
+make_multiple_density_plot(densities, legend.title = "TP classes (#models)",
+        title = "Density Estimation", x.axis.label = "Fitness score")
+```
+
+As we can see from the above plots, there is positive correlation between the 
+classes that predicted 0,1 and 2 TP synergies as well as between the 0 TP class
+and the 3,4,5-TP classes.
+Mathematically, we show that **the group distributions are indeed different using the Kruskal-Wallis Rank Sum Test**:
+
+```{r TP-classification: Kruskal Test, comment=""}
+# Hypothesis testing: Are the location parameters of the distribution of x the same in each group?
+kruskal.test(x = df[,"fit.unique"], g = df[, "tp.unique"])
+```
+
+As the p-value is less than the significance level $0.05$, we can conclude 
+that there are significant differences between the different groups of fitness 
+values. To see exactly which pair of groups are different **we perform pairwise
+Wilcoxon rank sum tests and we draw a heatmap of the each test's p-value**:
+```{r TP-classification: Pairwise Wilcox Tests, warning=FALSE}
+res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "tp.unique"], p.adjust.method = "BH")
+p.value.mat = res$p.value
+```
+
+```{r TP-classification: p-value Heatmap of Pairwise Wilcox Tests, warning=FALSE, fig.width=9, dpi=300}
+col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
+ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
+  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
+  row_title = "TP", row_title_rot = 0, row_names_side = "left",
+  column_title = "P-values (Pairwise Wilcoxon tests) - TP-classified fitnesses", column_title_gp = gpar(fontsize = 20),
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (!is.na(p.value.mat[i,j]))
+        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 16))
+})
+draw(ht)
+```
+
+As we can see above there is significant difference between groups of fitness
+values belonging to models that predicted $0$, $1$ and $2$ TP synergies, but
+not between these and the larger performant groups ($TP=3,4,5$) - with the exception
+of the group with $TP=2$. 
+
+Note that the **number of true positive predictions is an one-dimensional metric** and by 
+excluding the TN, FP and FNs we have a less-informant (and arguably incorrect) 
+picture of the models performance classification. 
+That's why we will proceed with the more balanced MCC score for classifing the models fitnesses 
+to different performance groups.
+
+### Correlation of fitness and MCC-class
+
+Firstly, we perform a *univariate k-means clustering* to 
+**split the models MCC values to different classes** and plot the data histogram.
+The **number of MCC classes** to split the data can be arbitrarily chosen and so
+we chose one less than the maximum number of TPs predicted:
+```{r MCC-classification: Find the clusters}
+num.of.mcc.classes = 5
+mcc.class.ids = 1:num.of.mcc.classes
+
+# find the clusters
+res = Ckmeans.1d.dp(x = df[,"mcc.unique"], k = num.of.mcc.classes)
+mcc.class.id = res$cluster
+df = cbind(df, mcc.class.id)
+
+plot_mcc_classes_hist(df[,"mcc.unique"], df[,"mcc.class.id"],
+                      num.of.mcc.classes, mcc.class.ids)
+```
+
+Then we show some box and density plots to see practically **what and where is 
+the difference between the models fitness values belonging to different MCC-classes**:
+```{r MCC-classification: Plots}
+# Box plots
+ggboxplot(df, x = "mcc.class.id", y = "fit.unique", color = "mcc.class.id",
+          palette = usefun:::colors.100[1:num.of.mcc.classes],
+          xlab = "MCC class", ylab = "Fitness values")
+
+# Density Plots
+densities = list()
+for (id in mcc.class.ids) {
+  x = df %>%
+    filter(mcc.class.id == id) %>%
+    select_at(.vars = c("fit.unique"))
+  den = density(x$fit.unique)
+  densities[[paste0(id, " (", res$size[id], ")")]] = den
+}
+
+make_multiple_density_plot(densities, legend.title = "MCC classes (#models)",
+        title = "Density Estimation", x.axis.label = "Fitness score")
+```
+
+As we can see from the above plots, **there is positive correlation between the 
+distribution of MCC scores in each class and the respective fitness scores**, 
+though not between the 3rd class and the 4th or 5th (it's negative). 
+Note also that the 5th class has a lot less models than the rest.
+Mathematically, we show that **the group distributions are indeed different 
+using the Kruskal-Wallis Rank Sum Test**:
+```{r MCC-classification: Kruskal Test, comment=""}
+# Hypothesis testing: Are the location parameters of the distribution of x the same in each group?
+kruskal.test(x = df[,"fit.unique"], g = df[, "mcc.class.id"])
+```
+
+As the p-value is less than the significance level $0.05$, we can conclude 
+that there are significant differences between the different groups of fitness 
+values.
+
+Next, to show that most of the groups are statistically different, **we perform 
+pairwise Wilcoxon rank sum tests and draw a heatmap of the each test’s p-value**:
+```{r MCC-classification: Pairwise Wilcox Tests, warning=FALSE}
+pair.res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "mcc.class.id"], p.adjust.method = "BH")
+p.value.mat = pair.res$p.value
+```
+
+```{r MCC-classification: p-value Heatmap of Pairwise Wilcox Tests, warning=FALSE, fig.width=9, dpi=300}
+col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
+ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
+  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
+  row_title = "MCC class id", row_title_rot = 90, row_names_side = "left",
+  column_title = "P-values (Pairwise Wilcoxon tests) - MCC-classified fitnesses", column_title_gp = gpar(fontsize = 20),
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (!is.na(p.value.mat[i,j]))
+        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 20))
+})
+draw(ht)
+```
+
+## R session info {-}
+
+```{r session info, comment=""}
+xfun::session_info()
+```
