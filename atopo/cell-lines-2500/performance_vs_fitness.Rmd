@@ -498,7 +498,7 @@ pseudo.r2.measures["McFadden"]
 To measure the goodness-of-fit for our model, there are several measures proposed 
 for logistic regression. We emphasize on the McFaddens's pseudo-$R^2$ measure 
 for our classifier, for which a value of $0.2-0.4$ would indicate an excellent fit [[source](https://stats.stackexchange.com/questions/82105/mcfaddens-pseudo-r2-interpretation)].
-Since we found less, we can also assume that there is only a weak/positive 
+Since we found less, we can also assume that there is only a weak/small positive 
 **correlation between the number of TP and the fitness score of the models**.
 
 Next, we will next proceed with a more elaborate analysis, where the models will be split to different 
