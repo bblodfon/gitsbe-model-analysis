@@ -46,6 +46,11 @@ fixpoint attractor) with the steady state of interest, node per node.
 A **higher fitness score** would mean a better match of a model's 
 stable state to the cell line derived steady state (a perfect match would result 
 in a fitness of 1).
+- The **models link operators** which is a representation of the boolean equations
+of each model. Each boolean equation is in the form: **Target *= (Activator OR Activator OR...) AND NOT (Inhibitor OR Inhibitor OR...)** and the difference between the models can be found in the 
+*link operator* (*1* = 'OR NOT', *0* = 'AND NOT', or absent) which has been 
+mutated (changed) through the genetic algorithm in `Gitsbe`. Note that the equations that do 
+not have link operators are *the same for every model* and are thus discarded.
 - The **observed synergies** file which lists the drug combinations that were 
 observed as synergistic for each cell line.
 - The **steady state** file which lists the network nodes (protein, gene, complexes
@@ -149,8 +154,7 @@ steady.state.per.cell.line = lapply(steady.state.files,
 )
 ```
 
-For the random models, we just need to get the predictions and stable states
-for each model:
+The random model input data:
 ```{r Random model Input}
 random.dir = paste0(getwd(), "/random")
 random.model.predictions = get_model_predictions(paste0(random.dir, "/model_predictions"))
@@ -173,7 +177,10 @@ We find the MCC, TP and fitness values for each model per cell line (note
 that each model's stable state in a specific cell line is matched against the 
 steady state from that cell line):
 ```{r Cell-specific Models TP + MCC + fitness per cell line}
+models.tp.per.cell.line = list()
 models.mcc.per.cell.line = list()
+models.fitness.per.cell.line = list()
+
 for (cell.line in cell.lines) {
   model.predictions = model.predictions.per.cell.line[[cell.line]]
   observed.synergies = observed.synergies.per.cell.line[[cell.line]]
@@ -185,27 +192,16 @@ for (cell.line in cell.lines) {
   unobserved.model.predictions =
     get_unobserved_model_predictions(model.predictions, observed.synergies)
   
+  # Count the predictions of the observed synergies per model (TP)
+  models.tp.per.cell.line[[cell.line]] = calculate_models_synergies_tp(observed.model.predictions)
+  
   # Calculate Matthews Correlation Coefficient (MCC) for every model
   models.mcc.per.cell.line[[cell.line]] = 
     calculate_models_mcc(observed.model.predictions,
                          unobserved.model.predictions,
                          number.of.drug.comb.tested)
-}
-
-models.tp.per.cell.line = list()
-for (cell.line in cell.lines) {
-  model.predictions = model.predictions.per.cell.line[[cell.line]]
-  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
   
-  observed.model.predictions =
-    get_observed_model_predictions(model.predictions, observed.synergies)
-  
-  # Count the predictions of the observed synergies per model (TP)
-  models.tp.per.cell.line[[cell.line]] = calculate_models_synergies_tp(observed.model.predictions)
-}
-
-models.fitness.per.cell.line = list()
-for (cell.line in cell.lines) {
+  # Fitness per model contrasted to steady state from cell line
   models.fitness.per.cell.line[[cell.line]] = 
     apply(models.stable.state.per.cell.line[[cell.line]], 1, get_percentage_of_matches, 
           steady.state.per.cell.line[[cell.line]])
@@ -220,6 +216,9 @@ the steady state from that cell line and that the random models' stable state da
 does not change per cell line, i.e. same `random.models.stable.state` object):
 ```{r Random Models TP + MCC + fitness per cell line}
 random.models.mcc.per.cell.line = list()
+random.models.tp.per.cell.line = list()
+random.models.fitness.per.cell.line = list()
+
 for (cell.line in cell.lines) {
   observed.synergies = observed.synergies.per.cell.line[[cell.line]]
   number.of.drug.comb.tested = ncol(random.model.predictions)
@@ -230,27 +229,17 @@ for (cell.line in cell.lines) {
   unobserved.model.predictions =
     get_unobserved_model_predictions(random.model.predictions, observed.synergies)
   
+   # Count the predictions of the observed synergies per model (TP)
+  random.models.tp.per.cell.line[[cell.line]] = 
+    calculate_models_synergies_tp(observed.model.predictions)
+  
   # Calculate Matthews Correlation Coefficient (MCC) for every model
   random.models.mcc.per.cell.line[[cell.line]] = 
     calculate_models_mcc(observed.model.predictions,
                          unobserved.model.predictions,
                          number.of.drug.comb.tested)
-}
-
-random.models.tp.per.cell.line = list()
-for (cell.line in cell.lines) {
-  observed.synergies = observed.synergies.per.cell.line[[cell.line]]
   
-  observed.model.predictions =
-    get_observed_model_predictions(random.model.predictions, observed.synergies)
-  
-  # Count the predictions of the observed synergies per model (TP)
-  random.models.tp.per.cell.line[[cell.line]] = 
-    calculate_models_synergies_tp(observed.model.predictions)
-}
-
-random.models.fitness.per.cell.line = list()
-for (cell.line in cell.lines) {
+  # Fitness per model contrasted to steady state from cell line
   random.models.fitness.per.cell.line[[cell.line]] = 
     apply(random.models.stable.state, 1, get_percentage_of_matches, 
           steady.state.per.cell.line[[cell.line]])
@@ -363,7 +352,7 @@ datatable(data = random.model.data,
 The below box plots compare the MCC values and fitness scores across all cell lines between
 the cell-specific models (trained to steady state) and the random ones (trained to proliferation):
 
-```{r Compine data into one data frame}
+```{r Combine data into one data frame}
 num.of.models = nrow(random.models.stable.state)
 data.list = list()
 
