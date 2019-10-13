@@ -1,5 +1,5 @@
 ---
-title: "Performance vs Fitness Model Analysis"
+title: "Cascade Performance vs Fitness Model Analysis"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -265,7 +265,7 @@ cell.specific.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 1
 rownames(cell.specific.model.data) = cell.lines
 colnames(cell.specific.model.data) = c("fitness range", "Min fitness", 
   "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
-  "Max MCC", "Mean MCC", "Median MCC", "Max TP")
+  "Max MCC", "Mean MCC", "Median MCC", "Max TPR")
 
 for (cell.line in cell.lines) {
   models.fitness = models.fitness.per.cell.line[[cell.line]]
@@ -274,7 +274,7 @@ for (cell.line in cell.lines) {
   
   fit.summary = unclass(summary(models.fitness))
   mcc.summary = unclass(summary(models.mcc))
-  max.tp = max(models.tp)
+  max.tpr = max(models.tp) / length(observed.synergies.per.cell.line[[cell.line]])
   
   cell.specific.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
   cell.specific.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
@@ -288,7 +288,7 @@ for (cell.line in cell.lines) {
   cell.specific.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
   cell.specific.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
   
-  cell.specific.model.data[cell.line, "Max TP"] = max.tp
+  cell.specific.model.data[cell.line, "Max TPR"] = max.tpr
 }
 
 # color columns
@@ -303,7 +303,7 @@ caption.title = "Table 1: Fitness, MCC scores and TP (True positives) for the Ce
 datatable(data = cell.specific.model.data, 
           options = list(dom = "t"), # just show the table
           caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(1:10, digits = 3) %>%
+  formatRound(1:11, digits = 3) %>%
   formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
   formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
 ```
@@ -313,7 +313,7 @@ random.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 11)
 rownames(random.model.data) = cell.lines
 colnames(random.model.data) = c("fitness range", "Min fitness", 
   "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
-  "Max MCC", "Mean MCC", "Median MCC", "Max TP")
+  "Max MCC", "Mean MCC", "Median MCC", "Max TPR")
 
 for (cell.line in cell.lines) {
   models.fitness = random.models.fitness.per.cell.line[[cell.line]]
@@ -322,7 +322,7 @@ for (cell.line in cell.lines) {
   
   fit.summary = unclass(summary(models.fitness))
   mcc.summary = unclass(summary(models.mcc))
-  max.tp = max(models.tp)
+  max.tpr = max(models.tp) / length(observed.synergies.per.cell.line[[cell.line]])
   
   random.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
   random.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
@@ -336,7 +336,7 @@ for (cell.line in cell.lines) {
   random.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
   random.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
   
-  random.model.data[cell.line, "Max TP"] = max.tp
+  random.model.data[cell.line, "Max TPR"] = max.tpr
 }
 
 # color columns
@@ -351,7 +351,7 @@ caption.title = "Table 2: Fitness, MCC scores and TP (True positives) for the ra
 datatable(data = random.model.data, 
           options = list(dom = "t"), # just show the table
           caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(1:10, digits = 3) %>%
+  formatRound(1:11, digits = 3) %>%
   formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
   formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
 ```
@@ -405,6 +405,245 @@ structure (boolean model equations) compared to the cell-specific generated ones
 compared to the random ones for each respective cell line.
 - In most of the cell lines, **the cell-specific models show an equal or less 
 performance (smaller MCC values) than the random ones**
+
+All in all, we will use the **random models data**, contrasted to the steady 
+state of the `AGS` cell line (see Table 2). This dataset has the largest 
+MCC range and TPR value (third largest fitness range value as well) combined 
+in both tables above.
+
+```{r Save best dataset}
+best.cell.line = "AGS"
+
+fit = random.models.fitness.per.cell.line[[best.cell.line]]
+tp  = random.models.tp.per.cell.line[[best.cell.line]]
+mcc = random.models.mcc.per.cell.line[[best.cell.line]]
+```
+
+## Statistical Analysis {-}
+
+### Data preprocessing
+
+Firstly, we filter the data by finding the **unique models** - those that have 
+strictly different boolean equations. Then, we take a random sample out of these 
+(while stabilizing the seed number for reproducibility purposes):
+```{r Sample best dataset}
+# For reproducibility
+set.seed(10)
+sample.size = 1000
+
+# find the unique models
+unique.models = rownames(unique(random.models.link.operator))
+
+# remove models with NaN MCC scores
+unique.models = unique.models[!unique.models %in% names(which(is.na(mcc)))]
+
+# take a sample
+unique.models.sample = sample(unique.models, size = sample.size)
+
+fit.unique = fit[names(fit) %in% unique.models.sample]
+tp.unique  = tp[names(tp) %in% unique.models.sample]
+mcc.unique = mcc[names(mcc) %in% unique.models.sample]
+
+df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
+```
+
+Note that the **fitness and MCC score are continuous variables while the number 
+of true positives (TP) is discrete**.
+
+### Correlation Plots
+
+Then, we check if the our data is normally distributed (using the Shapiro-Wilk
+test for normality and the Q-Q plots):
+```{r Normality testing, warning=FALSE, comment=""}
+ggqqplot(data = df, x = "fit.unique", ylab = "Fitness")
+ggqqplot(data = df, x = "mcc.unique", ylab = "MMC")
+
+shapiro.test(x = fit.unique)
+shapiro.test(x = mcc.unique)
+```
+
+From the above results we observe that both the fitness and MCC scores are surely
+not normally distributed (with statistical significance).
+Thus, we will use **non-parametric correlation scores, namely the Spearman and Kendall rank-based correlation tests**,
+to check the correlation between the two continuous variables (models fitness 
+values and their corresponding MCC score):
+```{r Rank correlation plots: Fitness vs MCC, warning=FALSE}
+ggscatter(df, x = "mcc.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (MCC) - Spearman Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "spearman", label.x.npc = 0.7, label.y.npc = 0.1),
+          xlab = "MCC scores", ylab = "Fitness Values")
+ggscatter(df, x = "mcc.unique", y = "fit.unique", 
+          title = "Fitness vs Performance (MCC) - Kendall Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall", label.x.npc = 0.7, label.y.npc = 0.1),
+          xlab = "MCC scores", ylab = "Fitness Values")
+```
+
+From the correlation plots above, we observe a **weak/small positive correlation between
+performance and fitness to the steady state**.
+
+To assess the **correlation between the number of TP predictions of the models 
+(discrete variable) and the models fitness (continuous variable)**, we construct a 
+predictor of the categorical variable from the continuous variable: if the 
+resulting classifier has a **high degree of fit** we can conclude the two variables 
+share a relationship and are indeed correlated. Since there are more than 2 TP
+classes (values) in the dataset, we will use **Multinomial Logistic Regression**
+and fit log-linear models via neural networks:
+
+```{r Multinomial Logistic Regression: TP ~ Fitness, comment=""}
+model.classifier = multinom(data = df, formula = tp.unique ~ fit.unique)
+pseudo.r2.measures = pR2(model.classifier)
+pseudo.r2.measures["McFadden"]
+```
+
+```{r Test prediction accuracy on same dataset, eval=FALSE, include=FALSE}
+library(caret)
+
+predictions = predict(object = model.classifier, newdata = df$tp.unique, type = "class")
+postResample(pred = predictions, obs = factor(df$tp.unique))
+```
+
+To measure the goodness-of-fit for our model, there are several measures proposed 
+for logistic regression. We emphasize on the McFaddens's pseudo-$R^2$ measure 
+for our classifier, for which a value of $0.2-0.4$ would indicate an excellent fit [[source](https://stats.stackexchange.com/questions/82105/mcfaddens-pseudo-r2-interpretation)].
+Since we found less, we can also assume that there is only a **weak/small positive 
+correlation between the number of TPs and the fitness score of the models**.
+
+Next, we will next proceed with a more elaborate analysis, where the models will be split to different 
+performance classes (TP or MCC score-derived) and the statistical correlation between the 
+individual groups will be tested (with regards to their fitness scores).
+
+### Correlation of fitness and TP-class
+
+First, some box and density plots to see practically **what and where is the difference 
+between the models fitness values belonging to different TP-classes**:
+```{r TP-classification: Plots}
+# Box plots
+ggboxplot(df, x = "tp.unique", y = "fit.unique", color = "tp.unique",
+          palette = usefun:::colors.100[1:length(unique(tp.unique))],
+          xlab = "True Positives (TP)", ylab = "Fitness values")
+
+# Density Plots
+densities = list()
+for (tp.num in sort(unique(tp.unique))) {
+  x = df %>%
+    filter(tp.unique == tp.num) %>%
+    select_at(.vars = c("fit.unique"))
+  den = density(x$fit.unique)
+  densities[[paste0(tp.num, " (", den$n, ")")]] = den
+}
+
+make_multiple_density_plot(densities, legend.title = "TP classes (#models)",
+        title = "Density Estimation", x.axis.label = "Fitness score")
+```
+
+As we can see from the above plots, **there doesn't seem to be any significant difference 
+between the fitness values of the different TP classes**.
+Mathematically, we can show that by using the **Kruskal-Wallis Rank Sum Test** 
+(notice the p-value - it is larger than $0.001$):
+
+```{r TP-classification: Kruskal Test, comment=""}
+# Hypothesis testing: Are the location parameters of the distribution of x the same in each group?
+kruskal.test(x = df[,"fit.unique"], g = df[, "tp.unique"])
+```
+
+To demonstrate that almost all pair of groups are the same, **we perform pairwise
+Wilcoxon rank sum tests and we draw a heatmap of the each test's p-value (note 
+that all except one are not statistically significant)**:
+
+```{r TP-classification: Pairwise Wilcox Tests, warning=FALSE}
+res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "tp.unique"], p.adjust.method = "BH")
+p.value.mat = res$p.value
+```
+
+```{r TP-classification: p-value Heatmap of Pairwise Wilcox Tests, warning=FALSE, fig.width=9, dpi=300}
+col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
+ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
+  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
+  row_title = "TP", row_title_rot = 0, row_names_side = "left",
+  column_title = "P-values (Pairwise Wilcoxon tests) - TP-classified fitnesses", column_title_gp = gpar(fontsize = 20),
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (!is.na(p.value.mat[i,j]))
+        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 16))
+})
+draw(ht)
+```
+
+Note that the **number of true positive predictions is an one-dimensional metric** and by 
+excluding the TN, FP and FNs we have a less-informant (and arguably incorrect) 
+picture of the models performance classification. 
+That's why we will proceed with the more balanced MCC score for classifing the models fitnesses 
+to different performance groups.
+
+### Correlation of fitness and MCC-class
+
+Firstly, we perform a *univariate k-means clustering* to 
+**split the models MCC values to different classes** and plot the data histogram.
+The **number of MCC classes** to split the data can be arbitrarily chosen and so
+we chose the same as the number of TP classes:
+
+```{r MCC-classification: Find the clusters}
+num.of.mcc.classes = 5
+mcc.class.ids = 1:num.of.mcc.classes
+
+# find the clusters
+res = Ckmeans.1d.dp(x = df[,"mcc.unique"], k = num.of.mcc.classes)
+mcc.class.id = res$cluster
+df = cbind(df, mcc.class.id)
+
+plot_mcc_classes_hist(df[,"mcc.unique"], df[,"mcc.class.id"],
+                      num.of.mcc.classes, mcc.class.ids)
+```
+
+Then we show some box and density plots to see practically **what and where is 
+the difference between the models fitness values belonging to different MCC-classes**:
+```{r MCC-classification: Plots}
+# Box plots
+ggboxplot(df, x = "mcc.class.id", y = "fit.unique", color = "mcc.class.id",
+          palette = usefun:::colors.100[1:num.of.mcc.classes],
+          xlab = "MCC class", ylab = "Fitness values")
+
+# Density Plots
+densities = list()
+for (id in mcc.class.ids) {
+  x = df %>%
+    filter(mcc.class.id == id) %>%
+    select_at(.vars = c("fit.unique"))
+  den = density(x$fit.unique)
+  densities[[paste0(id, " (", res$size[id], ")")]] = den
+}
+
+make_multiple_density_plot(densities, legend.title = "MCC classes (#models)",
+        title = "Density Estimation", x.axis.label = "Fitness score")
+```
+
+Again we observe that **there doesn’t seem to be any significant difference 
+between the fitness values of the different MCC classes**. The next statistical
+tests and heatmap show the same:
+
+```{r MCC-classification: Kruskal Test, comment=""}
+# Hypothesis testing: Are the location parameters of the distribution of x the same in each group?
+kruskal.test(x = df[,"fit.unique"], g = df[, "mcc.class.id"])
+```
+
+```{r MCC-classification: Pairwise Wilcox Tests, warning=FALSE}
+pair.res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "mcc.class.id"], p.adjust.method = "BH")
+p.value.mat = pair.res$p.value
+```
+
+```{r MCC-classification: p-value Heatmap of Pairwise Wilcox Tests, warning=FALSE, fig.width=9, dpi=300}
+col_fun = colorRamp2(breaks = c(0, 0.05, 0.5, 1), c("green", "white", "orange", "red"))
+ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE,
+  na_col = "white", name = "p-value", col = col_fun, column_names_rot = 0,
+  row_title = "MCC class id", row_title_rot = 90, row_names_side = "left",
+  column_title = "P-values (Pairwise Wilcoxon tests) - MCC-classified fitnesses", column_title_gp = gpar(fontsize = 20),
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (!is.na(p.value.mat[i,j]))
+        grid.text(sprintf("%.6f", p.value.mat[i, j]), x, y, gp = gpar(fontsize = 20))
+})
+draw(ht)
+```
 
 ## R session info {-}
 
