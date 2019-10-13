@@ -8,3 +8,4 @@ See the following analyses:
 - [Atopo Biomarker analysis](https://bblodfon.github.io/gitsbe-model-analysis/atopo/cell-lines-2500/) 
 - [Consensus model analysis](https://bblodfon.github.io/gitsbe-model-analysis/consensus-2500/consensus_model_analysis.html)
 - [Atopo Fitness vs Performance analysis](https://bblodfon.github.io/gitsbe-model-analysis/atopo/cell-lines-2500/performance_vs_fitness.html)
+- [Cascade Fitness vs Performance analysis](https://bblodfon.github.io/gitsbe-model-analysis/cascade/cell-lines-2500/performance_vs_fitness.html)
