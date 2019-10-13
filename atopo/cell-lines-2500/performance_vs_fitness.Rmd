@@ -1,5 +1,5 @@
 ---
-title: "Performance vs Fitness Model Analysis"
+title: "Atopo Performance vs Fitness Model Analysis"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -258,7 +258,7 @@ cell.specific.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 1
 rownames(cell.specific.model.data) = cell.lines
 colnames(cell.specific.model.data) = c("fitness range", "Min fitness", 
   "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
-  "Max MCC", "Mean MCC", "Median MCC", "Max TP")
+  "Max MCC", "Mean MCC", "Median MCC", "Max TPR")
 
 for (cell.line in cell.lines) {
   models.fitness = models.fitness.per.cell.line[[cell.line]]
@@ -267,7 +267,7 @@ for (cell.line in cell.lines) {
   
   fit.summary = unclass(summary(models.fitness))
   mcc.summary = unclass(summary(models.mcc))
-  max.tp = max(models.tp)
+  max.tpr = max(models.tp) / length(observed.synergies.per.cell.line[[cell.line]])
   
   cell.specific.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
   cell.specific.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
@@ -281,7 +281,7 @@ for (cell.line in cell.lines) {
   cell.specific.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
   cell.specific.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
   
-  cell.specific.model.data[cell.line, "Max TP"] = max.tp
+  cell.specific.model.data[cell.line, "Max TPR"] = max.tpr
 }
 
 # color columns
@@ -296,7 +296,7 @@ caption.title = "Table 1: Fitness, MCC scores and TP (True positives) for the Ce
 datatable(data = cell.specific.model.data, 
           options = list(dom = "t"), # just show the table
           caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(1:10, digits = 3) %>%
+  formatRound(1:11, digits = 3) %>%
   formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
   formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
 ```
@@ -306,7 +306,7 @@ random.model.data = matrix(data = NA, nrow = length(cell.lines), ncol = 11)
 rownames(random.model.data) = cell.lines
 colnames(random.model.data) = c("fitness range", "Min fitness", 
   "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
-  "Max MCC", "Mean MCC", "Median MCC", "Max TP")
+  "Max MCC", "Mean MCC", "Median MCC", "Max TPR")
 
 for (cell.line in cell.lines) {
   models.fitness = random.models.fitness.per.cell.line[[cell.line]]
@@ -315,7 +315,7 @@ for (cell.line in cell.lines) {
   
   fit.summary = unclass(summary(models.fitness))
   mcc.summary = unclass(summary(models.mcc))
-  max.tp = max(models.tp)
+  max.tpr = max(models.tp) / length(observed.synergies.per.cell.line[[cell.line]])
   
   random.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
   random.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
@@ -329,7 +329,7 @@ for (cell.line in cell.lines) {
   random.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
   random.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
   
-  random.model.data[cell.line, "Max TP"] = max.tp
+  random.model.data[cell.line, "Max TPR"] = max.tpr
 }
 
 # color columns
@@ -344,7 +344,7 @@ caption.title = "Table 2: Fitness, MCC scores and TP (True positives) for the ra
 datatable(data = random.model.data, 
           options = list(dom = "t"), # just show the table
           caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(1:10, digits = 3) %>%
+  formatRound(1:11, digits = 3) %>%
   formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
   formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
 ```
@@ -401,7 +401,8 @@ models that show better performance than the random ones (have a higher MCC valu
 
 All in all, we will use the **random models data**, contrasted to the steady 
 state of the `A498` cell line (see Table 2). This dataset has the largest 
-fitness, MCC and TP value range combined in both tables above.
+fitness and MCC value range (second largest TPR value as well) combined in both 
+tables above.
 
 ```{r Save best dataset}
 best.cell.line = "A498"
@@ -440,17 +441,16 @@ of true positives (TP) is discrete**.
 
 Then, we check if the our data is normally distributed (using the Shapiro-Wilk
 test for normality and the Q-Q plots):
-```{r plots1, comment=""}
-ggqqplot(data = df, x = "fit.unique", ylab = "Fitness") # not normal but close
-ggqqplot(data = df, x = "mcc.unique", ylab = "MMC") # surely not normal
+```{r Normality testing, comment=""}
+ggqqplot(data = df, x = "fit.unique", ylab = "Fitness")
+ggqqplot(data = df, x = "mcc.unique", ylab = "MMC")
 
-shapiro.test(x = sample(fit.unique, size = 100)) # close: maybe normal
-shapiro.test(x = sample(mcc.unique, size = 100)) # surely not normal
+shapiro.test(x = sample(fit.unique))
+shapiro.test(x = sample(mcc.unique))
 ```
 
-From the above results we observe that the fitness value data are close to normal
-(but it is not statistically significant), while the MCC values are surely
-not normally distributed.
+From the above results we observe that both the fitness and MCC scores are surely
+not normally distributed (with statistical significance).
 Thus, we will use **non-parametric correlation scores, namely the Spearman and Kendall rank-based correlation tests**,
 to check the correlation between the two continuous variables (models fitness 
 values and their corresponding MCC score):
@@ -484,11 +484,18 @@ pseudo.r2.measures = pR2(model.classifier)
 pseudo.r2.measures["McFadden"]
 ```
 
+```{r Test prediction accuracy on same dataset, eval=FALSE, include=FALSE}
+library(caret)
+
+apredictions = predict(object = model.classifier, newdata = df$tp.unique, type = "class")
+postResample(pred = predictions, obs = factor(df$tp.unique))
+```
+
 To measure the goodness-of-fit for our model, there are several measures proposed 
 for logistic regression. We emphasize on the McFaddens's pseudo-$R^2$ measure 
 for our classifier, for which a value of $0.2-0.4$ would indicate an excellent fit [[source](https://stats.stackexchange.com/questions/82105/mcfaddens-pseudo-r2-interpretation)].
-Since we found less, we can also assume that there is only a weak/small positive 
-**correlation between the number of TP and the fitness score of the models**.
+Since we found less, we can also assume that there is only a **weak/small positive 
+correlation between the number of TPs and the fitness score of the models**.
 
 Next, we will next proceed with a more elaborate analysis, where the models will be split to different 
 performance classes (TP or MCC score-derived) and the statistical correlation between the 
