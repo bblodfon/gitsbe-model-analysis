@@ -749,11 +749,11 @@ We provide the number of models used in the first comparison between the synergy
 set `BI-PI,PI-D1` and the single synergy `BI-PI`:
 ```{r Count models predicting `BI-PI,PI-D1` vs `BI-PI`, results = 'asis'}
 pretty_print_string(count_models_that_predict_synergies(
-  as.list(strsplit("BI-PI,PI-D1", ",")), model.predictions)
+  unlist(strsplit("BI-PI,PI-D1", ",")), model.predictions)
 )
 
 pretty_print_string(count_models_that_predict_synergies(
-  as.list(strsplit("BI-PI", ",")), model.predictions)
+  unlist(strsplit("BI-PI", ",")), model.predictions)
 )
 ```
 
