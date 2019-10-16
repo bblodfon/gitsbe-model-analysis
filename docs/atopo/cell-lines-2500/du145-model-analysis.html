@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>DU145 Model Analysis | Biomarker Atopo Analysis</title>
   <meta name="description" content="Description" />
-  <meta name="generator" content="bookdown 0.13 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.14 and GitBook 2.6.7" />
 
   <meta property="og:title" content="DU145 Model Analysis | Biomarker Atopo Analysis" />
   <meta property="og:type" content="book" />
@@ -39,6 +39,9 @@
 <link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
 
 
 
@@ -1727,13 +1730,13 @@ the extra <code>PI-D1</code> synergy:</p>
 <p>We provide the number of models used in the first comparison between the synergy
 set <code>BI-PI,PI-D1</code> and the single synergy <code>BI-PI</code>:</p>
 <div class="sourceCode" id="cb152"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb152-1" title="1"><span class="kw">pretty_print_string</span>(<span class="kw">count_models_that_predict_synergies</span>(</a>
-<a class="sourceLine" id="cb152-2" title="2">  <span class="kw">as.list</span>(<span class="kw">strsplit</span>(<span class="st">&quot;BI-PI,PI-D1&quot;</span>, <span class="st">&quot;,&quot;</span>)), model.predictions)</a>
+<a class="sourceLine" id="cb152-2" title="2">  <span class="kw">unlist</span>(<span class="kw">strsplit</span>(<span class="st">&quot;BI-PI,PI-D1&quot;</span>, <span class="st">&quot;,&quot;</span>)), model.predictions)</a>
 <a class="sourceLine" id="cb152-3" title="3">)</a></code></pre></div>
 <blockquote>
 <p>626</p>
 </blockquote>
 <div class="sourceCode" id="cb153"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb153-1" title="1"><span class="kw">pretty_print_string</span>(<span class="kw">count_models_that_predict_synergies</span>(</a>
-<a class="sourceLine" id="cb153-2" title="2">  <span class="kw">as.list</span>(<span class="kw">strsplit</span>(<span class="st">&quot;BI-PI&quot;</span>, <span class="st">&quot;,&quot;</span>)), model.predictions)</a>
+<a class="sourceLine" id="cb153-2" title="2">  <span class="kw">unlist</span>(<span class="kw">strsplit</span>(<span class="st">&quot;BI-PI&quot;</span>, <span class="st">&quot;,&quot;</span>)), model.predictions)</a>
 <a class="sourceLine" id="cb153-3" title="3">)</a></code></pre></div>
 <blockquote>
 <p>627</p>
@@ -1897,11 +1900,13 @@ synergy</li>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
 <script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
 <script>
 gitbook.require(["gitbook"], function(gitbook) {
 gitbook.start({

@@ -847,7 +847,7 @@ set `BI-PI,PI-D1` and the single synergy `BI-PI`:
 
 ```r
 pretty_print_string(count_models_that_predict_synergies(
-  as.list(strsplit("BI-PI,PI-D1", ",")), model.predictions)
+  unlist(strsplit("BI-PI,PI-D1", ",")), model.predictions)
 )
 ```
 
@@ -855,7 +855,7 @@ pretty_print_string(count_models_that_predict_synergies(
 
 ```r
 pretty_print_string(count_models_that_predict_synergies(
-  as.list(strsplit("BI-PI", ",")), model.predictions)
+  unlist(strsplit("BI-PI", ",")), model.predictions)
 )
 ```
 

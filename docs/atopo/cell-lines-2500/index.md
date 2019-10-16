@@ -1,7 +1,7 @@
 ---
 title: "Biomarker Atopo Analysis"
 author: "John Zobolas"
-date: "Last updated: 23 September, 2019"
+date: "Last updated: 16 October, 2019"
 knit: bookdown::render_book # to render the whole book not just this chapter
 site: bookdown::bookdown_site
 description: "Description"

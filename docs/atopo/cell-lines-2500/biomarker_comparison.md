@@ -300,9 +300,9 @@ draw(observed.synergies.heatmap,  heatmap_legend_list = list(lgd),
 - The *cell-specific* models predicted 12 
 of the 40 observed synergies found across the 
 8 cell lines, whereas the *random* models predicted 
-11 of the them.
+11 of them.
 Thus, the **total true positive coverage for all the models across all cell lines is 
-0.325%**
+32.5%**
 - Note that there exist synergies which were observed in all cell lines (`AK-BI`,
 `PI-D1`)
 - `BI-JN` is an observed synergy across almost all cell lines and only the 
