@@ -1,0 +1,258 @@
+---
+title: "Cascade Synergy Biomarkers for AK-PD and PD-PI synergies"
+author: "[John Zobolas](https://github.com/bblodfon)"
+date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+    code_folding: hide
+    code_download: true
+---
+
+```{r Render command, eval=FALSE, include=FALSE}
+#rmarkdown::render(input = "./cascade_synergy_biomarkers.Rmd", output_format = "html_document", output_dir = "../../docs/cascade/cell-lines-2500/")
+```
+
+## Intro {-}
+
+The purpose of this analysis is to find synergy biomarkers using the [emba R package](https://github.com/bblodfon/emba) in the cascade boolean model datasets (the *cascade* is the name of the topology used). 
+More specifically, we wil investigate the two synergies: `AK-PD`, `PD-PI` and try to find causal mechanisms that might explain why and where (pathways) these synergies manifest. 
+
+Note that `AK` is an **AKT inhibitor** and `PI` is a **PI3K inhibitor** and they both target the **PI3K/AKT/mTOR pathway**. The combination of such an inhibitor with a **MEK inhibitor** - `PD` - that targets the **MAPK/ERK pathway**, has proven to be more effective than the single drug treatment during clinical trials with patients that had advanced colorectal carcinoma ([source](https://clinicaltrials.gov/ct2/show/NCT01333475)).
+
+The boolean model datasets are in total $9$: one for each cell line 
+of interest (8 cell lines) where the models were **fitted to a specific steady state** in each 
+case and one for the so-called **random models** which were generated *randomly* in 
+the sense that were fitted only to a proliferation state (simulations were done using 
+the DrugLogics software modules `Gitsbe` and `Drabme`).
+
+```{r Load libraries, message = FALSE, echo = FALSE}
+library(emba)
+library(usefun)
+library(ComplexHeatmap)
+library(circlize)
+```
+
+## Input {-}
+
+First we load the cell-specific input data:
+```{r Cell-specific Input}
+# Cell Lines
+cell.lines = c("A498", "AGS", "DU145", "colo205", "SW620", "SF295", "UACC62", "MDA-MB-468")
+
+cell.line.dirs = sapply(cell.lines, function(cell.line) {
+  paste0(getwd(), "/", cell.line)
+})
+
+# Model predictions
+model.predictions.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/model_predictions")
+})
+
+model.predictions.per.cell.line = lapply(model.predictions.files, function(file) {   
+  get_model_predictions(file) 
+})
+
+# Observed synergies
+observed.synergies.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/observed_synergies")
+})
+
+observed.synergies.per.cell.line = lapply(observed.synergies.files, function(file) {
+  get_observed_synergies(file)
+})
+
+# Models Stable State (1 per model)
+models.stable.state.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/models_stable_state")
+})
+
+models.stable.state.per.cell.line = lapply(models.stable.state.files, function(file) { 
+  as.matrix(read.table(file, check.names = FALSE))
+})
+
+# Models Link Operators
+models.link.operator.files = sapply(cell.line.dirs, function(cell.line.dir) {
+  paste0(cell.line.dir, "/models_link_operator")
+})
+
+models.link.operators.per.cell.line = lapply(models.link.operator.files, function(file) {
+  as.matrix(read.table(file, check.names = FALSE))
+})
+```
+
+The random model input data:
+```{r Random model Input}
+random.dir = paste0(getwd(), "/random")
+random.model.predictions = get_model_predictions(paste0(random.dir, "/model_predictions"))
+
+random.models.stable.state = as.matrix(
+  read.table(file = paste0(random.dir, "/models_stable_state"), check.names = FALSE)
+)
+
+random.models.link.operator =
+  as.matrix(read.table(file = paste0(random.dir, "/models_link_operator"), check.names = FALSE))
+
+# the node names used in our analysis
+node.names = colnames(random.models.stable.state)
+# the tested drug combinations
+drug.combos = colnames(random.model.predictions)
+```
+
+## Synergy Biomarker Analysis {-}
+
+Using the generic function `biomarker_synergy_analysis` from the [emba R package](https://github.com/bblodfon/emba), we can find
+*synergy biomarkers* i.e. nodes whose activity and boolean equation parameterization (link operator) affect the manifestation of synergies in the boolean models. Models are classified based on whether they predict or not each of the predicted synergies found in each boolean dataset.
+
+First we run the analysis on the cell-specific boolean model datasets (note 
+that every input to the `biomarker_synergy_analysis` function changes per cell line):
+```{r Cell-specific Models - Synergy Biomarker Analysis, cache=TRUE}
+cell.specific.synergy.analysis.res = list()
+
+for (cell.line in cell.lines) {
+  cell.specific.synergy.analysis.res[[cell.line]] =
+    biomarker_synergy_analysis(model.predictions.per.cell.line[[cell.line]],
+      models.stable.state.per.cell.line[[cell.line]], 
+      models.link.operators.per.cell.line[[cell.line]],
+      observed.synergies.per.cell.line[[cell.line]], threshold = 0.7)
+}
+```
+
+Next we run the analysis on the random boolean model datasets (note 
+that the only input to the `biomarker_synergy_analysis` function that changes
+is the observed synergies per cell line - the rest is the same data from the 
+random model dataset):
+```{r Random Models - Synergy Biomarker Analysis, cache=TRUE}
+# Synergy Biomarkers for cell proliferation models
+random.synergy.analysis.res = list()
+
+for (cell.line in cell.lines) {
+  random.synergy.analysis.res[[cell.line]] =
+    biomarker_synergy_analysis(random.model.predictions, 
+      random.models.stable.state, random.models.link.operator, 
+      observed.synergies.per.cell.line[[cell.line]], threshold = 0.7)
+}
+```
+
+## Observed synergies {-}
+
+Each of the cell lines studied has a different set of observed synergies (drug 
+combinations that were found synergistic across all the 
+`r length(drug.combos)` tested ones). In this section, we will 
+**visualize the cell lines' observed synergies and mark the synergies that were 
+also predicted by the cell-specific models and the random-generated ones**. 
+First, we get the biomarkers for these synergies from each cell line:
+```{r Total predicted synergies by the cell-specific models}
+total.predicted.synergies.cell.specific =
+  unique(unlist(sapply(cell.specific.synergy.analysis.res, function(x) { x$predicted.synergies})))
+total.predicted.synergies.cell.specific.num = length(total.predicted.synergies.cell.specific)
+```
+
+The same for the random models:
+```{r Total predicted synergies by the random models}
+total.predicted.synergies.random = 
+  unique(unlist(sapply(random.synergy.analysis.res, function(x) { x$predicted.synergies})))
+total.predicted.synergies.random.num = length(total.predicted.synergies.random)
+```
+
+Then, we get the observed synergies from each cell line in a `data.frame`:
+```{r Observed synergies per cell line}
+observed.synergies.res = get_observed_synergies_per_cell_line(cell.line.dirs, drug.combos)
+
+# remove drug combinations which are not observed in any of the cell lines
+observed.synergies.res = prune_columns_from_df(observed.synergies.res, value = 0)
+
+total.observed.synergies = colnames(observed.synergies.res)
+total.observed.synergies.num = length(total.observed.synergies)
+```
+
+Lastly, we visualize the observed and predicted synergies for all cell lines 
+in one heatmap:
+```{r Observed synergies heatmap, fig.height = 5, fig.width = 9, dpi = 300, cache=TRUE}
+# color the cell-specific predicted synergies
+predicted.synergies.colors = rep("black", total.observed.synergies.num)
+names(predicted.synergies.colors) = total.observed.synergies
+common.predicted.synergies = intersect(total.predicted.synergies.cell.specific,
+                                       total.predicted.synergies.random)
+cell.specific.only.predicted.synergies = 
+  total.predicted.synergies.cell.specific[!total.predicted.synergies.cell.specific %in% total.predicted.synergies.random]
+random.only.predicted.synergies = 
+  total.predicted.synergies.random[!total.predicted.synergies.random %in% total.predicted.synergies.cell.specific]
+
+predicted.synergies.colors[total.observed.synergies %in% 
+                           common.predicted.synergies] = "blue"
+predicted.synergies.colors[total.observed.synergies %in% 
+                           cell.specific.only.predicted.synergies] = "orange"
+predicted.synergies.colors[total.observed.synergies %in% 
+                           random.only.predicted.synergies] = "purple"
+
+# define a coloring
+obs.synergies.col.fun = colorRamp2(c(0, 1), c("red", "green"))
+
+observed.synergies.heatmap = 
+  Heatmap(matrix = as.matrix(observed.synergies.res), 
+          col = obs.synergies.col.fun,
+          column_title = "Observed synergies per cell line",
+          column_title_gp = gpar(fontsize = 20),
+          column_names_gp = gpar(col = predicted.synergies.colors),
+          row_title = "Cell Lines", row_title_side = "left",
+          row_dend_side = "right", row_names_side = "left",
+          rect_gp = gpar(col = "black", lwd = 0.3),
+          heatmap_legend_param = list(at = c(1, 0), labels = c("YES", "NO"), 
+            color_bar = "discrete", title = "Observed", direction = "vertical"))
+
+lgd = Legend(at = c("Cell-specific", "Random", "Both"), title = "Predicted", 
+             legend_gp = gpar(fill = c("orange", "purple", "blue")))
+
+draw(observed.synergies.heatmap,  heatmap_legend_list = list(lgd), 
+     heatmap_legend_side = "right")
+```
+
+- The *cell-specific* models predicted `r total.predicted.synergies.cell.specific.num` 
+of the `r total.observed.synergies.num` observed synergies found across the 
+`r length(cell.lines)` cell lines, whereas the *random* models predicted 
+`r total.predicted.synergies.random.num` of the them.
+Thus, the **total true positive coverage for all the models across all cell lines is 
+`r (length(union(total.predicted.synergies.cell.specific, total.predicted.synergies.random))/total.observed.synergies.num)*100`%**
+- Note that there exist synergies which were observed in all cell lines (`AK-BI`,
+`PI-D1`)
+- `AK-G4` and `5Z-D1` are observed synergies that only the cell-specific models could predict, whereas the `G2-P5` and `PI-D4` are observed synergies that only the random models could predict. This shows us that a **complimentary
+approach** is needed when searching for biomarkers as the two different kind of 
+models (trained to a specific activity state profile vs trained to proliferation)
+although they share common true positives regarding the synergies they predict,
+there are also synergies only a specific class of models could predict.
+
+
+## Biomarker Analysis
+
+
+
+```{r Data processing}
+activity.biomarkers.cell.specific = list()
+for (cell.line in cell.lines) {
+  activity.biomarkers.cell.specific[[cell.line]] = 
+    cell.specific.synergy.analysis.res[[cell.line]]$activity.biomarkers
+}
+
+activity.biomarkers.random = list()
+for (cell.line in cell.lines) {
+  activity.biomarkers.random[[cell.line]] = 
+    random.synergy.analysis.res[[cell.line]]$activity.biomarkers
+}
+
+activity.biomarkers.cell.specific.res = ldf_arrange_by_rownames(activity.biomarkers.cell.specific)
+activity.biomarkers.random.res = ldf_arrange_by_rownames(activity.biomarkers.random)
+```
+
+
+
+
+
+
+
+
