@@ -4,12 +4,20 @@ author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
+    css: style.css
     theme: united
     toc: true
-    toc_float: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
     number_sections: false
-    code_folding: show
+    code_folding: hide
+    code_download: true
 ---
+
+```{r Render command, eval=FALSE, include=FALSE}
+#rmarkdown::render(input = "./consensus_model_analysis.Rmd", output_format = "html_document", output_dir = "../../docs/consensus-2500/")
+```
 
 ## Intro {-}
 

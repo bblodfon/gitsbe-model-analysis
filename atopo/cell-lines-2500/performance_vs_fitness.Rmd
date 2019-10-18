@@ -4,6 +4,7 @@ author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
+    css: css/style.css
     theme: united
     toc: true
     toc_float:
