@@ -16,7 +16,7 @@ output:
 ---
 
 ```{r Render command, eval=FALSE, include=FALSE}
-#rmarkdown::render(input = "./consensus_model_analysis.Rmd", output_format = "html_document", output_dir = "../../docs/consensus-2500/")
+#rmarkdown::render(input = "./consensus_model_analysis.Rmd", output_format = "html_document", output_dir = "../docs/consensus-2500/")
 ```
 
 ## Intro {-}
