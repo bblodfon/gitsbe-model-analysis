@@ -1,9 +1,9 @@
 # How to run
 
-rbbt image: rbbt.SINTEF.img
-image md5sum: 0a0167890384542abb5d4fae29ec5461
-command: rbbt workflow server SINTEF -p 1900 --export_all -W DrugLogics,Paradigm,CLSS,CombinationIndex --log 0
-doc: https://tinyurl.com/y57lglfw
+rbbt image: rbbt.SINTEF.img 
+image md5sum: 0a0167890384542abb5d4fae29ec5461 
+command: `rbbt workflow server SINTEF -p 1900 --export_all -W DrugLogics,Paradigm,CLSS,CombinationIndex --log 0` 
+doc: https://tinyurl.com/y57lglfw 
 
 # Job hash
 
