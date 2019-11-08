@@ -107,7 +107,7 @@ random.models.link.operator =
 
 # the node names used in our analysis
 node.names = colnames(random.models.stable.state)
-# the tested drug combinations
+# the tested drug comtions
 drug.combos = colnames(random.model.predictions)
 ```
 
@@ -149,7 +149,7 @@ for (cell.line in cell.lines) {
 ## Observed synergies {-}
 
 Each of the cell lines studied has a different set of observed synergies (drug 
-combinations that were found synergistic across all the 
+comtions that were found synergistic across all the 
 `r length(drug.combos)` tested ones). In this section, we will 
 **visualize the cell lines' observed synergies and mark the synergies that were 
 also predicted by the cell-specific models and the random-generated ones**. 
@@ -171,7 +171,7 @@ Then, we get the observed synergies from each cell line in a `data.frame`:
 ```{r Observed synergies per cell line}
 observed.synergies.res = get_observed_synergies_per_cell_line(cell.line.dirs, drug.combos)
 
-# remove drug combinations which are not observed in any of the cell lines
+# remove drug comtions which are not observed in any of the cell lines
 observed.synergies.res = prune_columns_from_df(observed.synergies.res, value = 0)
 
 total.observed.synergies = colnames(observed.synergies.res)
@@ -264,7 +264,7 @@ nice.layout = as.matrix(read.table(coordinates.file))
 
 #### Activity state biomarkers {-}
 
-We will now visualize the nodes average state differences in a network graph. Note that the **good models** are those that predicted the `AK-PD` drug combination to be *synergistic* and were contrasted to those that predicted it to be *antagonistic* (**bad models**). The number of models in each category were:
+We will now visualize the nodes average state differences in a network graph. Note that the **good models** are those that predicted the `AK-PD` drug comtion to be *synergistic* and were contrasted to those that predicted it to be *antagonistic* (**bad models**). The number of models in each category were:
 
 ```{r Count good vs bad models for AK-PD synergy (cell-specific models), results='asis'}
 model.predictions = model.predictions.per.cell.line[["A498"]]
@@ -411,7 +411,7 @@ datatable(data = diff.link.mat[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], o
 Using the matrix from Table 1 (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 ```{r Activity State Biomarker contingency table across all comparison sets (AK-PD - Cell-specific), results='asis'}
 threshold = 0.8
-biomarker.state.mat = binarize.to.thres(mat = diff.state.mat, threshold)
+biomarker.state.mat = binarize_to_thres(mat = diff.state.mat, threshold)
 biomarker.state.counts = colSums(biomarker.state.mat)
 pretty_print_vector_names_and_values(table(biomarker.state.counts))
 ```
@@ -437,7 +437,7 @@ Note the boolean equation: `PTPN6 *= SRC`. This means that `SRC` is **the only i
 Using the matrix from Table 2, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
 ```{r Link Operator Biomarker contingency table across all comparison sets (AK-PK - Cell-specific - A498), results='asis'}
-biomarker.link.mat = binarize.to.thres(mat = diff.link.mat, thres = 0.8)
+biomarker.link.mat = binarize_to_thres(mat = diff.link.mat, thres = 0.8)
 
 biomarker.link.counts = colSums(biomarker.link.mat)
 pretty_print_vector_names_and_values(table(biomarker.link.counts))
@@ -477,7 +477,7 @@ So, when `ERK_f` is overexpressed, `CSK` becomes active, which means that the pr
 **This gives the node the structural flexibility to become active when the `AK` drug is used**: `AK` inhibits `AKT_f` node, making thus `AKT1S1` active, which in turn makes the `mTORC1_c` equation like this: `mTORC1_c *=  (  (  RHEB )  or RSK_f ) AND/OR 0`. So, an `AND` link operator would result always in an inhibited `mTORC1_c` whereas an `OR` link operator would give the possibility for the `mTORC1_c` to be active in case one of its activators are active.
 
 
-```{r}
+```{r, eval=FALSE, include=FALSE}
 nodes = c("mTORC1_c", "TSC_f", "SRC", "AKT_f", "MEK_f")
 sub.net = filter_network(net, nodes, level = 1)
 sub.nodes = V(sub.net)$name
@@ -614,7 +614,7 @@ datatable(data = diff.link.mat.random[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTE
 
 Using the matrix from Table 3 (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 ```{r Activity State Biomarker contingency table across all comparison sets (AK-PD - Random), results='asis'}
-biomarker.state.mat.random = binarize.to.thres(mat = diff.state.mat.random, thres = 0.7)
+biomarker.state.mat.random = binarize_to_thres(mat = diff.state.mat.random, thres = 0.7)
 
 biomarker.state.counts.random = colSums(biomarker.state.mat.random)
 pretty_print_vector_names_and_values(table(biomarker.state.counts.random))
@@ -636,7 +636,7 @@ plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat.random), layout = 
 Using the matrix from Table 4, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
 ```{r Link Operator Biomarker contingency table across all comparison sets (AK-PK - Random), results='asis'}
-biomarker.link.mat.random = binarize.to.thres(mat = diff.link.mat.random, thres = 0.7)
+biomarker.link.mat.random = binarize_to_thres(mat = diff.link.mat.random, thres = 0.7)
 
 biomarker.link.counts.random = colSums(biomarker.link.mat.random)
 pretty_print_vector_names_and_values(table(biomarker.link.counts.random))
@@ -689,8 +689,8 @@ ak.pd.diff.link.mat = do.call(rbind, ak.pd.diff.link.list)
 </div>
 
 ```{r Activity state and link operator biomarkers (AK-PD, all cell lines except A498), results='asis'}
-ak.pd.biomarker.state.mat = binarize.to.thres(mat = ak.pd.diff.state.mat, thres = 0.7)
-ak.pd.biomarker.link.mat  = binarize.to.thres(mat = ak.pd.diff.link.mat, thres = 0.7)
+ak.pd.biomarker.state.mat = binarize_to_thres(mat = ak.pd.diff.state.mat, thres = 0.7)
+ak.pd.biomarker.link.mat  = binarize_to_thres(mat = ak.pd.diff.link.mat, thres = 0.7)
 
 ak.pd.biomarker.state.mat.counts = colSums(ak.pd.biomarker.state.mat)
 ak.pd.biomarker.link.mat.counts = colSums(ak.pd.biomarker.link.mat)
