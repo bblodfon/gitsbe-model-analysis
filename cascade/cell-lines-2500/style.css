@@ -8,7 +8,19 @@ h1,h2,h3,h4,h5{
 }
 
 .blue-box {
-  background-color:#e6f0ff;
+  background-color: #e6f0ff;
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.lime-box {
+  background-color: #d9ffe9;
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.orange-box {
+  background-color: #ffeedf;
   border-radius: 5px;
   padding: 20px;
 }
