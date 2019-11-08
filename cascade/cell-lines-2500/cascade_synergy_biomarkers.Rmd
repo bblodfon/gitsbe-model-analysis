@@ -1,5 +1,5 @@
 ---
-title: "Cascade Synergy Biomarkers for AK-PD and PD-PI synergies"
+title: "Cascade Synergy Biomarkers for AK-PD, PD-PI, PD-G2, PI-D1 synergies"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -10,7 +10,7 @@ output:
     toc_float:
       collapsed: false
       smooth_scroll: true
-    toc_depth: 4
+    toc_depth: 3
     number_sections: false
     code_folding: hide
     code_download: true
@@ -23,9 +23,11 @@ output:
 ## Intro {-}
 
 The purpose of this analysis is to find synergy biomarkers using the [emba R package](https://github.com/bblodfon/emba) in the cascade boolean model datasets (the *cascade* is the name of the topology used). 
-More specifically, we will investigate the two synergies: `AK-PD`, `PD-PI` and try to find causal mechanisms that might explain why and where (pathways) these synergies manifest. 
+Particularly, we will investigate $4$ synergies: `AK-PD`, `PD-PI`, `PD-G2`, `PI-D1` and try to find causal mechanisms that might explain why and where (pathways) these synergies manifest. 
 
-Note that `AK` is an **AKT inhibitor** and `PI` is a **PI3K inhibitor** and they both target the **PI3K/AKT/mTOR pathway**. The combination of such an inhibitor with a **MEK inhibitor** - `PD` - that targets the **MAPK/ERK pathway**, has proven to be more effective than the single drug treatment during clinical trials with patients that had advanced colorectal carcinoma ([source](https://clinicaltrials.gov/ct2/show/NCT01333475)).
+Note that `AK` is an **AKT inhibitor** and `PI` is a **PI3K inhibitor** and they both target the **PI3K/AKT/mTOR pathway**. The combination of such an inhibitor with a **MEK inhibitor** - `PD` - that targets the **MAPK/ERK pathway**, has proven to be more effective than the single drug treatment during clinical trials with patients that had advanced colorectal carcinoma ([source](https://clinicaltrials.gov/ct2/show/NCT01333475)). 
+The `G2` drug is a **PDPK1 inhibitor** and the `D1` drug is **an inhibitor of `RSK` isoforms** (
+RPS6KA1, RPS6KA3, RPS6KA2, RPS6KA6)
 
 The boolean model datasets are in total $9$: one for each cell line 
 of interest (8 cell lines) where the models were **fitted to a specific steady state** in each 
@@ -33,7 +35,10 @@ case and one for the so-called **random models** which were generated *randomly*
 the sense that were fitted only to a proliferation state (simulations were done using 
 the DrugLogics software modules `Gitsbe` and `Drabme`).
 
-```{r Load libraries, message = FALSE, echo = FALSE}
+## Input {-}
+
+Loading libraries:
+```{r Load libraries, message = FALSE}
 library(emba)
 library(usefun)
 library(ComplexHeatmap)
@@ -42,9 +47,7 @@ library(dplyr)
 library(DT)
 ```
 
-## Input {-}
-
-First we load the cell-specific input data:
+We load the cell-specific input data:
 ```{r Cell-specific Input, cache=TRUE}
 # Cell Lines
 cell.lines = c("A498", "AGS", "DU145", "colo205", "SW620", "SF295", "UACC62", "MDA-MB-468")
@@ -231,15 +234,15 @@ approach** is needed when searching for biomarkers as the two different kind of
 models (trained to a specific activity state profile vs trained to proliferation)
 although they share common true positives regarding the synergies they predict,
 there are also synergies only a specific class of models could predict.
-- The two synergies of interest, `AK-PD` and `PD-PI`, were observed in the `A498`
-cell line and predicted by both the cell-specific and random models.
+- The $3$ synergies of interest, `AK-PD`, `PD-PI` and `PD-G2` were observed in 
+the `A498` cell line and predicted by both the cell-specific and random models.
 </div>
 
 ## AK-PD biomarkers {-}
 
 As observed above, the `AK-PD` synergy was predicted by both the **cell specific** and **random models** in the `A498` cell line.
 
-### Cell-specific {-}
+### Cell-specific (A498) {-}
 
 We get the average state and link operator differences per network node for the `A498` cell line from the cell-specific models:
 
@@ -269,6 +272,9 @@ models.stable.state = models.stable.state.per.cell.line[["A498"]]
 drug.comb = "AK-PD"
 
 good.models.num = sum(model.predictions[, drug.comb] == 1 & !is.na(model.predictions[, drug.comb]))
+# unique good models
+# models.link.operator = models.link.operators.per.cell.line$A498
+# nrow(unique(models.link.operator[model.predictions[, drug.comb] == 1 & !is.na(model.predictions[, drug.comb]), ]))
 bad.models.num  = sum(model.predictions[, drug.comb] == 0 & !is.na(model.predictions[, drug.comb]))
 
 pretty_print_string(paste0("Number of 'good' models (AK-PD synergistic) in the A498 cell line: ", good.models.num))
@@ -290,13 +296,12 @@ pretty_print_vector_names(AK.PD.active.biomarkers)
 So, the `AK-PD` synergy manifests in cancer cell models that have the `ERK_f` family logical node in an **active** state.
 The **MAPK-ERK signaling pathway** has been studied a lot and has been found to be **overexpressed/have increased activity** in cancers and as such cancer treatments that include the inhibition of that pathway are found to be most beneficial.
 
-Paper evidence for **`ERK` overexpression** in cancer: 
+Paper evidence for **`ERK` overexpression** in cancer (there are many): 
 
 - [Roles of the Raf/MEK/ERK pathway in cell growth, malignant transformation and drug resistance](https://doi.org/10.1016/j.bbamcr.2006.10.001)
 - [The Ras/Raf/MEK/ERK signaling pathway and its role in the occurrence and development of HCC (Review)](https://doi.org/10.3892/ol.2016.5110)
 - [Targeting ERK, an Achilles' Heel of the MAPK pathway, in cancer therapy](https://doi.org/10.1016/j.apsb.2018.01.008)
 - [ERK is a Pivotal Player of Chemo-Immune-Resistance in Cancer](https://doi.org/10.3390/ijms20102505)
-- Others???
 
 The inhibited state biomarkers are:
 
@@ -305,7 +310,11 @@ AK.PD.inhibited.biomarkers = AK.PD.avg.state.diff.cell.specific[AK.PD.avg.state.
 pretty_print_vector_names(AK.PD.inhibited.biomarkers)
 ```
 
-We will demonstrate that these inhibited biomarkers are a direct consequence of the overepression of `ERK_f`.
+<div class="lime-box">
+We will demonstrate that the `PTPN11` and `GAB_f` inhibited biomarkers are a direct consequence of the overepression of `ERK_f`:
+</div>
+</br>
+
 If we check the logical equations related to the above biomarkers we see that:
 
 ```{r print equations, results='asis'}
@@ -333,6 +342,11 @@ So, the models that predicted the `AK-PD` synergy, had the **OR NOT** as a link 
 The difference in the result of the logical equation can be seen in the next two truth tables where the use of the **OR NOT link operator** makes the end truth value more *flexible* in the sense that a lot more more TRUE values are possible, since the activating regulator `MEK_f` (which is the `PD` drug's target) has more weight in the outcome:
 
 ![](img/truth_table_and.svg)![](img/truth_table_or.svg)
+
+<div class="orange-box">
+If you think it in reverse terms, in cancer models in which the `ERK_f` equation is mostly based on an `AND NOT` link operator logic and have the `ERK_F` node as *inactive* (also from the equation `DUSP6 *=  (  (  mTORC1_c )  or ERK_f )`, `DUSP6` will also be inactive), the `MEK_f` node will also be mostly **inactive** ($2$ out of $3$ cases in the table above: 1st, 2nd and 4th row) - it can be seen as a node that does not play an important role in the activity outcome of **ERK_f** - and so by inhibiting it further with the `PD` drug will not bring any significant benefit for cancer treatment.
+</div>
+</br>
 
 <div class = "blue-box">
 Thus, in cancer boolean models where the `ERK_f` node is overexpressed and the `MEK_f` logical node is it's most crucial regulator, inhibiting both the **MAPK/ERK pathway** (drug `PD`) and the **AKT pathway** (drug `AK`) is a synergistic combination for cancer treatment.
@@ -376,9 +390,6 @@ for (i in 1:nrow(AK.PD.res)) {
   diff.link.ak.pd = get_avg_link_operator_diff_based_on_synergy_set_cmp(synergy.set.str, synergy.subset.str, model.predictions, models.link.operator)
   diff.state.list[[paste0(synergy.set, " vs ", synergy.subset)]] = diff.state.ak.pd
   diff.link.list[[paste0(synergy.set, " vs ", synergy.subset)]] = diff.link.ak.pd
-  
-  #plot_avg_state_diff_graph(net, diff = diff.state.ak.pd, layout = nice.layout, title = paste0("Set: ", synergy.set, "(", synergy.set.models.num, ") vs Subset: ", synergy.subset, "(", synergy.subset.models.num, ")"))
-  #plot_avg_link_operator_diff_graph(net, diff = diff.link.ak.pd, layout = nice.layout, title = paste0("Set: ", synergy.set, "(", synergy.set.models.num, ") vs Subset: ", synergy.subset, "(", synergy.subset.models.num, ")"))
 }
 
 diff.state.mat = do.call(rbind, diff.state.list)
@@ -400,10 +411,7 @@ datatable(data = diff.link.mat[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], o
 Using the matrix from Table 1 (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 ```{r Activity State Biomarker contingency table across all comparison sets (AK-PD - Cell-specific), results='asis'}
 threshold = 0.8
-biomarker.state.mat = apply(diff.state.mat, c(1,2), function(x) {
-  if (x >= threshold | x <= -threshold) 1 else 0
-})
-
+biomarker.state.mat = binarize.to.thres(mat = diff.state.mat, threshold)
 biomarker.state.counts = colSums(biomarker.state.mat)
 pretty_print_vector_names_and_values(table(biomarker.state.counts))
 ```
@@ -414,57 +422,83 @@ The above means that there were $141$ nodes that were *zero* times found as **ac
 pretty_print_vector_names(biomarker.state.counts[biomarker.state.counts == 11])
 ```
 
-For example, visualizing the activity difference of the synergy sets `AK-PD,BI-PD,PD-PI` vs `BI-PD,PD-PI` from Table 1:
+If we visualize the **average activity state difference across all synergy comparison sets** from Table 1 we can see that the previous $2$ nodes are more pronounced:
 
-```{r AK-PD,BI-PD,PD-PI vs BI-PD,PD-PI ctivity state graph, cache=TRUE}
-synergy.set    = "AK-PD,BI-PD,PD-PI"
-synergy.subset = "BI-PD,PD-PI"
-
-synergy.set.str    = unlist(strsplit(x = synergy.set, split = ","))
-synergy.subset.str = unlist(strsplit(x = synergy.subset, split = ","))
-
-# count models
-synergy.set.models.num = count_models_that_predict_synergies(synergy.set.str, model.predictions)
-synergy.subset.models.num = count_models_that_predict_synergies(synergy.subset.str, model.predictions)
-
-plot_avg_state_diff_graph(net, diff = diff.state.mat["AK-PD,BI-PD,PD-PI vs BI-PD,PD-PI", ], layout = nice.layout, 
-  title = paste0("Set: ", synergy.set, " (", synergy.set.models.num, " models) vs Subset: ", synergy.subset, " (", synergy.subset.models.num, " models)"))
+```{r Average activity state diff across all synergy subsets (AK-PD), cache=TRUE}
+plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat), layout = nice.layout, 
+  title = "Average activity state diff across all synergy subsets (AK-PD)")
 ```
+
+<div class="orange-box">
+Note the boolean equation: `PTPN6 *= SRC`. This means that `SRC` is **the only inhibited node of interest**
+</div>
+</br>
 
 Using the matrix from Table 2, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
 ```{r Link Operator Biomarker contingency table across all comparison sets (AK-PK - Cell-specific - A498), results='asis'}
-threshold = 0.8
-biomarker.link.mat = apply(diff.link.mat, c(1,2), function(x) {
-  if (x >= threshold | x <= -threshold) 1 else 0
-})
+biomarker.link.mat = binarize.to.thres(mat = diff.link.mat, thres = 0.8)
 
 biomarker.link.counts = colSums(biomarker.link.mat)
 pretty_print_vector_names_and_values(table(biomarker.link.counts))
 ```
 
-The above means that there were $44$ nodes that were *zero* times found as link operator biomarkers across all synergy set comparisons, one that was found once, one that was found twice, **$5$ that were found 6 times and $1$ that was found 11 times**. The last node is of interest to us and it is:
+The above means that there were $44$ nodes that were *zero* times found as link operator biomarkers across all synergy set comparisons, one that was found once, one that was found twice, **$5$ that were found 6 times and $1$ that was found 11 times**. The last two categories of nodes are:
 
 ```{r Extra link operator biomarkers (Cell-specific - AK-PD), results='asis'}
-#pretty_print_vector_names(biomarker.link.counts[biomarker.link.counts == 6])
+pretty_print_vector_names(biomarker.link.counts[biomarker.link.counts == 6])
 pretty_print_vector_names(biomarker.link.counts[biomarker.link.counts == 11])
 ```
 
-The boolean equation of the `SRC` node is: `SRC *=  (  RTPK_f ) AND/OR NOT  ( CSK )` and it's mean link operator difference value across all synergy set comparisons is `r mean(diff.link.mat[, "SRC"])` which means that on average the logic operator that binds its two regulators is the `AND NOT` and thus it depends on both of it's regulators equally (meaning that it's more difficult to have it as activated - 1 case out of 4). This correlates with the fact that it was found as mostly inhibited in the analysis above.
+If we visualize the **average link operator difference across all of the synergy comparison sets** from Table 2, we can see the nodes mentioned above:
 
-For example, visualizing the link operator difference of the synergy sets `AK-PD,BI-PD,PD-PI` vs `BI-PD,PD-PI` from Table 2:
-
-```{r AK-PD,BI-PD,PD-PI vs BI-PD,PD-PI link operator diff graph, cache=TRUE}
-plot_avg_link_operator_diff_graph(net, diff = diff.link.mat["AK-PD,BI-PD,PD-PI vs BI-PD,PD-PI", ], layout = nice.layout, 
-  title = paste0("Set: ", synergy.set, " (", synergy.set.models.num, " models) vs Subset: ", synergy.subset, " (", synergy.subset.models.num, " models)"))
+```{r Average link operator diff across all synergy subsets (AK-PD), cache=TRUE}
+plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat), layout = nice.layout, 
+  title = "Average link operator diff across all synergy subsets (AK-PD)")
 ```
 
-<div class="blue-box">
-We conclude that cancer models in which the `AK-PD` drug combination is synergistic, tend to have the nodes `SRC` and `PTPN6` in an **inhibited state** and the `SRC` node depends on both it's regulators, `RTPK_f` and `CSK`.
+<div class="orange-box">
+Some notes/observations on the structure of the boolean equations found above:
 </div>
 </br>
 
-** ---------- Papers supporting the above? ------------ **
+The boolean equation of the `SRC` node is: `SRC *=  (  RTPK_f ) AND/OR NOT  ( CSK )` and it's mean link operator difference value across all synergy set comparisons is `r mean(diff.link.mat[, "SRC"])` which means that on average the logic operator that binds its two regulators is the `AND NOT` and thus it's more difficult to have it as activated (1 case out of 4 in boolean logic). **This correlates with the fact that it was found as mostly inhibited in the analysis above**. Also note the equations: 
+
+- `CSK *=  (  PRKACA )`
+- `PRKACA *=  (  (  NFKB_f )  or FOS )`
+- `FOS *=  (  (  (  ERK_f )  or RSK_f )  or SRF )`
+
+So, when `ERK_f` is overexpressed, `CSK` becomes active, which means that the prevalence of the `AND NOT` link operator makes the activity of the `SRC` node dependent only on it's inhibitor `CSK` (since it's active) and not on the activity of `RTPK_f` node.
+
+- `mTORC1_c *=  (  (  RHEB )  or RSK_f ) AND/OR NOT  ( AKT1S1 )`
+- `AKT1S1 *=  not  ( AKT_f )`
+
+`mTORC1_c`'s mean link operator difference value across all synergy set comparisons is `r mean(diff.link.mat[, "mTORC1_c"])` which means that on average the logic operator that binds its two regulators is the `OR NOT`. 
+**This gives the node the structural flexibility to become active when the `AK` drug is used**: `AK` inhibits `AKT_f` node, making thus `AKT1S1` active, which in turn makes the `mTORC1_c` equation like this: `mTORC1_c *=  (  (  RHEB )  or RSK_f ) AND/OR 0`. So, an `AND` link operator would result always in an inhibited `mTORC1_c` whereas an `OR` link operator would give the possibility for the `mTORC1_c` to be active in case one of its activators are active.
+
+
+```{r}
+nodes = c("mTORC1_c", "TSC_f", "SRC", "AKT_f", "MEK_f")
+sub.net = filter_network(net, nodes, level = 1)
+sub.nodes = V(sub.net)$name
+set.seed(0)
+sub.layout = layout_nicely(graph = sub.net)
+
+diff = colMeans(diff.link.mat)
+
+plot_avg_link_operator_diff_graph(sub.net, diff = diff[sub.nodes][!is.na(diff[sub.nodes])], 
+  layout = sub.layout, title = "Average link operator diff across all synergy subsets (AK-PD)")
+```
+
+
+**TODO: check MCLP dataset**
+
+
+<div class="blue-box">
+We conclude that cancer models in which the `AK-PD` drug combination is synergistic, tend to also have the nodes `SRC` and `PTPN6` in an **inhibited state** and the `SRC` node depends on both it's regulators, `RTPK_f` and `CSK`. 
+The link operators of the `mTORC1_c` and `TSC_f` equations also seem to have an important role in the manifestation of this synergy.
+</div>
+</br>
 
 ### Random {-}
 
@@ -483,6 +517,8 @@ We will now visualize the nodes average state differences in a network graph. No
 drug.comb = "AK-PD"
 
 good.models.num = sum(random.model.predictions[, drug.comb] == 1 & !is.na(random.model.predictions[, drug.comb]))
+# unique good models
+# nrow(unique(random.models.link.operator[random.model.predictions[, drug.comb] == 1 & !is.na(random.model.predictions[, drug.comb]),]))
 bad.models.num  = sum(random.model.predictions[, drug.comb] == 0 & !is.na(random.model.predictions[, drug.comb]))
 
 pretty_print_string(paste0("Number of 'good' random models (AK-PD synergistic) in the A498 cell line: ", good.models.num))
@@ -555,11 +591,9 @@ for (i in 1:nrow(AK.PD.res)) {
   # get the diff
   diff.state.ak.pd = get_avg_activity_diff_based_on_synergy_set_cmp(synergy.set.str, synergy.subset.str, random.model.predictions, random.models.stable.state)
   diff.link.ak.pd = get_avg_link_operator_diff_based_on_synergy_set_cmp(synergy.set.str, synergy.subset.str, random.model.predictions, random.models.link.operator)
+  
   diff.state.list.random[[paste0(synergy.set, " vs ", synergy.subset)]] = diff.state.ak.pd
   diff.link.list.random[[paste0(synergy.set, " vs ", synergy.subset)]] = diff.link.ak.pd
-  
-  #plot_avg_state_diff_graph(net, diff = diff.state.ak.pd, layout = nice.layout, title = paste0("Set: ", synergy.set, "(", synergy.set.models.num, ") vs Subset: ", synergy.subset, "(", synergy.subset.models.num, ")"))
-  #plot_avg_link_operator_diff_graph(net, diff = diff.link.ak.pd, layout = nice.layout, title = paste0("Set: ", synergy.set, "(", synergy.set.models.num, ") vs Subset: ", synergy.subset, "(", synergy.subset.models.num, ")"))
 }
 
 diff.state.mat.random = do.call(rbind, diff.state.list.random)
@@ -568,22 +602,19 @@ diff.link.mat.random = do.call(rbind, diff.link.list.random)
 caption.title.1 = "Table 3: Average activity difference values across all synergy set comparisons (AK-PD)"
 datatable(data = diff.state.mat.random[, c("SRC", "CSK", "MEK_f", "STAT1", "PTPN6")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
-  caption = htmltools::tags$caption(caption.title.1, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(1:ncol(diff.state.mat.random), digits = 3)
+    caption = htmltools::tags$caption(caption.title.1, style="color:#dd4814; font-size: 18px")) %>% 
+      formatRound(1:ncol(diff.state.mat.random), digits = 3)
 
 caption.title.2 = "Table 4: Average link operator difference values across all synergy set comparisons (AK-PD)"
-datatable(data = diff.link.mat[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], options = list(
+datatable(data = diff.link.mat.random[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
-  caption = htmltools::tags$caption(caption.title.2, style="color:#dd4814; font-size: 18px")) %>% 
-  formatRound(1:ncol(diff.link.mat), digits = 3)
+    caption = htmltools::tags$caption(caption.title.2, style="color:#dd4814; font-size: 18px")) %>% 
+      formatRound(1:ncol(diff.link.mat.random), digits = 3)
 ```
 
 Using the matrix from Table 3 (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 ```{r Activity State Biomarker contingency table across all comparison sets (AK-PD - Random), results='asis'}
-threshold = 0.7
-biomarker.state.mat.random = apply(diff.state.mat.random, c(1,2), function(x) {
-  if (x >= threshold | x <= -threshold) 1 else 0
-})
+biomarker.state.mat.random = binarize.to.thres(mat = diff.state.mat.random, thres = 0.7)
 
 biomarker.state.counts.random = colSums(biomarker.state.mat.random)
 pretty_print_vector_names_and_values(table(biomarker.state.counts.random))
@@ -595,22 +626,84 @@ So, there are $2$ nodes that were found as **activity state biomarkers** $6$ tim
 pretty_print_vector_names(biomarker.state.counts.random[biomarker.state.counts.random == 6])
 ```
 
-But the total number of comparisons was `r nrow(biomarker.state.mat.random)` so we could argue that **this is not a statistically significant result**, though the `PDPK1` node can also be seen as an inhibited biomarker at a lower singnificant threshold level from the figure above with the activity state biomarkers from the random models.
+But the total number of comparisons was `r nrow(biomarker.state.mat.random)` so we could argue that **this is not a statistically significant result**, which can be seen clearly in the next graph where we visualize the **average activity state difference across all synergy comparison sets** from Table 3:
+
+```{r Average activity state diff across all synergy subsets (AK-PD, random models), cache=TRUE}
+plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat.random), layout = nice.layout, 
+  title = "Average activity state diff across all synergy subsets (AK-PD)")
+```
 
 Using the matrix from Table 4, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
 ```{r Link Operator Biomarker contingency table across all comparison sets (AK-PK - Random), results='asis'}
-threshold = 0.7
-biomarker.link.mat.random = apply(diff.link.mat.random, c(1,2), function(x) {
-  if (x >= threshold | x <= -threshold) 1 else 0
-})
+biomarker.link.mat.random = binarize.to.thres(mat = diff.link.mat.random, thres = 0.7)
 
 biomarker.link.counts.random = colSums(biomarker.link.mat.random)
 pretty_print_vector_names_and_values(table(biomarker.link.counts.random))
 ```
 
-So, there was a node that was found $7$ times (out of a total of `r nrow(biomarker.link.mat.random)`) as a link operator biomarkers across all synergy set comparisons (so also **not statistically significant**):
+So, there was a node that was found $7$ times (out of a total of `r nrow(biomarker.link.mat.random)`, **so not statistically significant**) as a link operator biomarkers across all synergy set comparisons:
  
 ```{r Extra link operator biomarkers (AK-PD - Random), results='asis'}
 pretty_print_vector_names(biomarker.link.counts.random[biomarker.link.counts.random == 7])
+```
+
+We visualize the **average link operator difference across all synergy comparison sets** from Table 4:
+```{r Average link operator diff across all synergy subsets (AK-PD, random), cache=TRUE}
+plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat.random), layout = nice.layout, 
+  title = "Average link operator diff across all synergy subsets (AK-PD)")
+```
+
+### AK-PD in other cell lines
+
+Though the `AK-PD` synergy was observed and predicted in the A498 model dataset, we investigate its biomarkers in the other cell lines where **it was predicted as a False Positive (FP) synergy (predicted by the models but not observed in the experiments)**. 
+Thus, we can still see if there are any common (activity state and link operator) biomarkers for `AK-PD` across the all the cell-specific models by contrasting in each cell line the models that predicted `AK-PD` vs the models that did not:
+
+```{r AK-PD average activity state difference in all cell lines except A498}
+drug.comb = "AK-PD"
+
+ak.pd.diff.state.list = list()
+ak.pd.diff.link.list = list()
+
+for (cell.line in cell.lines) {
+  if (cell.line == "A498") 
+    next
+  
+  ak.pd.diff.state.list[[cell.line]] = get_avg_activity_diff_based_on_specific_synergy_prediction(
+    model.predictions = model.predictions.per.cell.line[[cell.line]], 
+    models.stable.state = models.stable.state.per.cell.line[[cell.line]], 
+    drug.comb)
+  ak.pd.diff.link.list[[cell.line]] = get_avg_link_operator_diff_based_on_specific_synergy_prediction(
+    model.predictions = model.predictions.per.cell.line[[cell.line]], 
+    models.link.operator = models.link.operators.per.cell.line[[cell.line]], 
+    drug.comb)
+  # print(count_models_that_predict_synergies(drug.comb, model.predictions = model.predictions.per.cell.line[[cell.line]]))
+}
+
+ak.pd.diff.state.mat = do.call(rbind, ak.pd.diff.state.list)
+ak.pd.diff.link.mat = do.call(rbind, ak.pd.diff.link.list)
+```
+
+<div class="blue-box">
+`ERK_f` was the one node that was found as an **activity state & link operator `AK-PD` biomarker** in all cell lines
+</div>
+
+```{r Activity state and link operator biomarkers (AK-PD, all cell lines except A498), results='asis'}
+ak.pd.biomarker.state.mat = binarize.to.thres(mat = ak.pd.diff.state.mat, thres = 0.7)
+ak.pd.biomarker.link.mat  = binarize.to.thres(mat = ak.pd.diff.link.mat, thres = 0.7)
+
+ak.pd.biomarker.state.mat.counts = colSums(ak.pd.biomarker.state.mat)
+ak.pd.biomarker.link.mat.counts = colSums(ak.pd.biomarker.link.mat)
+
+#pretty_print_vector_names_and_values(table(ak.pd.biomarker.state.mat.counts))
+#pretty_print_vector_names_and_values(table(ak.pd.biomarker.link.mat.counts))
+
+pretty_print_vector_names(ak.pd.biomarker.state.mat.counts[ak.pd.biomarker.state.mat.counts == 7])
+pretty_print_vector_names(ak.pd.biomarker.link.mat.counts[ak.pd.biomarker.link.mat.counts == 6])
+```
+
+## R session info {-}
+
+```{r session info, comment=""}
+xfun::session_info()
 ```
