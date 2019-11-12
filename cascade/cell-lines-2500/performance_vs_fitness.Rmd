@@ -578,7 +578,7 @@ picture of the models performance classification.
 That's why we will proceed with the more balanced MCC score for classifing the models fitnesses 
 to different performance groups.
 
-### MCC-class vs fitness
+### MCC-class vs fitness {-}
 
 Firstly, we perform a *univariate k-means clustering* to 
 **split the models MCC values to different classes** and plot the data histogram.
