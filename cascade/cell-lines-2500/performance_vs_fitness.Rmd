@@ -59,7 +59,10 @@ names, etc) and their activity value (0 or 1, representing an inhibited or activ
 node respectively). 
 This input is provided per cell line and not for the random models since they are just trained to a profileration state.
 
-```{r Load libraries, message = FALSE, echo = FALSE}
+## Input {-}
+
+Loading libraries:
+```{r Load libraries, message = FALSE}
 library(DT)
 library(ggpubr)
 library(emba)
@@ -74,10 +77,8 @@ library(Ckmeans.1d.dp)
 library(RColorBrewer)
 ```
 
-## Input {-}
-
 First we load the cell-specific input data:
-```{r Cell-specific Input}
+```{r Cell-specific Input, cache=TRUE}
 # Cell Lines
 cell.lines = c("A498", "AGS", "DU145", "colo205", "SW620", "SF295", "UACC62", "MDA-MB-468")
 
@@ -180,7 +181,7 @@ In order to find the number of true positive predicted synergies, MCC scores and
 We find the MCC, TP and fitness values for each model per cell line (note
 that each model's stable state in a specific cell line is matched against the 
 steady state from that cell line):
-```{r Cell-specific Models TP + MCC + fitness per cell line}
+```{r Cell-specific Models TP + MCC + fitness per cell line, cache=TRUE}
 models.tp.per.cell.line = list()
 models.mcc.per.cell.line = list()
 models.fitness.per.cell.line = list()
@@ -220,7 +221,7 @@ Finding the MCC, TP and fitness values for each model from the above result (not
 that each model's stable state in a specific cell line is matched against the 
 steady state from that cell line and that the random models' stable state data
 does not change per cell line, i.e. same `random.models.stable.state` object):
-```{r Random Models TP + MCC + fitness per cell line}
+```{r Random Models TP + MCC + fitness per cell line, cache=TRUE}
 random.models.mcc.per.cell.line = list()
 random.models.tp.per.cell.line = list()
 random.models.fitness.per.cell.line = list()
@@ -254,7 +255,7 @@ for (cell.line in cell.lines) {
 }
 ```
 
-## Choosing best dataset for analysis {-}
+## Choose best dataset {-}
 
 We now want to **find the best dataset & cell line** for our subsequent analysis - that is to show the performance vs fitness correlation. 
 The argument here is that we want to choose a boolean dataset that has a **large enough fitness value range** along with a large **TP and/or MCC value range**, since with smaller value ranges it would be harder to distinguish the difference of the estimated distributions of the fitness scores belonging to different performance classes (i.e. models' fitnesses that belong to different classification groups with the metric being either the number of TPs or the MCC score).
@@ -422,7 +423,7 @@ mcc = random.models.mcc.per.cell.line[[best.cell.line]]
 
 ## Statistical Analysis {-}
 
-### Data preprocessing
+### Data preprocessing {-}
 
 Firstly, we filter the data by finding the **unique models** - those that have 
 strictly different boolean equations. Then, we take a random sample out of these 
@@ -451,13 +452,13 @@ df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
 Note that the **fitness and MCC score are continuous variables while the number 
 of true positives (TP) is discrete**.
 
-### Correlation Plots
+### Correlation Plots {-}
 
 Then, we check if the our data is normally distributed (using the Shapiro-Wilk
 test for normality and the Q-Q plots):
 ```{r Normality testing, warning=FALSE, comment=""}
 ggqqplot(data = df, x = "fit.unique", ylab = "Fitness")
-ggqqplot(data = df, x = "mcc.unique", ylab = "MMC")
+ggqqplot(data = df, x = "mcc.unique", ylab = "MCC")
 
 shapiro.test(x = fit.unique)
 shapiro.test(x = mcc.unique)
@@ -515,7 +516,7 @@ Next, we will next proceed with a more elaborate analysis, where the models will
 performance classes (TP or MCC score-derived) and the statistical correlation between the 
 individual groups will be tested (with regards to their fitness scores).
 
-### Correlation of fitness and TP-class
+### TP-class vs fitness {-}
 
 First, some box and density plots to see practically **what and where is the difference 
 between the models fitness values belonging to different TP-classes**:
@@ -577,7 +578,7 @@ picture of the models performance classification.
 That's why we will proceed with the more balanced MCC score for classifing the models fitnesses 
 to different performance groups.
 
-### Correlation of fitness and MCC-class
+### MCC-class vs fitness
 
 Firstly, we perform a *univariate k-means clustering* to 
 **split the models MCC values to different classes** and plot the data histogram.
@@ -645,6 +646,410 @@ ht = Heatmap(matrix = p.value.mat, cluster_rows = FALSE, cluster_columns = FALSE
 })
 draw(ht)
 ```
+
+## Extended Analysis {-}
+
+In this section, we get new steady states to test the fitness of our model datasets against. 
+See [README.md](https://github.com/bblodfon/gitsbe-model-analysis/blob/master/cascade/cell-lines-2500/steady-states/README.md) for more info on how to generate the new steady states.
+
+The idea here is that the absense of correlation between fitness and performance shown above had to do with **wrongly inferred steady states**.
+So, even though the models have not be trained to these new steady states, their stable states remain the same and new fitness scores can be evaluated against these. Thus, the correlation of the models performance correspoding model fitness in each dataset.
+
+### Input {-}
+
+First, we get the new steady states:
+```{r New Steady states}
+steady.state.per.cell.line.new = list()
+for (cell.line in cell.lines) {
+  file = paste0(getwd(), "/steady-states/", cell.line, "_steady_state")
+  ss.df = read.table(file, sep = "\t", stringsAsFactors = FALSE)
+  
+  steady.state = ss.df[,2]
+  names(steady.state) = ss.df[,1]
+  
+  # change value to NA for nodes for which there was no activity found (dash)
+  steady.state[steady.state == "-"] = NA
+  
+  # keep only the nodes that are included in the analysis
+  steady.state = prune_and_reorder_vector(steady.state, node.names)
+    
+  # check
+  stopifnot(names(steady.state) %in% node.names)
+  
+  # return an integer vector since the activity values are binarized (0,1)
+  steady.state.per.cell.line.new[[cell.line]] = sapply(steady.state, as.integer)
+}
+
+# Which nodes are not in the steady state vector? (genes: xxx_g)
+#node.names[which((node.names %in% names(steady.state.per.cell.line.new$SW620) == FALSE))]
+```
+
+We check to see if the **new steady states are different from before** by checking the percentage of common states:
+
+```{r Comparing steady states between old and new method, results='asis'}
+for (cell.line in cell.lines) {
+  percentage.match = get_percentage_of_matches(steady.state.per.cell.line.new[[cell.line]], 
+    steady.state.per.cell.line[[cell.line]])
+  expres = paste0(cell.line, ": ", specify_decimal(percentage.match, digits.to.keep = 2))
+  if (cell.line == cell.lines[1])
+    pretty_print_string(string = expres)
+  else
+    pretty_print_string(string = expres, with.gt = FALSE)
+  print_empty_line(html.output = TRUE)
+}
+```
+
+<div class="green-box">
+So, we see that the new steady state vector for each cell line is around half different than the previous calculated one.
+</div>
+</br>
+
+We also get the *gold/curation-based* **steady state for the AGS cell line** which was one of the datasets given as supplementary material in the paper [Discovery of Drug Synergies in Gastric Cancer Cells Predicted by Logical Modeling](https://doi.org/10.1371/journal.pcbi.1004426) - see Table S4. Here is a version that is applicable to the node set in the Cascade 2.0 topology (that is used in all our simulations) with the addition of the steady state values for `Prosurvival` and `Antisurvival` nodes:
+
+```{r AGS literature steady state}
+ags.literature.file = paste0(getwd(), "/steady-states/AGS_literature_steady_state")
+ss.df = read.table(ags.literature.file, sep = "\t", stringsAsFactors = FALSE)
+ags.literature.ss = ss.df[,2]
+names(ags.literature.ss) = ss.df[,1]
+stopifnot(names(ags.literature.ss) %in% node.names)
+```
+
+Comparing the common nodes between the AGS steady state vectors found with the 2 previous methods and the *literature-curated* profile in order to see **how much more different the computationally predicted states for the AGS cell line** are from the gold standard, we see that:
+
+```{r AGS gold vs 2 CLSS-calculated AGS steady state vectors, results='asis'}
+ags.ss.old = prune_and_reorder_vector(steady.state.per.cell.line$AGS, names(ags.literature.ss))
+ags.ss.new = prune_and_reorder_vector(steady.state.per.cell.line.new$AGS, names(ags.literature.ss))
+
+pretty_print_string(paste0("Match between the 2 AGS steady state vectors pruned to the literature-based nodes: ", specify_decimal(get_percentage_of_matches(ags.ss.old, ags.ss.new), digits.to.keep = 2)))
+pretty_print_string(paste0("Match between the old AGS steady state vector and the literature-based one: ", specify_decimal(get_percentage_of_matches(ags.ss.old, ags.literature.ss), digits.to.keep = 2)))
+pretty_print_string(paste0("Match between the new AGS steady state vector and the literature-based one: ", specify_decimal(get_percentage_of_matches(ags.ss.new, ags.literature.ss), digits.to.keep = 2)))
+```
+
+<div class="orange-box">
+So, it seems that the 2 computational methods are very different even when compared on the node subset that constitutes the gold standard. Both of them are half correct when it comes to true (curated) steady state predictions.
+</div>
+</b>
+
+### Models fitness {-}
+
+Given the new steady states, we re-calculate the models fitness for both the cell-specific models and the random ones:
+```{r Cell-specific and Random Models new fitness per cell line}
+models.fitness.per.cell.line.new = list()
+random.models.fitness.per.cell.line.new = list()
+
+for (cell.line in cell.lines) {
+  steady.state = steady.state.per.cell.line.new[[cell.line]]
+  models.stable.state = models.stable.state.per.cell.line[[cell.line]]
+  
+  # Fitness per model contrasted to steady state from cell line
+  models.fitness.per.cell.line.new[[cell.line]] = apply(
+    models.stable.state[,names(steady.state)], 1, get_percentage_of_matches, steady.state
+  )
+  
+  random.models.fitness.per.cell.line.new[[cell.line]] = apply(
+    random.models.stable.state[,names(steady.state)], 1, 
+    get_percentage_of_matches, steady.state
+  )
+}
+```
+
+We calculate the fitness of the AGS-trained models and the random ones to the **literature-curated steady state for the AGS cell line**:
+```{r AGS-specific and Random Models fitness to literature-curated AGS steady state}
+ags.models.stable.state = models.stable.state.per.cell.line$AGS
+
+models.fitness.to.ags.literature.ss = apply(
+  ags.models.stable.state[,names(ags.literature.ss)], 1, 
+  get_percentage_of_matches, ags.literature.ss)
+random.models.fitness.to.ags.literature.ss = apply(
+  random.models.stable.state[,names(ags.literature.ss)], 1, 
+  get_percentage_of_matches, ags.literature.ss)
+```
+
+### Choose best dataset {-}
+
+Following the same procedure as before, we try to find the best dataset to do the correlation analysis on. Such dataset will have models that result in a **large MCC + fitness range** when contrasted to the new steady states.
+
+The next two tables will help us determine exactly which cell line and dataset
+to use:
+```{r Cell-specific Models TP + MCC + fitness per cell line stats with new steady states}
+cell.specific.model.data = matrix(data = NA, nrow = length(cell.lines) + 1, ncol = 11)
+rownames(cell.specific.model.data) = c(cell.lines, "AGS-gold")
+colnames(cell.specific.model.data) = c("fitness range", "Min fitness", 
+  "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
+  "Max MCC", "Mean MCC", "Median MCC", "Max TPR")
+
+for (cell.line in c(cell.lines, "AGS-gold")) {
+  if (cell.line == "AGS-gold") {
+    models.fitness = models.fitness.to.ags.literature.ss
+    models.mcc = models.mcc.per.cell.line$AGS
+    models.tp = models.tp.per.cell.line$AGS
+  } else {
+    models.fitness = models.fitness.per.cell.line.new[[cell.line]]
+    models.mcc = models.mcc.per.cell.line[[cell.line]]
+    models.tp = models.tp.per.cell.line[[cell.line]]
+  }
+  
+  fit.summary = unclass(summary(models.fitness))
+  mcc.summary = unclass(summary(models.mcc))
+  if (cell.line == "AGS-gold") {
+    max.tpr = max(models.tp) / length(observed.synergies.per.cell.line$AGS)
+  } else {
+    max.tpr = max(models.tp) / length(observed.synergies.per.cell.line[[cell.line]])
+  }
+  
+  cell.specific.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
+  cell.specific.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
+  cell.specific.model.data[cell.line, "Max fitness"] = fit.summary["Max."]
+  cell.specific.model.data[cell.line, "Mean fitness"] = fit.summary["Mean"]
+  cell.specific.model.data[cell.line, "Median fitness"] = fit.summary["Median"]
+  
+  cell.specific.model.data[cell.line, "MCC range"] = mcc.summary["Max."] - mcc.summary["Min."]
+  cell.specific.model.data[cell.line, "Min MCC"] = mcc.summary["Min."]
+  cell.specific.model.data[cell.line, "Max MCC"] = mcc.summary["Max."]
+  cell.specific.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
+  cell.specific.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
+  
+  cell.specific.model.data[cell.line, "Max TPR"] = max.tpr
+}
+
+# color columns
+fit.breaks = quantile(cell.specific.model.data[,"fitness range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+fit.colors = round(seq(255, 40, length.out = length(fit.breaks) + 1), 0) %>%
+  {paste0("rgb(255,", ., ",", ., ")")} # red
+mcc.breaks = quantile(cell.specific.model.data[,"MCC range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+mcc.colors = round(seq(255, 40, length.out = length(mcc.breaks) + 1), 0) %>%
+  {paste0("rgb(", ., ",255,", ., ")")} # green
+
+caption.title = "Table 3: Fitness, MCC scores and TP (True positives) for the Cell-specific model predictions across 8 Cell Lines"
+datatable(data = cell.specific.model.data, 
+          options = list(dom = "t"), # just show the table
+          caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
+  formatRound(1:11, digits = 3) %>%
+  formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
+  formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
+```
+
+```{r Random Models TP + MCC + fitness per cell line stats with new steady states}
+random.model.data = matrix(data = NA, nrow = length(cell.lines) + 1, ncol = 11)
+rownames(random.model.data) = c(cell.lines, "AGS-gold")
+colnames(random.model.data) = c("fitness range", "Min fitness", 
+  "Max fitness", "Mean fitness", "Median fitness", "MCC range", "Min MCC", 
+  "Max MCC", "Mean MCC", "Median MCC", "Max TPR")
+
+for (cell.line in c(cell.lines, "AGS-gold")) {
+  if (cell.line == "AGS-gold") {
+    models.fitness = random.models.fitness.to.ags.literature.ss
+    models.mcc = random.models.mcc.per.cell.line$AGS
+    models.tp = random.models.tp.per.cell.line$AGS
+  } else {
+    models.fitness = random.models.fitness.per.cell.line.new[[cell.line]]
+    models.mcc = random.models.mcc.per.cell.line[[cell.line]]
+    models.tp = random.models.tp.per.cell.line[[cell.line]]
+  }
+  
+  fit.summary = unclass(summary(models.fitness))
+  mcc.summary = unclass(summary(models.mcc))
+  if (cell.line == "AGS-gold") {
+    max.tpr = max(models.tp) / length(observed.synergies.per.cell.line$AGS)
+  } else {
+    max.tpr = max(models.tp) / length(observed.synergies.per.cell.line[[cell.line]])
+  }
+  
+  random.model.data[cell.line, "fitness range"] = fit.summary["Max."] - fit.summary["Min."]
+  random.model.data[cell.line, "Min fitness"] = fit.summary["Min."]
+  random.model.data[cell.line, "Max fitness"] = fit.summary["Max."]
+  random.model.data[cell.line, "Mean fitness"] = fit.summary["Mean"]
+  random.model.data[cell.line, "Median fitness"] = fit.summary["Median"]
+  
+  random.model.data[cell.line, "MCC range"] = mcc.summary["Max."] - mcc.summary["Min."]
+  random.model.data[cell.line, "Min MCC"] = mcc.summary["Min."]
+  random.model.data[cell.line, "Max MCC"] = mcc.summary["Max."]
+  random.model.data[cell.line, "Mean MCC"] = mcc.summary["Mean"]
+  random.model.data[cell.line, "Median MCC"] = mcc.summary["Median"]
+  
+  random.model.data[cell.line, "Max TPR"] = max.tpr
+}
+
+# color columns
+fit.breaks = quantile(random.model.data[,"fitness range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+fit.colors = round(seq(255, 40, length.out = length(fit.breaks) + 1), 0) %>%
+  {paste0("rgb(255,", ., ",", ., ")")} # red
+mcc.breaks = quantile(random.model.data[,"MCC range"], probs = seq(.05, .95, .05), na.rm = TRUE)
+mcc.colors = round(seq(255, 40, length.out = length(mcc.breaks) + 1), 0) %>%
+  {paste0("rgb(", ., ",255,", ., ")")} # green
+
+caption.title = "Table 4: Fitness, MCC scores and TP (True positives) for the random model predictions across 8 Cell Lines"
+datatable(data = random.model.data, 
+          options = list(dom = "t"), # just show the table
+          caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>% 
+  formatRound(1:11, digits = 3) %>%
+  formatStyle(columns = c("fitness range"), backgroundColor = styleInterval(fit.breaks, fit.colors)) %>%
+  formatStyle(columns = c("MCC range"), backgroundColor = styleInterval(mcc.breaks, mcc.colors))
+```
+
+The below box plots compare the new fitness scores across all cell lines:
+```{r Combine fitness data into one data frame}
+num.of.models = nrow(random.models.stable.state)
+data.list = list()
+
+for (cell.line in c(cell.lines, "AGS-gold")) {
+  cell.line.vec = as.data.frame(rep(cell.line, num.of.models), stringsAsFactors = FALSE)
+  
+  if (cell.line == "AGS-gold") {
+    models.fitness.cell.specific = remove_rownames(as.data.frame(models.fitness.to.ags.literature.ss))
+    models.fitness.random        = remove_rownames(as.data.frame(random.models.fitness.to.ags.literature.ss))
+  } else {
+    models.fitness.cell.specific = remove_rownames(as.data.frame(models.fitness.per.cell.line.new[[cell.line]]))
+    models.fitness.random        = remove_rownames(as.data.frame(random.models.fitness.per.cell.line.new[[cell.line]]))
+  }
+  
+  colnames(models.fitness.cell.specific) = NULL
+  colnames(models.fitness.random) = NULL
+  
+  data.list[[cell.line]] = 
+    bind_cols(cell.line.vec, models.fitness.cell.specific, models.fitness.random)
+}
+
+data = bind_rows(data.list)
+colnames(data) = c("cell.line", "fitness cell-specific", "fitness random")
+```
+
+```{r Boxplots: Fitness values between cell-specific and random models for the new steady states, fig.width=10, cache=TRUE}
+ggboxplot(data, x = "cell.line", y = c("fitness cell-specific", "fitness random"),
+          palette = brewer.pal(3, "Set1"), merge = "asis",
+          xlab = "Cell Lines", ylab = "Fitness values", add = "point", add.params = list(size = 0.5))
+```
+
+<div class="green-box">
+We observe from Tables 3 and 4 and the boxplots above that all models show a wide range of fitness values since no models were *trained* to the new steady states (it's like all models are random-generated). Also, **the fitness of the AGS-specific and random models to the literature-curated steady state** has the largest possible fitness range and small number of unique fitness values among the models (total of $13$).
+</div>
+</br>
+
+<div class="orange-box">
+We checked the following datasets and found **no statistically significant correlation** between fitness scores and performance metric (TP or MCC):
+
+- `SF295`, `DU145` with cell-specific models (from Table 3)
+- `A498`, `UACC62`, `DU145`, `AGS` with random models (from Table 4)
+</div>
+</br>
+
+Next, we investigate the *AGS-gold* dataset  (row with the higher fitness and MCC range from Table 3). In this dataset the performance (MCC score) of the cell-specific AGS models is associated with the models fitness to the literature-curated AGS steady state.
+
+### AGS-gold Statistical Analysis {-}
+
+Firstly, we:
+
+- Filter the data by finding the **unique models** - those that have strictly different boolean equations
+- Remove the unique models with NaN MCC scores
+- Merge the fitness scores and MCC values in a common data.frame object
+
+```{r Save best datasets (with new steady states)}
+best.cell.line = "AGS"
+
+# AGS-Gold cell-specific data
+fit = models.fitness.to.ags.literature.ss
+tp  = models.tp.per.cell.line[[best.cell.line]]
+mcc = models.mcc.per.cell.line[[best.cell.line]]
+
+unique.models = rownames(unique(models.link.operators.per.cell.line[[best.cell.line]]))
+unique.models = unique.models[!unique.models %in% names(which(is.na(mcc)))]
+
+fit.unique = fit[names(fit) %in% unique.models]
+tp.unique  = tp[names(tp) %in% unique.models]
+mcc.unique = mcc[names(mcc) %in% unique.models]
+
+df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
+```
+
+Then, we check if the our data is normally distributed (using the Shapiro-Wilk
+test for normality and the Q-Q plots):
+```{r Normality testing 2, warning=FALSE, comment=""}
+ggqqplot(data = df, x = "fit.unique", ylab = "Fitness")
+ggqqplot(data = df, x = "mcc.unique", ylab = "MCC")
+
+shapiro.test(x = sample(x = df$fit.unique, size = 1000))
+shapiro.test(x = sample(x = df$mcc.unique, size = 1000))
+```
+
+From the above results we observe that both the fitness and MCC scores in both datasets are surely not normally distributed (with statistical significance).
+Thus, we will use **non-parametric correlation scores, namely the Spearman and Kendall rank-based correlation tests**, to check the correlation between the two continuous variables (models fitness values and their corresponding MCC score):
+```{r Rank correlation plots: Fitness to curated AGS ss vs MCC}
+ggscatter(df, x = "fit.unique", y = "mcc.unique", 
+          title = "AGS-Gold (Cell-specific): Fitness vs Performance - Spearman Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "spearman"),
+          xlab = "Fitness Values", ylab = "MCC scores")
+ggscatter(df, x = "fit.unique", y = "mcc.unique", 
+          title = "AGS-Gold (Cell-specific): Fitness vs Performance - Kendall Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall"),
+          xlab = "Fitness Values", ylab = "MCC scores")
+```
+
+#### Fitness vs TP/MCC-class {-}
+
+Split the models to MCC classes:
+```{r MCC-classification: Find the clusters 2, cache=TRUE}
+num.of.mcc.classes = 5
+mcc.class.ids = 1:num.of.mcc.classes
+
+# find the clusters
+res = Ckmeans.1d.dp(x = df$mcc.unique, k = num.of.mcc.classes)
+mcc.class.id = res$cluster
+df = cbind(df, mcc.class.id)
+
+plot_mcc_classes_hist(df$mcc.unique, df$mcc.class.id, 
+  num.of.mcc.classes, mcc.class.ids)
+```
+
+Box plots to show the difference of the different TP/MCC-classes in terms of fitness score:
+```{r Fitness vs TP or MCC-class, warning=FALSE, cache=TRUE}
+ggboxplot(df, x = "mcc.class.id", y = "fit.unique", color = "mcc.class.id",
+  palette = usefun:::colors.100[1:num.of.mcc.classes],
+  xlab = "MCC class", ylab = "Fitness values", 
+  add = c("mean", "mean_sd"), error.plot = "errorbar")
+
+ggboxplot(df, x = "tp.unique", y = "fit.unique", color = "tp.unique",
+  palette = usefun:::colors.100[1:length(unique(tp.unique))],
+  xlab = "TP class", ylab = "Fitness values", 
+  add = c("mean", "mean_sd"), remove = 5)
+```
+
+#### Fitness-class vs mean MCC {-}
+
+Since the gold-standard AGS steady state has only 23 nodes, our models generate a small number of unique fitness scores to that steady state (total of `r length(unique(df$fit.unique))` unique fitness classes). So, **instead of grouping the models per performance class (TP or MCC) we will group them by fitness class and show the average MCC value in each class**:
+
+```{r Fitness Class vs mean MCC, cache=TRUE}
+num.of.fit.classes = length(unique(df$fit.unique))
+fit.class.ids = 1:num.of.fit.classes
+
+# find the fitness classes
+res = Ckmeans.1d.dp(x = df$fit.unique, k = num.of.fit.classes)
+fit.class.id = res$cluster
+df = cbind(df, fit.class.id)
+
+unique.fit.stats = desc_statby(df, measure.var = "mcc.unique", grps = c("fit.unique", "fit.class.id"), ci = 0.95)
+
+ggscatter(unique.fit.stats, x = "fit.unique", y = "mean", 
+          title = "Fitness Class vs Performance (MCC) - Kendall Correlation",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall", label.x.npc = 0.7, label.y.npc = 0.1),
+          xlab = "Unique Fitness values", ylab = "Mean MCC")
+  
+ggbarplot(unique.fit.stats, x = "fit.unique", y = "mean", title = "Fitness Class vs Performance (MCC)", fill = "fit.class.id",
+  xlab = "Fitness Score", ylab = "Mean MCC", ylim = c(0, max(unique.fit.stats$mean) + 0.1),
+  label = unique.fit.stats$length, lab.vjust = -2) + 
+  scale_x_discrete(labels = round(unique.fit.stats$fit.unique, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high="red", name = "Fitness Class", guide = "legend", breaks = c(1,4,7,10,13)) +
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9)) +
+  annotate("text", x = 7.5, y = 0.5, label = "Number of models per fitness class are displayed above 95% CI bars for the mean MCC")
+# mean -+ 2*se => 95% CI for mean. Use when you are interested in the precision of the means or in comparing and testing differences between means.
+```
+
+<div class="green-box">
+There is evident statistical correlation between the models fitness to a curation-based steady state and their performance (measured by MCC score). **Models with higher fitness to the steady state tend to have higher MCC score on average**.
+</div>
+</br>
 
 ## R session info {-}
 
