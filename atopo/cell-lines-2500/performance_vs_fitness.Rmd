@@ -59,7 +59,10 @@ names, etc) and their activity value (0 or 1, representing an inhibited or activ
 node respectively). 
 This input is provided per cell line and not for the random models since they are just trained to a profileration state.
 
-```{r Load libraries, message = FALSE, echo = FALSE}
+## Input {-}
+
+Loading libraries:
+```{r Load libraries, message = FALSE}
 library(DT)
 library(ggpubr)
 library(emba)
@@ -74,10 +77,8 @@ library(Ckmeans.1d.dp)
 library(RColorBrewer)
 ```
 
-## Input {-}
-
 First we load the cell-specific input data:
-```{r Cell-specific Input}
+```{r Cell-specific Input, cache=TRUE}
 # Cell Lines
 cell.lines = c("A498", "AGS", "DU145", "colo205", "SW620", "SF295", "UACC62", "MDA-MB-468")
 
@@ -247,7 +248,7 @@ for (cell.line in cell.lines) {
 }
 ```
 
-## Choosing best dataset for analysis {-}
+## Choose best dataset {-}
 
 We now want to **find the best dataset & cell line** for our subsequent analysis - that is to show the performance vs fitness correlation. 
 The argument here is that we want to choose a boolean model dataset that has a **large enough fitness value range** combined with a large **TP and/or MCC value range**, since with smaller value ranges it would be harder to distinguish the difference of the estimated distributions of the fitness scores belonging to different performance classes (i.e. models' fitnesses that belong to different classification groups with the metric being either the number of TPs or the MCC score).
@@ -386,6 +387,7 @@ ggboxplot(data, x = "cell.line", y = c("fitness cell-specific", "fitness random"
 
 So, from the two tables and the two box plots above we conclude that:
 
+<div class="blue-box">
 - In general, the **random models offer a larger range of 
 fitness values** when their stable states are matched against the steady state 
 of each particular cell line. 
@@ -399,11 +401,16 @@ structure (boolean model equations) compared to the cell-specific generated ones
 compared to the random ones for each respective cell line.
 - In each cell line (with the expection of SW620) **there are always cell-specific 
 models that show better performance than the random ones (have a higher MCC value)**
+</div>
+</br>
 
+<div class="orange-box">
 All in all, we will use the **random models data**, contrasted to the steady 
 state of the `A498` cell line (see Table 2). This dataset has the largest 
 fitness and MCC value range (second largest TPR value as well) combined in both 
 tables above.
+</div>
+</br>
 
 ```{r Save best dataset}
 best.cell.line = "A498"
@@ -415,7 +422,7 @@ mcc = random.models.mcc.per.cell.line[[best.cell.line]]
 
 ## Statistical Analysis {-}
 
-### Data preprocessing
+### Data preprocessing {-}
 
 Firstly, we filter the data by finding the **unique models** - those that have 
 strictly different boolean equations. Then, we take a random sample out of these 
@@ -438,7 +445,7 @@ df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
 Note that the **fitness and MCC score are continuous variables while the number 
 of true positives (TP) is discrete**.
 
-### Correlation Plots
+### Correlation Plots {-}
 
 Then, we check if the our data is normally distributed (using the Shapiro-Wilk
 test for normality and the Q-Q plots):
@@ -502,7 +509,7 @@ Next, we will next proceed with a more elaborate analysis, where the models will
 performance classes (TP or MCC score-derived) and the statistical correlation between the 
 individual groups will be tested (with regards to their fitness scores).
 
-### Correlation of fitness and TP-class
+### TP-class vs fitness {-}
 
 First, some box and density plots to see practically **what and where is the difference 
 between the models fitness values belonging to different TP-classes**:
@@ -526,9 +533,13 @@ make_multiple_density_plot(densities, legend.title = "TP classes (#models)",
         title = "Density Estimation", x.axis.label = "Fitness score")
 ```
 
+<div class="green-box">
 As we can see from the above plots, there is positive correlation between the 
 classes that predicted 0,1 and 2 TP synergies as well as between the 0 TP class
 and the 3,4,5-TP classes.
+</div>
+</br>
+
 Mathematically, we show that **the group distributions are indeed different using the Kruskal-Wallis Rank Sum Test**:
 
 ```{r TP-classification: Kruskal Test, comment=""}
@@ -569,7 +580,7 @@ picture of the models performance classification.
 That's why we will proceed with the more balanced MCC score for classifing the models fitnesses 
 to different performance groups.
 
-### Correlation of fitness and MCC-class
+### MCC-class vs fitness {-}
 
 Firstly, we perform a *univariate k-means clustering* to 
 **split the models MCC values to different classes** and plot the data histogram.
@@ -592,9 +603,12 @@ Then we show some box and density plots to see practically **what and where is
 the difference between the models fitness values belonging to different MCC-classes**:
 ```{r MCC-classification: Plots}
 # Box plots
+# if you want to add p-values on the boxplot
+#mcc.class.id.cmps = list(c("1", "2"), c("1", "3"), c("3", "5"))
 ggboxplot(df, x = "mcc.class.id", y = "fit.unique", color = "mcc.class.id",
           palette = usefun:::colors.100[1:num.of.mcc.classes],
           xlab = "MCC class", ylab = "Fitness values")
+# + stat_compare_means(comparisons = mcc.class.id.cmps) + stat_compare_means()
 
 # Density Plots
 densities = list()
@@ -610,9 +624,10 @@ make_multiple_density_plot(densities, legend.title = "MCC classes (#models)",
         title = "Density Estimation", x.axis.label = "Fitness score")
 ```
 
+<div class="green-box">
 As we can see from the above plots, **there is positive correlation between the 
 distribution of MCC scores in each class and the respective fitness scores**, 
-though not between the 3rd class and the 4th or 5th (it's negative). 
+though not between the 3rd class and the 4th or 5th (it's negative). </div></br>
 Note also that the 5th class has a lot less models than the rest.
 Mathematically, we show that **the group distributions are indeed different 
 using the Kruskal-Wallis Rank Sum Test**:
@@ -630,6 +645,7 @@ pairwise Wilcoxon rank sum tests and draw a heatmap of the each test’s p-value
 ```{r MCC-classification: Pairwise Wilcox Tests, warning=FALSE}
 pair.res = pairwise.wilcox.test(x = df[,"fit.unique"], g = df[, "mcc.class.id"], p.adjust.method = "BH")
 p.value.mat = pair.res$p.value
+# same: compare_means(fit.unique ~ mcc.class.id, data = df)
 ```
 
 ```{r MCC-classification: p-value Heatmap of Pairwise Wilcox Tests, warning=FALSE, fig.width=9, dpi=300}

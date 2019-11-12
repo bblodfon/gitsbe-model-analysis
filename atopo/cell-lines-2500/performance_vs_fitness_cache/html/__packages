@@ -1,10 +1,4 @@
 base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
 DT
 ggplot2
 magrittr
@@ -13,7 +7,6 @@ emba
 usefun
 nnet
 pscl
-grid
 ComplexHeatmap
 circlize
 dplyr
