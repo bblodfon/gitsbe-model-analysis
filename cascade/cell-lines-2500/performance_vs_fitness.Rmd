@@ -456,7 +456,7 @@ of true positives (TP) is discrete**.
 
 Then, we check if the our data is normally distributed (using the Shapiro-Wilk
 test for normality and the Q-Q plots):
-```{r Normality testing, warning=FALSE, comment=""}
+```{r Normality testing, warning=FALSE, comment="", cache=TRUE}
 ggqqplot(data = df, x = "fit.unique", ylab = "Fitness")
 ggqqplot(data = df, x = "mcc.unique", ylab = "MCC")
 
@@ -649,7 +649,8 @@ draw(ht)
 
 ## Extended Analysis {-}
 
-In this section, we get new steady states to test the fitness of our model datasets against. 
+In this section, we get new steady states to test the fitness of our model datasets against.
+Note that the old ones used were calculated by using both the PARADIGM tool and tools to infer transcription factor activity (in the CLSS workflow). The new ones will use only PARADIGM.
 See [README.md](https://github.com/bblodfon/gitsbe-model-analysis/blob/master/cascade/cell-lines-2500/steady-states/README.md) for more info on how to generate the new steady states.
 
 The idea here is that the absense of correlation between fitness and performance shown above had to do with **wrongly inferred steady states**.
@@ -700,7 +701,7 @@ for (cell.line in cell.lines) {
 ```
 
 <div class="green-box">
-So, we see that the new steady state vector for each cell line is around half different than the previous calculated one.
+So, we see that the new steady state vector for each cell line is around half different than the previous calculated one, so pretty much random!
 </div>
 </br>
 
@@ -726,7 +727,7 @@ pretty_print_string(paste0("Match between the new AGS steady state vector and th
 ```
 
 <div class="orange-box">
-So, it seems that the 2 computational methods are very different even when compared on the node subset that constitutes the gold standard. Both of them are half correct when it comes to true (curated) steady state predictions.
+So, it seems that the 2 computational methods are very different even when compared on the node subset that constitutes the gold standard. Both of them seem to be random compared to the true (curated) steady state predictions.
 </div>
 </b>
 
@@ -933,7 +934,7 @@ We checked the following datasets and found **no statistically significant corre
 </div>
 </br>
 
-Next, we investigate the *AGS-gold* dataset  (row with the higher fitness and MCC range from Table 3). In this dataset the performance (MCC score) of the cell-specific AGS models is associated with the models fitness to the literature-curated AGS steady state.
+**Next, we investigate the AGS-gold dataset**  (row with the higher fitness and MCC range from Table 3). In this dataset the performance (MCC score) of the cell-specific AGS models is associated with the models fitness to the literature-curated AGS steady state.
 
 ### AGS-gold Statistical Analysis {-}
 
@@ -963,7 +964,7 @@ df = as.data.frame(cbind(fit.unique, mcc.unique, tp.unique))
 
 Then, we check if the our data is normally distributed (using the Shapiro-Wilk
 test for normality and the Q-Q plots):
-```{r Normality testing 2, warning=FALSE, comment=""}
+```{r Normality testing 2, warning=FALSE, comment="", cache=TRUE}
 ggqqplot(data = df, x = "fit.unique", ylab = "Fitness")
 ggqqplot(data = df, x = "mcc.unique", ylab = "MCC")
 
@@ -973,7 +974,7 @@ shapiro.test(x = sample(x = df$mcc.unique, size = 1000))
 
 From the above results we observe that both the fitness and MCC scores in both datasets are surely not normally distributed (with statistical significance).
 Thus, we will use **non-parametric correlation scores, namely the Spearman and Kendall rank-based correlation tests**, to check the correlation between the two continuous variables (models fitness values and their corresponding MCC score):
-```{r Rank correlation plots: Fitness to curated AGS ss vs MCC}
+```{r Rank correlation plots: Fitness to curated AGS ss vs MCC, cache=TRUE}
 ggscatter(df, x = "fit.unique", y = "mcc.unique", 
           title = "AGS-Gold (Cell-specific): Fitness vs Performance - Spearman Correlation",
           add = "reg.line", conf.int = TRUE, 
@@ -1050,6 +1051,105 @@ ggbarplot(unique.fit.stats, x = "fit.unique", y = "mean", title = "Fitness Class
 There is evident statistical correlation between the models fitness to a curation-based steady state and their performance (measured by MCC score). **Models with higher fitness to the steady state tend to have higher MCC score on average**.
 </div>
 </br>
+
+### AGS-PARADIGM(+TF) analysis {-}
+
+<div class="blue-box">
+What if we take the **AGS steady state calculated with the PARADIGM tool** (with or without the Transcription Factor activity) and **prune to the nodes that constitute the AGS-gold steady state**: will there be a correlation between fitness and performance then?
+</div>
+</br>
+
+The AGS-Gold nodes are:
+```{r AGS-Gold nodes, results='asis'}
+pretty_print_vector_names(ags.literature.ss)
+```
+
+We first find **the fitness of the models to the AGS steady state (Paradigm with and without TF included in the calculation) pruned to the AGS-gold nodes**:
+```{r Models fitness to AGS new and old steady states - pruned to AGS literature nodes}
+ags.models.stable.state = models.stable.state.per.cell.line$AGS
+
+models.fitness.to.ags.ss.old = apply(
+  ags.models.stable.state[,names(ags.ss.old)], 1, 
+  get_percentage_of_matches, ags.ss.old)
+models.fitness.to.ags.ss.new = apply(
+  ags.models.stable.state[,names(ags.ss.new)], 1, 
+  get_percentage_of_matches, ags.ss.new)
+
+fit.old = models.fitness.to.ags.ss.old
+fit.new = models.fitness.to.ags.ss.new
+fit.unique.old = fit.old[names(fit.old) %in% unique.models]
+fit.unique.new = fit.new[names(fit.new) %in% unique.models]
+
+df.old = as.data.frame(cbind(fit.unique.old, mcc.unique, tp.unique))
+df.new = as.data.frame(cbind(fit.unique.new, mcc.unique, tp.unique))
+```
+
+Then, we see if there is any correlation between fitness and performance (MCC) using general scatter plots:
+```{r Rank correlation plots: Fitness to Paradigm-calculated ss (with and without TF) - pruned to AGS-gold nodes vs MCC, cache=TRUE}
+ggscatter(df.old, x = "fit.unique.old", y = "mcc.unique", 
+          title = "AGS (Paradigm+TF) - Cell-specific: Fitness vs Performance - Kendall's tau",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall"),
+          xlab = "Fitness Values", ylab = "MCC scores")
+ggscatter(df.new, x = "fit.unique.new", y = "mcc.unique", 
+          title = "AGS (Paradigm) - Cell-specific: Fitness vs Performance - Kendall's tau",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall"),
+          xlab = "Fitness Values", ylab = "MCC scores")
+```
+
+<div class="orange-box">
+There is almost no correlation between fitness and performance when the fitness of the models is calculated with the **same nodes as in AGS-gold steady state**, but **with the values as they were calculated by PARADIGM or PARADIGM including TF activity**. This proves that the best models are those that fit to the *true* steady state and not the wrongly assessed ones!
+</div>
+</br>
+
+To better visualize the absense of correlation, **we group the models to distinct fitness classes and show the average MCC per class with the corresponding 95% CI**. 
+
+First for the **PARADIGM+TF (old)** calculated steady state for AGS, pruned to the AGS-gold nodes:
+
+```{r Fitness Class vs mean MCC (Paradigm+TF - pruned to AGS-gold), warning=FALSE, cache=TRUE}
+num.of.fit.classes = length(unique(df.old$fit.unique.old))
+fit.class.ids = 1:num.of.fit.classes
+
+# find the fitness classes
+res = Ckmeans.1d.dp(x = df.old$fit.unique.old, k = num.of.fit.classes)
+fit.class.id = res$cluster
+df.old = cbind(df.old, fit.class.id)
+
+unique.fit.stats.old = desc_statby(df.old, measure.var = "mcc.unique", grps = c("fit.unique.old", "fit.class.id"), ci = 0.95)
+  
+ggbarplot(unique.fit.stats.old, x = "fit.unique.old", y = "mean", title = "Fitness Class vs Performance (MCC) - Paradigm + TF", fill = "fit.class.id",
+  xlab = "Fitness Score", ylab = "Mean MCC", ylim = c(0, max(unique.fit.stats.old$mean) + 0.1),
+  label = unique.fit.stats.old$length, lab.vjust = -2) + 
+  scale_x_discrete(labels = round(unique.fit.stats.old$fit.unique.old, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high="red", name = "Fitness Class", guide = "legend", breaks = c(1,4,7)) +
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9)) +
+  annotate("text", x = 4.5, y = 0.38, label = "Number of models per fitness class are displayed above 95% CI bars for the mean MCC")
+# mean -+ 2*se => 95% CI for mean. Use when you are interested in the precision of the means or in comparing and testing differences between means.
+```
+
+And secondly for **the PARADIGM only (new)** calculated steady state for AGS, pruned to the AGS-gold nodes:
+
+```{r Fitness Class vs mean MCC (Paradigm only - pruned to AGS-gold), warning=FALSE, cache=TRUE}
+num.of.fit.classes = length(unique(df.new$fit.unique.new))
+fit.class.ids = 1:num.of.fit.classes
+
+# find the fitness classes
+res = Ckmeans.1d.dp(x = df.new$fit.unique.new, k = num.of.fit.classes)
+fit.class.id = res$cluster
+df.new = cbind(df.new, fit.class.id)
+
+unique.fit.stats.new = desc_statby(df.new, measure.var = "mcc.unique", grps = c("fit.unique.new", "fit.class.id"), ci = 0.95)
+  
+ggbarplot(unique.fit.stats.new, x = "fit.unique.new", y = "mean", title = "Fitness Class vs Performance (MCC) - Paradigm only", fill = "fit.class.id",
+  xlab = "Fitness Score", ylab = "Mean MCC", ylim = c(0, max(unique.fit.stats.new$mean) + 0.1),
+  label = unique.fit.stats.new$length, lab.vjust = -2) + 
+  scale_x_discrete(labels = round(unique.fit.stats.new$fit.unique.new, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high="red", name = "Fitness Class", guide = "legend", breaks = c(1,4,7)) +
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9)) +
+  annotate("text", x = 4.5, y = 0.35, label = "Number of models per fitness class are displayed above 95% CI bars for the mean MCC")
+# mean -+ 2*se => 95% CI for mean. Use when you are interested in the precision of the means or in comparing and testing differences between means.
+```
 
 ## R session info {-}
 
