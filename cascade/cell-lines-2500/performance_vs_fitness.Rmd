@@ -1140,7 +1140,7 @@ fit.class.id = res$cluster
 df.new = cbind(df.new, fit.class.id)
 
 unique.fit.stats.new = desc_statby(df.new, measure.var = "mcc.unique", grps = c("fit.unique.new", "fit.class.id"), ci = 0.95)
-  
+
 ggbarplot(unique.fit.stats.new, x = "fit.unique.new", y = "mean", title = "Fitness Class vs Performance (MCC) - Paradigm only", fill = "fit.class.id",
   xlab = "Fitness Score", ylab = "Mean MCC", ylim = c(0, max(unique.fit.stats.new$mean) + 0.1),
   label = unique.fit.stats.new$length, lab.vjust = -2) + 
@@ -1148,6 +1148,144 @@ ggbarplot(unique.fit.stats.new, x = "fit.unique.new", y = "mean", title = "Fitne
   scale_fill_gradient(low = "lightblue", high="red", name = "Fitness Class", guide = "legend", breaks = c(1,4,7)) +
   geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9)) +
   annotate("text", x = 4.5, y = 0.35, label = "Number of models per fitness class are displayed above 95% CI bars for the mean MCC")
+# mean -+ 2*se => 95% CI for mean. Use when you are interested in the precision of the means or in comparing and testing differences between means.
+```
+
+### ASG-Gold Random analysis
+
+<div class="blue-box">
+In this section we want to investigate how the **random models performance** correlates with the **fitness to the AGS-gold steady state**, as well as the **pruned PARADIGM steady state (with or with TF)** - pruned to the 23 nodes of the AGS-gold ss.
+</div>
+</br>
+
+First, we calculate the new fitness values for the random models, for each steady state case (AGS-Gold, PARADIGM only (new), PARADIGM+TF (old)):
+```{r Fitness and MCC scores for Random Models, cache=TRUE}
+# Get the MCC scores of the random models for the AGS
+mcc = random.models.mcc.per.cell.line$AGS
+
+# find the unique models
+unique.models = rownames(unique(random.models.link.operator))
+
+# remove models with NaN MCC scores
+unique.models = unique.models[!unique.models %in% names(which(is.na(mcc)))]
+
+# Prune MCC scores to unique models
+mcc.unique = mcc[names(mcc) %in% unique.models]
+
+# Find fitness of the random models to the 3 steady states
+# random.models.fitness.to.ags.literature.ss (already calculated for AGS-Gold)
+random.models.fitness.to.ags.ss.old = apply(
+  random.models.stable.state[,names(ags.ss.old)], 1, 
+  get_percentage_of_matches, ags.ss.old)
+random.models.fitness.to.ags.ss.new = apply(
+  random.models.stable.state[,names(ags.ss.new)], 1, 
+  get_percentage_of_matches, ags.ss.new)
+
+fit.gold = random.models.fitness.to.ags.literature.ss
+fit.old = random.models.fitness.to.ags.ss.old
+fit.new = random.models.fitness.to.ags.ss.new
+
+fit.unique.gold = fit.gold[names(fit.gold) %in% unique.models]
+fit.unique.old = fit.old[names(fit.old) %in% unique.models]
+fit.unique.new = fit.new[names(fit.new) %in% unique.models]
+
+df.gold.random = as.data.frame(cbind(fit.unique.gold, mcc.unique))
+df.old.random = as.data.frame(cbind(fit.unique.old, mcc.unique))
+df.new.random = as.data.frame(cbind(fit.unique.new, mcc.unique))
+```
+
+Then, we check to see if there is any correlation between fitness and performance (MCC) using general scatter plots:
+```{r Rank correlation plots for Random Models, cache=TRUE}
+ggscatter(df.gold.random, x = "fit.unique.gold", y = "mcc.unique", 
+          title = "AGS-Gold - Random: Fitness vs Performance - Kendall's tau",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall"),
+          xlab = "Fitness Values", ylab = "MCC scores")
+ggscatter(df.old.random, x = "fit.unique.old", y = "mcc.unique", 
+          title = "AGS (Paradigm+TF) - Random: Fitness vs Performance - Kendall's tau",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall"),
+          xlab = "Fitness Values", ylab = "MCC scores")
+ggscatter(df.new.random, x = "fit.unique.new", y = "mcc.unique", 
+          title = "AGS (Paradigm) - Random: Fitness vs Performance - Kendall's tau",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coeff.args = list(method = "kendall"),
+          xlab = "Fitness Values", ylab = "MCC scores")
+```
+
+<div class="orange-box">
+There is very small correlation between fitness and performance in the case of fitness to the **AGS-Gold steady state** and the one that is calculated with the **same nodes as in AGS-gold steady state**, but **with the values as they were calculated by PARADIGM including TF activity**.
+</div>
+</br>
+
+To better visualize the correlation relationship (if there is any), **we group the models to distinct fitness classes and show the average MCC per class with the corresponding 95% CI**. 
+
+First for the **AGS-Gold** steady state:
+
+```{r Fitness Class vs mean MCC for Random Models (AGS-Gold), warning=FALSE, cache=TRUE}
+num.of.fit.classes = length(unique(df.gold.random$fit.unique.gold))
+fit.class.ids = 1:num.of.fit.classes
+
+# find the fitness classes
+res = Ckmeans.1d.dp(x = df.gold.random$fit.unique.gold, k = num.of.fit.classes)
+fit.class.id = res$cluster
+df.gold.random = cbind(df.gold.random, fit.class.id)
+
+unique.fit.stats.gold = desc_statby(df.gold.random, measure.var = "mcc.unique", grps = c("fit.unique.gold", "fit.class.id"), ci = 0.95)
+
+ggbarplot(unique.fit.stats.gold, x = "fit.unique.gold", y = "mean", title = "Fitness Class vs Performance (MCC) - AGS-Gold - Random", fill = "fit.class.id",
+  xlab = "Fitness Score", ylab = "Mean MCC", ylim = c(0, max(unique.fit.stats.gold$mean) + 0.1),
+  label = unique.fit.stats.gold$length, lab.vjust = -2) + 
+  scale_x_discrete(labels = round(unique.fit.stats.gold$fit.unique.gold, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high="red", name = "Fitness Class", guide = "legend", breaks = c(1,4,7,10)) +
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9)) +
+  annotate("text", x = 5.5, y = 0.48, label = "Number of models per fitness class are displayed above 95% CI bars for the mean MCC")
+# mean -+ 2*se => 95% CI for mean. Use when you are interested in the precision of the means or in comparing and testing differences between means.
+```
+
+Secondly, for the **PARADIGM+TF (old)** calculated steady state for AGS, pruned to the AGS-gold nodes:
+
+```{r Fitness Class vs mean MCC for Random Models (Paradigm+TF - pruned to AGS-gold), warning=FALSE, cache=TRUE}
+num.of.fit.classes = length(unique(df.old.random$fit.unique.old))
+fit.class.ids = 1:num.of.fit.classes
+
+# find the fitness classes
+res = Ckmeans.1d.dp(x = df.old.random$fit.unique.old, k = num.of.fit.classes)
+fit.class.id = res$cluster
+df.old.random = cbind(df.old.random, fit.class.id)
+
+unique.fit.stats.old = desc_statby(df.old.random, measure.var = "mcc.unique", grps = c("fit.unique.old", "fit.class.id"), ci = 0.95)
+
+ggbarplot(unique.fit.stats.old, x = "fit.unique.old", y = "mean", title = "Fitness Class vs Performance (MCC) - Paradigm+TF - Random", fill = "fit.class.id",
+  xlab = "Fitness Score", ylab = "Mean MCC", ylim = c(0, max(unique.fit.stats.old$mean) + 0.1),
+  label = unique.fit.stats.old$length, lab.vjust = -2) + 
+  scale_x_discrete(labels = round(unique.fit.stats.old$fit.unique.old, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high="red", name = "Fitness Class", guide = "legend", breaks = c(1,4,7,9)) +
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9)) +
+  annotate("text", x = 5.5, y = 0.48, label = "Number of models per fitness class are displayed above 95% CI bars for the mean MCC")
+# mean -+ 2*se => 95% CI for mean. Use when you are interested in the precision of the means or in comparing and testing differences between means.
+```
+
+Lastly, for the **PARADIGM (new)** calculated steady state for AGS, pruned to the AGS-gold nodes:
+
+```{r Fitness Class vs mean MCC for Random models (Paradigm - pruned to AGS-gold), warning=FALSE, cache=TRUE}
+num.of.fit.classes = length(unique(df.new.random$fit.unique.new))
+fit.class.ids = 1:num.of.fit.classes
+
+# find the fitness classes
+res = Ckmeans.1d.dp(x = df.new.random$fit.unique.new, k = num.of.fit.classes)
+fit.class.id = res$cluster
+df.new.random = cbind(df.new.random, fit.class.id)
+
+unique.fit.stats.new = desc_statby(df.new.random, measure.var = "mcc.unique", grps = c("fit.unique.new", "fit.class.id"), ci = 0.95)
+
+ggbarplot(unique.fit.stats.new, x = "fit.unique.new", y = "mean", title = "Fitness Class vs Performance (MCC) - Paradigm - Random", fill = "fit.class.id",
+  xlab = "Fitness Score", ylab = "Mean MCC", ylim = c(0, max(unique.fit.stats.new$mean) + 0.1),
+  label = unique.fit.stats.new$length, lab.vjust = -2) + 
+  scale_x_discrete(labels = round(unique.fit.stats.new$fit.unique.new, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high="red", name = "Fitness Class", guide = "legend", breaks = c(1,4,7,10)) +
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9)) +
+  annotate("text", x = 5.5, y = 0.48, label = "Number of models per fitness class are displayed above 95% CI bars for the mean MCC")
 # mean -+ 2*se => 95% CI for mean. Use when you are interested in the precision of the means or in comparing and testing differences between means.
 ```
 
