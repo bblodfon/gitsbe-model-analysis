@@ -44,7 +44,9 @@ library(usefun)
 library(ComplexHeatmap)
 library(circlize)
 library(dplyr)
+library(tibble)
 library(DT)
+library(ggpubr)
 ```
 
 We load the cell-specific input data:
@@ -310,7 +312,7 @@ AK.PD.inhibited.biomarkers = AK.PD.avg.state.diff.cell.specific[AK.PD.avg.state.
 pretty_print_vector_names(AK.PD.inhibited.biomarkers)
 ```
 
-<div class="lime-box">
+<div class="green-box">
 We will demonstrate that the `PTPN11` and `GAB_f` inhibited biomarkers are a direct consequence of the overepression of `ERK_f`:
 </div>
 </br>
@@ -427,6 +429,29 @@ If we visualize the **average activity state difference across all synergy compa
 ```{r Average activity state diff across all synergy subsets (AK-PD), cache=TRUE}
 plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat), layout = nice.layout, 
   title = "Average activity state diff across all synergy subsets (AK-PD)")
+```
+
+Same can be seen with a `dotchart` where we have excluded the nodes that have *zero* average activity difference:
+```{r Average activity state diff across all synergy subsets (AK-PD) - dotchart, cache=TRUE}
+df = as.data.frame(t(as.data.frame(as.list(diff.state.ak.pd))))
+colnames(df) = "avg.state"
+df = df %>% 
+  rownames_to_column(var = "nodes") %>%
+  filter(avg.state != 0)
+
+ggdotchart(df, x = "nodes", y = "avg.state",
+  title = "Average activity state difference across all synergy comparison sets (AK-PD, A498 cell line)", 
+  label = "nodes", font.label = list(size = 11, color = "steelblue"),
+  label.select = list(criteria = "`y` >= 0.7 | `y` <= -0.7"), repel = TRUE,
+  xlab = "Nodes", ylab = "Average Activity State", 
+  ylim = c(-1,1), add = "segments") + 
+    font("x.text", size = 10) +
+    font("title", size = 11) + 
+    geom_hline(yintercept = -0.7, linetype = "dashed", color = "red") + 
+    geom_hline(aes(yintercept = 0.7, linetype = "0.7"), color = "red") +
+    scale_linetype_manual(name = "Threshold", values = 2, 
+      guide = guide_legend(override.aes = list(color = "red"))) + 
+    theme(legend.position = c(0.2,0.7))
 ```
 
 <div class="orange-box">
@@ -599,16 +624,16 @@ for (i in 1:nrow(AK.PD.res)) {
 diff.state.mat.random = do.call(rbind, diff.state.list.random)
 diff.link.mat.random = do.call(rbind, diff.link.list.random)
 
-caption.title.1 = "Table 3: Average activity difference values across all synergy set comparisons (AK-PD)"
+caption.title.3 = "Table 3: Average activity difference values across all synergy set comparisons (AK-PD)"
 datatable(data = diff.state.mat.random[, c("SRC", "CSK", "MEK_f", "STAT1", "PTPN6")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
-    caption = htmltools::tags$caption(caption.title.1, style="color:#dd4814; font-size: 18px")) %>% 
+    caption = htmltools::tags$caption(caption.title.3, style="color:#dd4814; font-size: 18px")) %>% 
       formatRound(1:ncol(diff.state.mat.random), digits = 3)
 
-caption.title.2 = "Table 4: Average link operator difference values across all synergy set comparisons (AK-PD)"
+caption.title.4 = "Table 4: Average link operator difference values across all synergy set comparisons (AK-PD)"
 datatable(data = diff.link.mat.random[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
-    caption = htmltools::tags$caption(caption.title.2, style="color:#dd4814; font-size: 18px")) %>% 
+    caption = htmltools::tags$caption(caption.title.4, style="color:#dd4814; font-size: 18px")) %>% 
       formatRound(1:ncol(diff.link.mat.random), digits = 3)
 ```
 
