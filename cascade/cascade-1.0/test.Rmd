@@ -1,0 +1,58 @@
+---
+title: "Cascade 1.0: Test All Possible Models"
+author: "[John Zobolas](https://github.com/bblodfon)"
+date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: "../cell-lines-2500/style.css"
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+    code_folding: hide
+    code_download: true
+---
+
+```{r Render command, eval=FALSE, include=FALSE}
+#rmarkdown::render(input = "test.Rmd", output_format = "html_document", output_dir = "../../docs/cascade/cascade-1.0/")
+```
+
+## Time Estimation {-}
+
+Loading libraries:
+```{r Load libraries, message = FALSE}
+library(emba)
+library(usefun)
+```
+
+Find all possible models generated through performing **all possible mutations of the Link Operator** in the models that can be generated using Cascade 1.0
+
+```{r}
+models.dir = paste0(getwd(), "/models")
+topology.file = paste0(getwd(), "/topology")
+
+net = construct_network(topology.file, models.dir)
+models.link.operator = get_link_operators_from_models_dir(models.dir)
+```
+
+Target nodes whose boolean equation has a link operator:
+```{r, results='asis'}
+pretty_print_vector_values(colnames(models.link.operator))
+```
+
+Total number of models that can be generated:
+```{r, comment=""}
+n = ncol(models.link.operator)
+2^n
+```
+
+After generating all this models, you keep only those that have 1 stable state using the BNReduction (reduced version). If for every model, each perturbation lasts 50ms (overestimating) you have `50 * 8388608` msecs which equals to less than **5 days**. Then you end up with a subset of models (a lot less I guess), let's say around less than half of them: **3 million**.
+
+For a total of **28 perturbations** to test on each model (each done with BNReduction-areduced in Drabme) you want a total of `50 * 3000000 * 28` msecs which equals to a little less than **50 days**.
+
+Could be a lot less of course, these are crude estimations to get an idea!!!
+
+For an average of **10 msecs per perturbation** you get down to a little bit less than **10 days**.
+
