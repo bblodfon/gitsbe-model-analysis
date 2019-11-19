@@ -6,3 +6,6 @@ circlize
 DT
 dplyr
 igraph
+ggplot2
+magrittr
+ggpubr
