@@ -1,0 +1,134 @@
+---
+title: "Compare CLSS steady state vectors"
+author: "[John Zobolas](https://github.com/bblodfon)"
+date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: style.css
+    theme: united
+    toc: false
+    number_sections: false
+    code_folding: hide
+    code_download: true
+---
+
+```{r Render command, eval=FALSE, include=FALSE}
+#rmarkdown::render(input = "compare_ss_clss.Rmd", output_format = "html_document", output_dir = "../../docs/cascade/cell-lines-2500/")
+```
+
+Loading libraries:
+```{r Load libraries, message = FALSE}
+library(emba)
+library(usefun)
+library(igraph)
+library(dplyr)
+library(DT)
+```
+
+Get the `.tsv` file with produced steady states for `AGS` using various computational methods:
+```{r Input, comment=""}
+# Get the compare steady state file 
+ss.compare.file = paste0(getwd(), "/steady_state_comparison_AGS.tsv")
+
+df = read.table(file = ss.compare.file, header = TRUE, fill = TRUE, sep = "\t")
+
+# Get Cascade 2.0 Topology
+topology.file = paste0(getwd(), "/topology")
+net = construct_network(topology.file = topology.file, models.dir =  paste0(getwd(), "/AGS/models"))
+cascade.nodes = V(net)$name
+
+# check that only the genes (*_g) are not given a steady state value 
+cascade.nodes[!cascade.nodes %in% df$Node]
+
+# prune to the CASCADE 2.0 nodes only
+df = df %>% filter(Node %in% cascade.nodes)
+
+datatable(data = df, options = list(searching = FALSE, pageLength = 12))
+```
+
+**Compare AGS: PARADIGM only** new results and previous (See [README.md](https://github.com/bblodfon/gitsbe-model-analysis/blob/master/cascade/cell-lines-2500/steady-states/README.md) for the previous calculation method):
+```{r, comment=""}
+file = paste0(getwd(), "/steady-states/AGS_steady_state")
+ss.df = read.table(file, sep = "\t", stringsAsFactors = FALSE)
+
+paradigm.ss = ss.df[,2]
+names(paradigm.ss) = ss.df[,1]
+  
+# change value to NA for nodes for which there was no activity found (dash)
+paradigm.ss[paradigm.ss == "-"] = NA
+
+paradigm.ss = prune_and_reorder_vector(paradigm.ss, as.character(df$Node))
+paradigm.ss = sapply(paradigm.ss, as.integer)
+
+df = cbind(df, paradigm.ss)
+
+get_percentage_of_matches(df$paradigm, df$paradigm.ss)
+```
+
+**Compare AGS: PARADIGM+TF** new results and previous (See [README.md](https://github.com/bblodfon/gitsbe-model-analysis/blob/master/cascade/cell-lines-2500/steady-states/README.md) for the previous calculation method):
+```{r, comment=""}
+file = paste0(getwd(), "/AGS/steady_state")
+ss.df = read.table(file, sep = "\t", stringsAsFactors = FALSE)
+
+paradigm_tf.ss = ss.df[,2]
+names(paradigm_tf.ss) = ss.df[,1]
+  
+# change value to NA for nodes for which there was no activity found (dash)
+paradigm_tf.ss[paradigm_tf.ss == "-"] = NA
+
+paradigm_tf.ss = prune_and_reorder_vector(paradigm_tf.ss, as.character(df$Node))
+paradigm_tf.ss = sapply(paradigm_tf.ss, as.integer)
+
+df = cbind(df, paradigm_tf.ss)
+
+get_percentage_of_matches(df$paradigm_tf, df$paradigm_tf.ss)
+```
+
+**Compare AGS: PARADIGM only vs PARADIGM+TF** results (previous calculations, same as in the [fitness vs performance analysis](https://bblodfon.github.io/gitsbe-model-analysis/cascade/cell-lines-2500/performance_vs_fitness.html#input13)):
+```{r, comment=""}
+get_percentage_of_matches(df$paradigm.ss, df$paradigm_tf.ss)
+```
+
+**Compare AGS: PARADIGM only vs PARADIGM+TF** results (new calculation, provided by Miguel 20/11/2019):
+```{r, comment=""}
+get_percentage_of_matches(df$paradigm, df$paradigm_tf)
+```
+
+<div class="orange-box">
+Results have changed for PARADIGM and PARADIGM+TF, but seem to have become more consistent!
+</div>
+</br>
+
+**Who agrees more with literature-curated nodes for AGS?**
+
+Filter to literature nodes:
+```{r, comment=""}
+df.filtered = df %>% filter(!is.na(literature))
+```
+
+Reporting results as in [fitness vs performance analysis](https://bblodfon.github.io/gitsbe-model-analysis/cascade/cell-lines-2500/performance_vs_fitness.html#input13)):
+**Compare AGS: Literature (Gold) vs PARADIGM (previous) results**:
+```{r, comment=""}
+get_percentage_of_matches(df.filtered$literature, df.filtered$paradigm.ss)
+```
+
+**Compare AGS: Literature (Gold) vs PARADIGM+TF (previous) results**:
+```{r, comment=""}
+get_percentage_of_matches(df.filtered$literature, df.filtered$paradigm_tf.ss)
+```
+
+Comparing new results (based on Miguel's 20/11/2019 file):
+**Compare AGS: Literature (Gold) vs PARADIGM (new) results**:
+```{r, comment=""}
+get_percentage_of_matches(df.filtered$literature, df.filtered$paradigm)
+```
+
+**Compare AGS: Literature (Gold) vs PARADIGM+TF (new) results**:
+```{r, comment=""}
+get_percentage_of_matches(df.filtered$literature, df.filtered$paradigm_tf)
+```
+
+<div class="orange-box">
+Results seem to be consistenly random compared ot literature/Gold AGS steady state in all cases!
+</div>
+</br>
