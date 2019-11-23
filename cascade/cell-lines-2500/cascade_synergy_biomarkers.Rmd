@@ -47,6 +47,7 @@ library(dplyr)
 library(tibble)
 library(DT)
 library(ggpubr)
+library(Ckmeans.1d.dp)
 ```
 
 We load the cell-specific input data:
@@ -460,7 +461,7 @@ Note the boolean equation: `PTPN6 *= SRC`. This means that `SRC` is **the only i
 </div>
 </br>
 
-We will now check if the above observations regarding the node activity are true compared to the [MCLP dataset](https://tcpaportal.org/mclp/#/download):
+We will now check if the above observations regarding the activity of the nodes are true using the [MCLP dataset](https://tcpaportal.org/mclp/#/download) as a reference:
 
 ```{r MCLP Dataset, cache=TRUE}
 mclp.data = read.table(file = "MCLP-v1.1-Level4.tsv", header = TRUE, stringsAsFactors = FALSE)
@@ -493,24 +494,30 @@ Since for `A498` cell line we observe one of the largest signaling measurements 
 </div>
 </br>
 
-For the `ERK2` we don't have data for the `A498` cell line:
-```{r MCLP Data Visualization (ERK2), cache=TRUE}
-erk.data = mclp.data %>% select(Sample_Name, ERK2) %>% na.omit()
+We also check for the phosphorylation value of the `MAPK_pT202Y204` (for the `ERK_f` activation) across all cell lines:
+```{r MCLP Data Visualization (ERK_f), cache=TRUE}
+erk.data = mclp.data %>% select(Sample_Name, MAPK_pT202Y204) %>% na.omit()
 
 # find the activity classes (3 classes: low expression, no expression, high expression)
-res = Ckmeans.1d.dp(x = erk.data$ERK2, k = 3)
+res = Ckmeans.1d.dp(x = erk.data$MAPK_pT202Y204, k = 3)
 activity = as.factor(res$cluster)
 levels(activity) = c("low", "medium", "high")
 erk.data = cbind(erk.data, activity)
 
-ggdotchart(data = erk.data, x = "Sample_Name", y = "ERK2", 
-  title = "ERK2 expression across all cell lines in MCLP Dataset",
+ggdotchart(data = erk.data, x = "Sample_Name", y = "MAPK_pT202Y204", 
+  title = "MAPK_pT202Y204 signaling across all cell lines in MCLP Dataset",
   color = "activity", palette = c("red", "grey", "green"), 
   label = "Sample_Name", label.select = cell.lines.in.mclp, repel = TRUE, xlab = "Cell Lines",
-  add = "segments", label.rectangle = TRUE, ylab = "ERK2 expression",
+  add = "segments", label.rectangle = TRUE, ylab = "MAPK_pT202Y204 Signaling",
   add.params = list(color = "activity", palette = c("red", "grey", "green"))) + 
     theme(axis.text.x = element_blank(), axis.ticks = element_blank())
 ```
+
+<div class="blue-box">
+One of the **activating phosphorylation sites of `ERK`** is the **ERK1 T202/Y204**. 
+From the above figure we see a weak signaling of this phoshosite for the `A498` cell line which does not fully correlate well with the results from our analysis above (`ERK_f` overexpression). Though, in a [later section](#ak-pd-in-other-cell-lines) we show that `ERK_f` is found active in all models from all cell lines that predict the `AK-PD` synergy (for example even in `UACC62` cell line which has a high phoshorylation signal in the above figure).
+</div>
+</br>
 
 Using the matrix from Table 2, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
@@ -728,7 +735,7 @@ plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat.random), la
   title = "Average link operator diff across all synergy subsets (AK-PD)")
 ```
 
-### AK-PD in other cell lines
+### AK-PD in other cell lines {-}
 
 Though the `AK-PD` synergy was observed and predicted in the A498 model dataset, we investigate its biomarkers in the other cell lines where **it was predicted as a False Positive (FP) synergy (predicted by the models but not observed in the experiments)**. 
 Thus, we can still see if there are any common (activity state and link operator) biomarkers for `AK-PD` across the all the cell-specific models by contrasting in each cell line the models that predicted `AK-PD` vs the models that did not:
