@@ -1540,6 +1540,12 @@ summary {
 }
 }
 
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
 
 .toc-content {
   padding-left: 30px;
@@ -1723,16 +1729,16 @@ Locale:
 
 Package version:
   assertthat_0.2.1 backports_1.1.5  base64enc_0.1-3  BH_1.69.0.1     
-  cli_1.1.0        compiler_3.6.1   crayon_1.3.4     digest_0.6.21   
+  cli_1.1.0        compiler_3.6.1   crayon_1.3.4     digest_0.6.23   
   dplyr_0.8.3      ellipsis_0.3.0   evaluate_0.14    fansi_0.4.0     
   glue_1.3.1       graphics_3.6.1   grDevices_3.6.1  highr_0.8       
-  htmltools_0.4.0  jsonlite_1.6     knitr_1.25       magrittr_1.5    
+  htmltools_0.4.0  jsonlite_1.6     knitr_1.26       magrittr_1.5    
   markdown_1.1     methods_3.6.1    mime_0.7         pillar_1.4.2    
-  pkgconfig_2.0.3  plogr_0.2.0      purrr_0.3.2      R6_2.4.0        
-  Rcpp_1.0.2       rlang_0.4.0      rmarkdown_1.16   stats_3.6.1     
+  pkgconfig_2.0.3  plogr_0.2.0      purrr_0.3.3      R6_2.4.1        
+  Rcpp_1.0.3       rlang_0.4.2      rmarkdown_1.17   stats_3.6.1     
   stringi_1.4.3    stringr_1.4.0    tibble_2.1.3     tidyselect_0.2.5
-  tinytex_0.16     tools_3.6.1      utf8_1.1.4       utils_3.6.1     
-  vctrs_0.2.0      xfun_0.10        yaml_2.2.0       zeallot_0.1.0   </code></pre>
+  tinytex_0.17     tools_3.6.1      utf8_1.1.4       utils_3.6.1     
+  vctrs_0.2.0      xfun_0.11        yaml_2.2.0       zeallot_0.1.0   </code></pre>
 </div>
 
 <div id="rmd-source-code">LS0tCnRpdGxlOiAiRmxpcHBlZCBBR1MtR29sZCBzdGVhZHkgc3RhdGUiCmF1dGhvcjogIltKb2huIFpvYm9sYXNdKGh0dHBzOi8vZ2l0aHViLmNvbS9iYmxvZGZvbikiCmRhdGU6ICJMYXN0IHVwZGF0ZWQ6IGByIGZvcm1hdChTeXMudGltZSgpLCAnJWQgJUIsICVZJylgIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDoKICAgIGNzczogIi4uL2NlbGwtbGluZXMtMjUwMC9zdHlsZS5jc3MiCiAgICB0aGVtZTogdW5pdGVkCiAgICB0b2M6IHRydWUKICAgIHRvY19mbG9hdDoKICAgICAgY29sbGFwc2VkOiBmYWxzZQogICAgICBzbW9vdGhfc2Nyb2xsOiB0cnVlCiAgICBudW1iZXJfc2VjdGlvbnM6IGZhbHNlCiAgICBjb2RlX2ZvbGRpbmc6IGhpZGUKICAgIGNvZGVfZG93bmxvYWQ6IHRydWUKLS0tCgojIyBJbnB1dCB7LX0KCkxvYWRpbmcgbGlicmFyaWVzOgpgYGB7ciBMb2FkIGxpYnJhcmllcywgbWVzc2FnZSA9IEZBTFNFfQpsaWJyYXJ5KGtuaXRyKQpsaWJyYXJ5KGRwbHlyKQpsaWJyYXJ5KHRpYmJsZSkKYGBgCgpSZWFkIHRoZSBBR1MtR29sZCBzdGVhZHkgc3RhdGUgYW5kIHJlZm9ybWF0IGl0IHRvIGEgZGF0YS5mcmFtZToKYGBge3J9CnRyYWluaW5nLmRhdGEuZmlsZSA9IHBhc3RlMChnZXR3ZCgpLCAiL3RyYWluaW5nX2Fnc19nb2xkIikKbGluZXMgPSByZWFkTGluZXModHJhaW5pbmcuZGF0YS5maWxlKQpzcy5nb2xkID0gdW5saXN0KHN0cnNwbGl0KHggPSBsaW5lc1s1XSwgc3BsaXQgPSAiXHQiKSkKCnJlcy5saXN0ID0gbGlzdCgpCmZvcihlbCBpbiBzcy5nb2xkKSB7CiAgcmVzID0gdW5saXN0KHN0cnNwbGl0KGVsLCBzcGxpdCA9ICI6IikpCiAgcmVzLmxpc3RbW2VsXV0gPSBjKHJlc1sxXSwgcmVzWzJdKQp9CgpkZiA9IGFzLmRhdGEuZnJhbWUoZG8uY2FsbChyYmluZCwgcmVzLmxpc3QpLCBzdHJpbmdzQXNGYWN0b3JzID0gRkFMU0UpCmRmID0gcmVtb3ZlX3Jvd25hbWVzKGRmKQpjb2xuYW1lcyhkZikgPSBjKCJub2RlcyIsICJzdGF0ZSIpCmRmJHN0YXRlID0gYXMubnVtZXJpYyhkZiRzdGF0ZSkKCiNrYWJsZShkZikKYGBgCgojIyBHZW5lcmF0ZSBmbGlwcGVkIHN0ZWFkeSBzdGF0ZXMKCldlIHdhbnQgdG8gZ2VuZXJhdGUgbWFueSB0cmFpbmluZyBkYXRhIGZpbGVzIHdpdGggdGhlIHN0ZWFkeSBzdGF0ZSBhcyB0aGUgQUdTLWdvbGQsIGJ1dCBzb21lIG9mIHRoZSBub2RlcyB3aWxsIGhhdmUgdGhlaXIgc3RhdGVzIGZsaXBwZWQgdG8gdGhlIG9wcG9zaXRlIHN0YXRlLiAKCkZpcnN0LCB3ZSBjaG9vc2UgdGhlICoqYW1vdW50IG9mIG5vZGVzIHRvIGZsaXAgaW4gdGhlIEFHUy1nb2xkIHNzKiogKGZyb20gJDEkIHRvIGFsbCBvZiB0aGVtKS4gRm9yIGVhY2ggc3VjaCAqZmxpcHBpbmcgbm9kZXMqIHZhbHVlLCB3ZSBnZW5lcmF0ZSAkMjAkIG5ldyBzdGVhZHkgc3RhdGVzIHdpdGggYSByYW5kb21seSBjaG9zZW4gc2V0IG9mIG5vZGVzIHdob3NlIHZhbHVlIGlzIGdvaW5nIHRvIGZsaXAgKGZyb20gMCB0byAxIGFuZCB2aWNlLXZlcnNhKS4KCmBgYHtyIEdlbmVyYXRlIHN0ZWFkeSBzdGF0ZXN9CnNldC5zZWVkKDIpCm51bS5vZi5mbGlwcyA9IGMoMSwzLDYsOSwxMiwxNSwxNywxOSwyMSwyMiwyMykKcmFuZG9tLnN0YXRlcy5udW0gPSAyMApnb2xkLnN0YXRlID0gZGYkc3RhdGUKCmZsaXBwZWQuc3RhdGVzID0gbGlzdCgpCmZvcihmbGlwLm51bSBpbiBudW0ub2YuZmxpcHMpIHsKICBpZiAoZmxpcC5udW0gPT0gMSkgeyAjIGZsaXAgb25jZSBldmVyeSBub2RlCiAgICBmb3IgKGZsaXAuaW5kZXggaW4gMTpucm93KGRmKSkgewogICAgICBmbGlwcGVkLnN0YXRlID0gZ29sZC5zdGF0ZQogICAgICBmbGlwcGVkLnN0YXRlW2ZsaXAuaW5kZXhdID0gIWZsaXBwZWQuc3RhdGVbZmxpcC5pbmRleF0KICAgICAgZmxpcHBlZC5zdGF0ZXNbW3Bhc3RlMChmbGlwLm51bSwiX2ZsaXBzXyIsZmxpcC5pbmRleCldXSA9IGZsaXBwZWQuc3RhdGUKICAgIH0KICAgIG5leHQKICB9CiAgCiAgaWYgKGZsaXAubnVtID09IG5yb3coZGYpKSB7ICMgZmxpcCBhbGwgbm9kZXMgYXQgb25jZSEKICAgIGZsaXBwZWQuc3RhdGUgPSBnb2xkLnN0YXRlCiAgICBmbGlwcGVkLnN0YXRlID0gYXMubnVtZXJpYyghZmxpcHBlZC5zdGF0ZSkKICAgIGZsaXBwZWQuc3RhdGVzW1twYXN0ZTAoZmxpcC5udW0sIl9mbGlwc18xIildXSA9IGZsaXBwZWQuc3RhdGUKICAgIG5leHQKICB9CiAgCiAgZm9yKHN0YXRlLmluZGV4IGluIDE6cmFuZG9tLnN0YXRlcy5udW0pIHsKICAgIGZsaXAuaW5kZXgudmVjID0gc2FtcGxlKHggPSAxOm5yb3coZGYpLCBzaXplID0gZmxpcC5udW0pCiAgICBmbGlwcGVkLnN0YXRlID0gZ29sZC5zdGF0ZQogICAgZmxpcHBlZC5zdGF0ZVtmbGlwLmluZGV4LnZlY10gPSAhZmxpcHBlZC5zdGF0ZVtmbGlwLmluZGV4LnZlY10KICAgIGZsaXBwZWQuc3RhdGVzW1twYXN0ZTAoZmxpcC5udW0sIl9mbGlwc18iLHN0YXRlLmluZGV4KV1dID0gZmxpcHBlZC5zdGF0ZQogIH0KfQojIHJlcyA9IGRvLmNhbGwoY2JpbmQsIGZsaXBwZWQuc3RhdGVzKQojIGRmID0gY2JpbmQoZGYsIHJlcykKYGBgCgpBbmQgd2Ugd3JpdGUgdGhlICpmbGlwcGVkKiBzdGVhZHkgc3RhdGVzIHRvIGZpbGVzOgpgYGB7ciBXcml0ZSBmbGlwcGVkIHN0ZWFkeSBzdGF0ZXMgdG8gZmlsZXN9CnRyYWluLmRhdGEuZGlyID0gcGFzdGUwKGdldHdkKCksICIvdHJhaW5pbmctZGF0YS1maWxlcy8iKQpmbGlwcGVkLnN0YXRlLmxpbmVzID0gbGluZXMKCmZvciAoaW5kZXggaW4gMTpsZW5ndGgoZmxpcHBlZC5zdGF0ZXMpKSB7CiAgZmxpcHBlZC5zdGF0ZSA9IGZsaXBwZWQuc3RhdGVzW1tpbmRleF1dCiAgc3RhdGUubmFtZSAgICA9IG5hbWVzKGZsaXBwZWQuc3RhdGVzKVtpbmRleF0KICAKICBmbGlwcGVkLnN0YXRlLmxpbmVzWzVdID0gcGFzdGUwKGRmJG5vZGVzLCAiOiIsIGZsaXBwZWQuc3RhdGUsIGNvbGxhcHNlID0gIlx0IikKICBmaWxlLm5hbWUgPSBwYXN0ZTAodHJhaW4uZGF0YS5kaXIsICJ0cmFpbmluZ18iLCBzdGF0ZS5uYW1lKQogIHdyaXRlTGluZXModGV4dCA9IGZsaXBwZWQuc3RhdGUubGluZXMsIGNvbiA9IGZpbGUubmFtZSkKfQpgYGAKCgojIyBSIHNlc3Npb24gaW5mbyB7LX0KCmBgYHtyIHNlc3Npb24gaW5mbywgY29tbWVudD0iIn0KeGZ1bjo6c2Vzc2lvbl9pbmZvKCkKYGBgCg==</div>
