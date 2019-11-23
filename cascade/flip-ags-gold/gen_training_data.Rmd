@@ -1,0 +1,108 @@
+---
+title: "Flipped AGS-Gold steady state"
+author: "[John Zobolas](https://github.com/bblodfon)"
+date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: "../cell-lines-2500/style.css"
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+    code_folding: hide
+    code_download: true
+---
+
+## Input {-}
+
+Loading libraries:
+```{r Load libraries, message = FALSE}
+library(knitr)
+library(dplyr)
+library(tibble)
+```
+
+Read the AGS-Gold steady state and reformat it to a data.frame:
+```{r}
+training.data.file = paste0(getwd(), "/training_ags_gold")
+lines = readLines(training.data.file)
+ss.gold = unlist(strsplit(x = lines[5], split = "\t"))
+
+res.list = list()
+for(el in ss.gold) {
+  res = unlist(strsplit(el, split = ":"))
+  res.list[[el]] = c(res[1], res[2])
+}
+
+df = as.data.frame(do.call(rbind, res.list), stringsAsFactors = FALSE)
+df = remove_rownames(df)
+colnames(df) = c("nodes", "state")
+df$state = as.numeric(df$state)
+
+#kable(df)
+```
+
+## Generate flipped steady states
+
+We want to generate many training data files with the steady state as the AGS-gold, but some of the nodes will have their states flipped to the opposite state. 
+
+First, we choose the **amount of nodes to flip in the AGS-gold ss** (from $1$ to all of them). For each such *flipping nodes* value, we generate $20$ new steady states with a randomly chosen set of nodes whose value is going to flip (from 0 to 1 and vice-versa).
+
+```{r Generate steady states}
+set.seed(2)
+num.of.flips = c(1,3,6,9,12,15,17,19,21,22,23)
+random.states.num = 20
+gold.state = df$state
+
+flipped.states = list()
+for(flip.num in num.of.flips) {
+  if (flip.num == 1) { # flip once every node
+    for (flip.index in 1:nrow(df)) {
+      flipped.state = gold.state
+      flipped.state[flip.index] = !flipped.state[flip.index]
+      flipped.states[[paste0(flip.num,"_flips_",flip.index)]] = flipped.state
+    }
+    next
+  }
+  
+  if (flip.num == nrow(df)) { # flip all nodes at once!
+    flipped.state = gold.state
+    flipped.state = as.numeric(!flipped.state)
+    flipped.states[[paste0(flip.num,"_flips_1")]] = flipped.state
+    next
+  }
+  
+  for(state.index in 1:random.states.num) {
+    flip.index.vec = sample(x = 1:nrow(df), size = flip.num)
+    flipped.state = gold.state
+    flipped.state[flip.index.vec] = !flipped.state[flip.index.vec]
+    flipped.states[[paste0(flip.num,"_flips_",state.index)]] = flipped.state
+  }
+}
+# res = do.call(cbind, flipped.states)
+# df = cbind(df, res)
+```
+
+And we write the *flipped* steady states to files:
+```{r Write flipped steady states to files}
+train.data.dir = paste0(getwd(), "/training-data-files/")
+flipped.state.lines = lines
+
+for (index in 1:length(flipped.states)) {
+  flipped.state = flipped.states[[index]]
+  state.name    = names(flipped.states)[index]
+  
+  flipped.state.lines[5] = paste0(df$nodes, ":", flipped.state, collapse = "\t")
+  file.name = paste0(train.data.dir, "training_", state.name)
+  writeLines(text = flipped.state.lines, con = file.name)
+}
+```
+
+
+## R session info {-}
+
+```{r session info, comment=""}
+xfun::session_info()
+```
