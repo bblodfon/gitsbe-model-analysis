@@ -489,7 +489,7 @@ ggdotchart(data = src.data, x = "Sample_Name", y = "SRC_pY527",
 ```
 
 <div class="blue-box">
-It has been shown in various studies (e.g. in [this paper]https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0071035)) that the phosphorylation sites of `SRC` include the **inhibiting phosphotyrosine 527 site**, which overrides the `Y416` phosphorylation (which is also tested in the MCLP dataset). 
+It has been shown in various studies (e.g. in [this paper](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0071035)) that the phosphorylation sites of `SRC` include the **inhibiting phosphotyrosine 527 site**, which overrides the `Y416` phosphorylation (which is also tested in the MCLP dataset). 
 Since for `A498` cell line we observe one of the largest signaling measurements compared to all the cell lines for the `SRC_pY527` site, this means that `SRC` should be in an **inhibiting state**, which is exactly what we found from our analysis above.
 </div>
 </br>
@@ -515,7 +515,7 @@ ggdotchart(data = erk.data, x = "Sample_Name", y = "MAPK_pT202Y204",
 
 <div class="blue-box">
 One of the **activating phosphorylation sites of `ERK`** is the **ERK1 T202/Y204**. 
-From the above figure we see a weak signaling of this phoshosite for the `A498` cell line which does not fully correlate well with the results from our analysis above (`ERK_f` overexpression). Though, in a [later section](#ak-pd-in-other-cell-lines) we show that `ERK_f` is found active in all models from all cell lines that predict the `AK-PD` synergy (for example even in `UACC62` cell line which has a high phoshorylation signal in the above figure).
+From the above figure we see a weak signaling of this phoshosite for the `A498` cell line which does not fully correlate well with the results from our analysis above (`ERK_f` overexpression). Though, in a [later section](#ak-pd-in-other-cell-lines) we show that `ERK_f` is found active in all models from all cell lines that predict the `AK-PD` synergy (for example even in `UACC62` cell line which has a high phosphorylation signal in the above figure).
 </div>
 </br>
 
