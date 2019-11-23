@@ -9,3 +9,7 @@ igraph
 ggplot2
 magrittr
 ggpubr
+Ckmeans.1d.dp
+tidyr
+tibble
+stringr
