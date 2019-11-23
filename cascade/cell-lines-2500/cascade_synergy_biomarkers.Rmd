@@ -441,8 +441,9 @@ df = df %>%
 
 ggdotchart(df, x = "nodes", y = "avg.state",
   title = "Average activity state difference across all synergy comparison sets (AK-PD, A498 cell line)", 
-  label = "nodes", font.label = list(size = 11, color = "steelblue"),
-  label.select = list(criteria = "`y` >= 0.7 | `y` <= -0.7"), repel = TRUE,
+  label = "nodes", font.label = list(size = 11, color = "blue"),
+  label.select = list(criteria = "`y` >= 0.7 | `y` <= -0.7"), 
+  repel = TRUE, label.rectangle = TRUE,
   xlab = "Nodes", ylab = "Average Activity State", 
   ylim = c(-1,1), add = "segments") + 
     font("x.text", size = 10) +
@@ -458,6 +459,52 @@ ggdotchart(df, x = "nodes", y = "avg.state",
 Note the boolean equation: `PTPN6 *= SRC`. This means that `SRC` is **the only inhibited node of interest**
 </div>
 </br>
+
+We will now check if the above observations regarding the node activity are true compared to the [MCLP dataset](https://tcpaportal.org/mclp/#/download):
+
+```{r MCLP Dataset, cache=TRUE}
+mclp.data = read.table(file = "MCLP-v1.1-Level4.tsv", header = TRUE, stringsAsFactors = FALSE)
+cell.lines.in.mclp = c("A498", "AGS", "DU145", "COLO205", "SW620", "SF295", "UACC62", "MDAMB468")
+```
+
+We check the expression value of the `SRC` across all cell lines:
+```{r MCLP Data Visualization (SRC), cache=TRUE}
+src.data = mclp.data %>% select(Sample_Name, SRC) %>% na.omit()
+
+# find the activity classes (3 classes: low expression, no expression, high expression)
+res = Ckmeans.1d.dp(x = src.data$SRC, k = 3)
+activity = as.factor(res$cluster)
+levels(activity) = c("low", "medium", "high")
+src.data = cbind(src.data, activity)
+
+ggdotchart(data = src.data, x = "Sample_Name", y = "SRC", 
+  title = "SRC expression across all cell lines in MCLP Dataset",
+  color = "activity", palette = c("red", "grey", "green"), 
+  label = "Sample_Name", label.select = cell.lines.in.mclp, repel = TRUE,
+  add = "segments", label.rectangle = TRUE,
+  xlab = "Cell Lines", ylab = "SRC exression",
+  add.params = list(color = "activity", palette = c("red", "grey", "green"))) + 
+    theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
+
+For the `ERK2` we don't have data for the `A498` cell line:
+```{r MCLP Data Visualization (ERK2), cache=TRUE}
+erk.data = mclp.data %>% select(Sample_Name, ERK2) %>% na.omit()
+
+# find the activity classes (3 classes: low expression, no expression, high expression)
+res = Ckmeans.1d.dp(x = erk.data$ERK2, k = 3)
+activity = as.factor(res$cluster)
+levels(activity) = c("low", "medium", "high")
+erk.data = cbind(erk.data, activity)
+
+ggdotchart(data = erk.data, x = "Sample_Name", y = "ERK2", 
+  title = "ERK2 expression across all cell lines in MCLP Dataset",
+  color = "activity", palette = c("red", "grey", "green"), 
+  label = "Sample_Name", label.select = cell.lines.in.mclp, repel = TRUE, xlab = "Cell Lines",
+  add = "segments", label.rectangle = TRUE, ylab = "ERK2 expression",
+  add.params = list(color = "activity", palette = c("red", "grey", "green"))) + 
+    theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
 
 Using the matrix from Table 2, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
@@ -502,7 +549,7 @@ So, when `ERK_f` is overexpressed, `CSK` becomes active, which means that the pr
 **This gives the node the structural flexibility to become active when the `AK` drug is used**: `AK` inhibits `AKT_f` node, making thus `AKT1S1` active, which in turn makes the `mTORC1_c` equation like this: `mTORC1_c *=  (  (  RHEB )  or RSK_f ) AND/OR 0`. So, an `AND` link operator would result always in an inhibited `mTORC1_c` whereas an `OR` link operator would give the possibility for the `mTORC1_c` to be active in case one of its activators are active.
 
 
-```{r, eval=FALSE, include=FALSE}
+```{r Induced graphs investigation, eval=FALSE, include=FALSE}
 nodes = c("mTORC1_c", "TSC_f", "SRC", "AKT_f", "MEK_f")
 sub.net = filter_network(net, nodes, level = 1)
 sub.nodes = V(sub.net)$name
@@ -514,10 +561,6 @@ diff = colMeans(diff.link.mat)
 plot_avg_link_operator_diff_graph(sub.net, diff = diff[sub.nodes][!is.na(diff[sub.nodes])], 
   layout = sub.layout, title = "Average link operator diff across all synergy subsets (AK-PD)")
 ```
-
-
-**TODO: check MCLP dataset**
-
 
 <div class="blue-box">
 We conclude that cancer models in which the `AK-PD` drug combination is synergistic, tend to also have the nodes `SRC` and `PTPN6` in an **inhibited state** and the `SRC` node depends on both it's regulators, `RTPK_f` and `CSK`. 
