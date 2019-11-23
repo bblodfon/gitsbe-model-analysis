@@ -467,25 +467,31 @@ mclp.data = read.table(file = "MCLP-v1.1-Level4.tsv", header = TRUE, stringsAsFa
 cell.lines.in.mclp = c("A498", "AGS", "DU145", "COLO205", "SW620", "SF295", "UACC62", "MDAMB468")
 ```
 
-We check the expression value of the `SRC` across all cell lines:
+We check the phosphorylation value of the `SRC_pY527` across all cell lines:
 ```{r MCLP Data Visualization (SRC), cache=TRUE}
-src.data = mclp.data %>% select(Sample_Name, SRC) %>% na.omit()
+src.data = mclp.data %>% select(Sample_Name, SRC_pY527) %>% na.omit()
 
-# find the activity classes (3 classes: low expression, no expression, high expression)
+# find the activity classes (3 classes: low activity, no activity, high activity)
 res = Ckmeans.1d.dp(x = src.data$SRC, k = 3)
 activity = as.factor(res$cluster)
 levels(activity) = c("low", "medium", "high")
 src.data = cbind(src.data, activity)
 
-ggdotchart(data = src.data, x = "Sample_Name", y = "SRC", 
-  title = "SRC expression across all cell lines in MCLP Dataset",
+ggdotchart(data = src.data, x = "Sample_Name", y = "SRC_pY527", 
+  title = "SRC_pY527 signaling across all cell lines in MCLP Dataset",
   color = "activity", palette = c("red", "grey", "green"), 
   label = "Sample_Name", label.select = cell.lines.in.mclp, repel = TRUE,
   add = "segments", label.rectangle = TRUE,
-  xlab = "Cell Lines", ylab = "SRC exression",
+  xlab = "Cell Lines", ylab = "SRC_pY527 Signaling",
   add.params = list(color = "activity", palette = c("red", "grey", "green"))) + 
     theme(axis.text.x = element_blank(), axis.ticks = element_blank())
 ```
+
+<div class="blue-box">
+It has been shown in various studies ([1](https://doi.org/10.1016/j.bbrc.2005.03.012), [2](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0071035)) that the phosphorylation sites of `SRC` include the **inhibiting phosphotyrosine 527 site**. 
+Since for `A498` cell line we observe one of the largest signaling measurements compared to all the cell lines for the `SRC_pY527` site, this means that `SRC` should be in an **inhibiting state**, which is exactly what we found from our analysis above.
+</div>
+</br>
 
 For the `ERK2` we don't have data for the `A498` cell line:
 ```{r MCLP Data Visualization (ERK2), cache=TRUE}
