@@ -3,7 +3,7 @@ title: "Cascade Synergy Biomarkers for AK-PD, PD-PI, PD-G2, PI-D1 synergies"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
-  html_document:
+  bookdown::html_document2:
     css: style.css
     theme: united
     toc: true
@@ -17,12 +17,12 @@ output:
 ---
 
 ```{r Render command, eval=FALSE, include=FALSE}
-#rmarkdown::render(input = "./cascade_synergy_biomarkers.Rmd", output_format = "html_document", output_dir = "../../docs/cascade/cell-lines-2500/")
+rmarkdown::render(input = "cascade_synergy_biomarkers.Rmd", output_dir = "../../docs/cascade/cell-lines-2500/")
 ```
 
 ## Intro {-}
 
-The purpose of this analysis is to find synergy biomarkers using the [emba R package](https://github.com/bblodfon/emba) in the cascade boolean model datasets (the *cascade* is the name of the topology used). 
+The purpose of this analysis is to find synergy biomarkers using the [emba R package](https://github.com/bblodfon/emba) in the cascade boolean model datasets (*Cascade* is the name of the topology used). 
 Particularly, we will investigate $4$ synergies: `AK-PD`, `PD-PI`, `PD-G2`, `PI-D1` and try to find causal mechanisms that might explain why and where (pathways) these synergies manifest. 
 
 Note that `AK` is an **AKT inhibitor** and `PI` is a **PI3K inhibitor** and they both target the **PI3K/AKT/mTOR pathway**. The combination of such an inhibitor with a **MEK inhibitor** - `PD` - that targets the **MAPK/ERK pathway**, has proven to be more effective than the single drug treatment during clinical trials with patients that had advanced colorectal carcinoma ([source](https://clinicaltrials.gov/ct2/show/NCT01333475)). 
@@ -243,7 +243,7 @@ the `A498` cell line and predicted by both the cell-specific and random models.
 
 ## AK-PD biomarkers {-}
 
-As observed above, the `AK-PD` synergy was predicted by both the **cell specific** and **random models** in the `A498` cell line.
+[As observed above](#observed-synergies), the `AK-PD` synergy was predicted by both the **cell specific** and **random models** in the `A498` cell line.
 
 ### Cell-specific (A498) {-}
 
@@ -284,7 +284,7 @@ pretty_print_string(paste0("Number of 'good' models (AK-PD synergistic) in the A
 pretty_print_string(paste0("Number of 'bad' models (AK-PD antagonistic) in the A498 cell line: ", bad.models.num))
 ```
 
-```{r AK-PD activity state biomarkers (Cell specific models - A498), cache = TRUE}
+```{r AK-PD activity state biomarkers (Cell specific models - A498), cache = TRUE, fig.align='center'}
 plot_avg_state_diff_graph(net, diff = AK.PD.avg.state.diff.cell.specific, 
   layout = nice.layout, title = "AK-PD activity state biomarkers (Cell specific models - A498)")
 ```
@@ -336,7 +336,7 @@ All in all, the overexpression of `ERK_f` is what causes the two other inhibited
 
 We visualize the nodes average link operator differences in a network graph:
 
-```{r AK-PD link operator biomarkers (Cell specific models - A498), cache = TRUE}
+```{r AK-PD link operator biomarkers (Cell specific models - A498), cache = TRUE, fig.align='center'}
 plot_avg_link_operator_diff_graph(net, diff = AK.PD.avg.link.diff.cell.specific, 
   layout = nice.layout, title = "AK-PD link operator biomarkers (Cell specific models - A498)")
 ```
@@ -427,25 +427,25 @@ pretty_print_vector_names(biomarker.state.counts[biomarker.state.counts == 11])
 
 If we visualize the **average activity state difference across all synergy comparison sets** from Table 1 we can see that the previous $2$ nodes are more pronounced:
 
-```{r Average activity state diff across all synergy subsets (AK-PD), cache=TRUE}
+```{r Average activity state diff across all synergy subsets (AK-PD), cache=TRUE, fig.align='center'}
 plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat), layout = nice.layout, 
   title = "Average activity state diff across all synergy subsets (AK-PD)")
 ```
 
-Same can be seen with a `dotchart` where we have excluded the nodes that have *zero* average activity difference:
-```{r Average activity state diff across all synergy subsets (AK-PD) - dotchart, cache=TRUE}
-df = as.data.frame(t(as.data.frame(as.list(diff.state.ak.pd))))
-colnames(df) = "avg.state"
+We also visualize the **median activity difference per node from Table 1** using a `dotchart`, where we have excluded the nodes that have an absolute median activity difference of $0.05$ or less:
+```{r Median activity state diff across all synergy subsets (AK-PD) - dotchart, cache=TRUE, fig.align='center'}
+df = as.data.frame(apply(diff.state.mat, 2, median))
+colnames(df) = "median.state.diff"
 df = df %>% 
   rownames_to_column(var = "nodes") %>%
-  filter(avg.state != 0)
+  filter(median.state.diff > 0.05 | median.state.diff < -0.05)
 
-ggdotchart(df, x = "nodes", y = "avg.state",
-  title = "Average activity state difference across all synergy comparison sets (AK-PD, A498 cell line)", 
+ggdotchart(df, x = "nodes", y = "median.state.diff",
+  title = "Median activity state difference across all synergy comparison sets (AK-PD, A498 cell line)", 
   label = "nodes", font.label = list(size = 11, color = "blue"),
   label.select = list(criteria = "`y` >= 0.7 | `y` <= -0.7"), 
   repel = TRUE, label.rectangle = TRUE,
-  xlab = "Nodes", ylab = "Average Activity State", 
+  xlab = "Nodes", ylab = "Median Activity State", 
   ylim = c(-1,1), add = "segments") + 
     font("x.text", size = 10) +
     font("title", size = 11) + 
@@ -469,7 +469,7 @@ cell.lines.in.mclp = c("A498", "AGS", "DU145", "COLO205", "SW620", "SF295", "UAC
 ```
 
 We check the phosphorylation value of the `SRC_pY527` across all cell lines:
-```{r MCLP Data Visualization (SRC), cache=TRUE}
+```{r MCLP Data Visualization (SRC), cache=TRUE, fig.align='center'}
 src.data = mclp.data %>% select(Sample_Name, SRC_pY527) %>% na.omit()
 
 # find the activity classes (3 classes: low activity, no activity, high activity)
@@ -495,7 +495,7 @@ Since for `A498` cell line we observe one of the largest signaling measurements 
 </br>
 
 We also check for the phosphorylation value of the `MAPK_pT202Y204` (for the `ERK_f` activation) across all cell lines:
-```{r MCLP Data Visualization (ERK_f), cache=TRUE}
+```{r MCLP Data Visualization (ERK_f), cache=TRUE, fig.align='center'}
 erk.data = mclp.data %>% select(Sample_Name, MAPK_pT202Y204) %>% na.omit()
 
 # find the activity classes (3 classes: low expression, no expression, high expression)
@@ -537,7 +537,7 @@ pretty_print_vector_names(biomarker.link.counts[biomarker.link.counts == 11])
 
 If we visualize the **average link operator difference across all of the synergy comparison sets** from Table 2, we can see the nodes mentioned above:
 
-```{r Average link operator diff across all synergy subsets (AK-PD), cache=TRUE}
+```{r Average link operator diff across all synergy subsets (AK-PD), cache=TRUE, fig.align='center'}
 plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat), layout = nice.layout, 
   title = "Average link operator diff across all synergy subsets (AK-PD)")
 ```
@@ -606,7 +606,7 @@ pretty_print_string(paste0("Number of 'good' random models (AK-PD synergistic) i
 pretty_print_string(paste0("Number of 'bad' random models (AK-PD antagonistic) in the A498 cell line: ", bad.models.num))
 ```
 
-```{r AK-PD activity state biomarkers (Random models - A498), cache = TRUE}
+```{r AK-PD activity state biomarkers (Random models - A498), cache = TRUE, fig.align='center'}
 plot_avg_state_diff_graph(net, diff = AK.PD.avg.state.diff.random, 
   layout = nice.layout, title = "AK-PD activity state biomarkers (Random models - A498)")
 ```
@@ -632,7 +632,7 @@ The random models that predicted the `AK-PD` synergy also show an overexpression
 
 We visualize the nodes average link operator differences in a network graph:
 
-```{r AK-PD link operator biomarkers (Random models - A498), cache = TRUE}
+```{r AK-PD link operator biomarkers (Random models - A498), cache = TRUE, fig.align='center'}
 plot_avg_link_operator_diff_graph(net, diff = AK.PD.avg.link.diff.random, 
   layout = nice.layout, title = "AK-PD link operator biomarkers (Random models - A498)")
 ```
@@ -709,7 +709,7 @@ pretty_print_vector_names(biomarker.state.counts.random[biomarker.state.counts.r
 
 But the total number of comparisons was `r nrow(biomarker.state.mat.random)` so we could argue that **this is not a statistically significant result**, which can be seen clearly in the next graph where we visualize the **average activity state difference across all synergy comparison sets** from Table 3:
 
-```{r Average activity state diff across all synergy subsets (AK-PD, random models), cache=TRUE}
+```{r Average activity state diff across all synergy subsets (AK-PD, random models), cache=TRUE, fig.align='center'}
 plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat.random), layout = nice.layout, 
   title = "Average activity state diff across all synergy subsets (AK-PD)")
 ```
@@ -730,7 +730,7 @@ pretty_print_vector_names(biomarker.link.counts.random[biomarker.link.counts.ran
 ```
 
 We visualize the **average link operator difference across all synergy comparison sets** from Table 4:
-```{r Average link operator diff across all synergy subsets (AK-PD, random), cache=TRUE}
+```{r Average link operator diff across all synergy subsets (AK-PD, random), cache=TRUE, fig.align='center'}
 plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat.random), layout = nice.layout, 
   title = "Average link operator diff across all synergy subsets (AK-PD)")
 ```
@@ -783,8 +783,201 @@ pretty_print_vector_names(ak.pd.biomarker.state.mat.counts[ak.pd.biomarker.state
 pretty_print_vector_names(ak.pd.biomarker.link.mat.counts[ak.pd.biomarker.link.mat.counts == 6])
 ```
 
+
+## PD-PI activity biomarkers {-}
+
+As observed in the [heatmap above](#observed-synergies), the `PD-PI` synergy was predicted by both the **cell specific** and **random models** in the `A498` cell line.
+
+### Cell-specific (A498) {-}
+
+```{r PD-PI diff (Cell specific models - A498)}
+PD.PI.avg.state.diff.cell.specific = cell.specific.synergy.analysis.res$A498$diff.state.synergies.mat["PD-PI",]
+#PD.PI.avg.link.diff.cell.specific  = cell.specific.synergy.analysis.res$A498$diff.link.synergies.mat["PD-PI", ]
+```
+
+We will now visualize the nodes average state differences in a network graph. Note that the **good models** are those that predicted the `PD-PI` drug combination to be *synergistic* and were contrasted to those that predicted it to be *antagonistic* (**bad models**). The number of models in each category were:
+
+```{r Count good vs bad models for PD-PI synergy (cell specific models), results='asis'}
+model.predictions = model.predictions.per.cell.line[["A498"]]
+models.stable.state = models.stable.state.per.cell.line[["A498"]]
+drug.comb = "PD-PI"
+
+good.models.num = sum(model.predictions[, drug.comb] == 1 & !is.na(model.predictions[, drug.comb]))
+# unique good models
+# models.link.operator = models.link.operators.per.cell.line$A498
+# nrow(unique(models.link.operator[model.predictions[, drug.comb] == 1 & !is.na(model.predictions[, drug.comb]), ]))
+bad.models.num  = sum(model.predictions[, drug.comb] == 0 & !is.na(model.predictions[, drug.comb]))
+
+pretty_print_string(paste0("Number of 'good' models (PD-PI synergistic) in the A498 cell line: ", good.models.num))
+pretty_print_string(paste0("Number of 'bad' models (PD-PI antagonistic) in the A498 cell line: ", bad.models.num))
+```
+
+```{r PD-PI activity state biomarkers (Cell specific models - A498), cache = TRUE, fig.align='center'}
+plot_avg_state_diff_graph(net, diff = PD.PI.avg.state.diff.cell.specific, 
+  layout = nice.layout, title = "PD-PI activity state biomarkers (Cell specific models - A498)")
+```
+
+<div id="Text1"> We now visualize the nodes average state differences in a `dotchart` where we can easily identify the **active and inhibited state biomarkers** with the defined thresholds (we have excluded nodes whose absolute average difference value was less than $0.05$):
+</div>
+```{r PD-PI active state biomarkers (Cell specific models - A498), fig.align='center'}
+df = as.data.frame(PD.PI.avg.state.diff.cell.specific)
+colnames(df) = "avg.state.diff"
+df = df %>% 
+  rownames_to_column(var = "nodes") %>%
+  filter(avg.state.diff > 0.05 | avg.state.diff < -0.05)
+
+ggdotchart(df, x = "nodes", y = "avg.state.diff",
+  title = "Average activity state difference (Good - bad) - A498 cell line", 
+  label = "nodes", font.label = list(size = 11, color = "blue"),
+  label.select = list(criteria = "`y` >= 0.7 | `y` <= -0.5"), 
+  repel = TRUE, label.rectangle = TRUE,
+  xlab = "Nodes", ylab = "Average Activity State", 
+  ylim = c(-1,1), add = "segments") + 
+    font("x.text", size = 8) +
+    font("title", size = 14) + 
+    geom_hline(yintercept = -0.7, linetype = "dashed", color = "red") + 
+    geom_hline(aes(yintercept = 0.7, linetype = "0.7"), color = "red") +
+    scale_linetype_manual(name = "Threshold", values = 2, 
+      guide = guide_legend(override.aes = list(color = "red"))) + 
+    theme(legend.position = c(0.2,0.7)) + 
+    annotate("text", x = c(18, 35), y = -0.9, label = c("Good models: PD-PI synergy,", "Bad Models: PD-PI antagonism"))
+```
+
+<div class="orange-box">
+Note the boolean equation: `PPM1A *= ( PTEN )`. This means that `PTEN` is **the only inhibited node of interest**
+</div>
+</br>
+
+We now check the `PTEN` in the `MCLP` dataset:
+```{r MCLP Data Visualization (PTEN), cache=TRUE, fig.align='center'}
+pten.data = mclp.data %>% select(Sample_Name, PTEN) %>% na.omit()
+
+# find the activity classes (3 classes: low activity, no activity, high activity)
+res = Ckmeans.1d.dp(x = pten.data$PTEN, k = 3)
+activity = as.factor(res$cluster)
+levels(activity) = c("low", "medium", "high")
+pten.data = cbind(pten.data, activity)
+
+ggdotchart(data = pten.data, x = "Sample_Name", y = "PTEN", 
+  title = "PTEN signaling across all cell lines in MCLP Dataset",
+  color = "activity", palette = c("red", "grey", "green"), 
+  label = "Sample_Name", label.select = cell.lines.in.mclp, repel = TRUE,
+  add = "segments", label.rectangle = TRUE,
+  xlab = "Cell Lines", ylab = "PTEN Signaling",
+  add.params = list(color = "activity", palette = c("red", "grey", "green"))) + 
+    theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
+
+<div class="blue-box">
+The `PTEN` node is found highly expressed in the `A498` cell line, but for the models to predict the `PD-PI` synergy we found that the node needs to be in an **inhibited state** ([see here](#Text1)). The overexpression of the `ERK_f` node is also a result from this analysis.
+</div>
+</br>
+
+#### Synergy Subsets Analysis {#ss2}
+
+It will be interesting to find **all the possible synergy sets and subsets that include the `PD-PI` as the extra synergy**. 
+Using these synergy sets, models that predict a set of synergies will be contrasted to models that predicted the same set with the addition of the extra `PD-PI` synergy. 
+Thus we could find **synergy biomarkers that allow already good predicting models to predict the additional synergy of interest**.
+This investigation will allow us thus to refine the activity state biomarkers we found above.
+
+We first construct a matrix where **each row is a set vs subset average activity difference vector of the network nodes**:
+```{r Synergy Subsets Comparison PD-PI (Cell-specific - A498), cache=TRUE}
+model.predictions = model.predictions.per.cell.line$A498
+models.stable.state = models.stable.state.per.cell.line$A498
+models.link.operator = models.link.operators.per.cell.line$A498
+
+res = get_synergy_comparison_sets(cell.specific.synergy.analysis.res$A498$synergy.subset.stats)
+PD.PI.res = res %>% filter(synergies == "PD-PI")
+
+diff.state.list = list()
+#diff.link.list = list()
+
+for (i in 1:nrow(PD.PI.res)) {
+  synergy.set    = PD.PI.res[i, 2]
+  synergy.subset = PD.PI.res[i, 3]
+  
+  synergy.set.str    = unlist(strsplit(x = synergy.set, split = ","))
+  synergy.subset.str = unlist(strsplit(x = synergy.subset, split = ","))
+  
+  # count models
+  synergy.set.models.num = count_models_that_predict_synergies(synergy.set.str, model.predictions)
+  synergy.subset.models.num = count_models_that_predict_synergies(synergy.subset.str, model.predictions)
+  
+  # if too small number of models, skip the diff vector
+  # if ((synergy.set.models.num <= 3) | (synergy.set.models.num <= 3)) 
+  #   next
+  
+  # get the diff
+  diff.state.ak.pd = get_avg_activity_diff_based_on_synergy_set_cmp(synergy.set.str, synergy.subset.str, model.predictions, models.stable.state)
+  #diff.link.ak.pd = get_avg_link_operator_diff_based_on_synergy_set_cmp(synergy.set.str, synergy.subset.str, model.predictions, models.link.operator)
+  diff.state.list[[paste0(synergy.set, " vs ", synergy.subset)]] = diff.state.ak.pd
+  #diff.link.list[[paste0(synergy.set, " vs ", synergy.subset)]] = diff.link.ak.pd
+}
+
+diff.state.mat = do.call(rbind, diff.state.list)
+#diff.link.mat = do.call(rbind, diff.link.list)
+
+caption.title.1 = "Table 5: Average activity difference values across all synergy set comparisons (PD-PI)"
+datatable(data = diff.state.mat[, c("SRC", "CSK", "MEK_f", "STAT1", "PTPN6")], options = list(
+    searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
+  caption = htmltools::tags$caption(caption.title.1, style="color:#dd4814; font-size: 18px")) %>% 
+  formatRound(1:ncol(diff.state.mat), digits = 3)
+```
+
+If we visualize the **average activity state difference across all synergy comparison sets** from Table 5 in a network graph, we see that there are no nodes with significant average state difference:
+
+```{r Average activity state diff across all synergy subsets (PD-PI), cache=TRUE, fig.align='center'}
+plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat), layout = nice.layout, 
+  title = "Average activity state diff across all synergy subsets (PD-PI)")
+```
+
+We also visualize the **median activity difference per node from Table 5** using a `dotchart`, where we have excluded the nodes that have an absolute median activity difference of $0.05$ or less:
+```{r Average activity state diff across all synergy subsets (PD-PI) - dotchart, cache=TRUE, fig.align='center'}
+df = as.data.frame(apply(diff.state.mat, 2, median))
+colnames(df) = "median.state.diff"
+df = df %>% 
+  rownames_to_column(var = "nodes") %>%
+  filter(median.state.diff > 0.05 | median.state.diff < -0.05)
+
+ggdotchart(df, x = "nodes", y = "median.state.diff",
+  title = "Median activity state difference across all synergy comparison sets (PD-PI, A498 cell line)", 
+  label = "nodes", font.label = list(size = 11, color = "blue"),
+  label.select = list(criteria = "`y` >= 0.7 | `y` <= -0.7"), 
+  repel = TRUE, label.rectangle = TRUE,
+  xlab = "Nodes", ylab = "Median Activity State", 
+  ylim = c(-1,1), add = "segments") + 
+    font("x.text", size = 10) +
+    font("title", size = 11) + 
+    geom_hline(yintercept = -0.7, linetype = "dashed", color = "red") + 
+    geom_hline(aes(yintercept = 0.7, linetype = "0.7"), color = "red") +
+    scale_linetype_manual(name = "Threshold", values = 2, 
+      guide = guide_legend(override.aes = list(color = "red"))) + 
+    theme(legend.position = c(0.2,0.7))
+```
+
+<div class="orange-box">
+So **no significant nodes** whose activity plays important role in the manifestation of the `PD-PI` synergy were found with the [synergy subset analysis](#ss2) method.
+</div>
+</br>
+
+### Random {-}
+
+
+## PD-G2 activity biomarkers {-}
+
+As observed in the [heatmap above](#observed-synergies), the `PD-G2` synergy was predicted by both the **cell specific** and **random models** in the `A498` cell line.
+
+### Cell-specific (A498) {-}
+
+### Random {-}
+
+## PI-D1 activity biomarkers {-}
+
+As observed in the [heatmap above](#observed-synergies), the `PI-D1` synergy was predicted by both the **cell specific** and **random models** in all the cell lines tested.
+
 ## R session info {-}
 
 ```{r session info, comment=""}
 xfun::session_info()
 ```
+
