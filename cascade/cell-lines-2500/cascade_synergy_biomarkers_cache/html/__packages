@@ -3,13 +3,10 @@ emba
 usefun
 ComplexHeatmap
 circlize
-DT
 dplyr
-igraph
+tibble
+DT
 ggplot2
 magrittr
 ggpubr
 Ckmeans.1d.dp
-tidyr
-tibble
-stringr
