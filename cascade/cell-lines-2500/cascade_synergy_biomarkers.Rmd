@@ -26,8 +26,7 @@ The purpose of this analysis is to find synergy biomarkers using the [emba R pac
 Particularly, we will investigate $4$ synergies: `AK-PD`, `PD-PI`, `PD-G2`, `PI-D1` and try to find causal mechanisms that might explain why and where (pathways) these synergies manifest. 
 
 Note that `AK` is an **AKT inhibitor** and `PI` is a **PI3K inhibitor** and they both target the **PI3K/AKT/mTOR pathway**. The combination of such an inhibitor with a **MEK inhibitor** - `PD` - that targets the **MAPK/ERK pathway**, has proven to be more effective than the single drug treatment during clinical trials with patients that had advanced colorectal carcinoma ([source](https://clinicaltrials.gov/ct2/show/NCT01333475)). 
-The `G2` drug is a **PDPK1 inhibitor** and the `D1` drug is **an inhibitor of `RSK` isoforms** (
-RPS6KA1, RPS6KA3, RPS6KA2, RPS6KA6)
+The `G2` drug is a **PDPK1 inhibitor** and the `D1` drug is **an inhibitor of `RSK` isoforms** (RPS6KA1, RPS6KA3, RPS6KA2, RPS6KA6).
 
 The boolean model datasets are in total $9$: one for each cell line 
 of interest (8 cell lines) where the models were **fitted to a specific steady state** in each 
@@ -397,13 +396,19 @@ for (i in 1:nrow(AK.PD.res)) {
 
 diff.state.mat = do.call(rbind, diff.state.list)
 diff.link.mat = do.call(rbind, diff.link.list)
+```
 
+<div id="Table1"></div>
+```{r Table1, cache=TRUE}
 caption.title.1 = "Table 1: Average activity difference values across all synergy set comparisons (AK-PD)"
 datatable(data = diff.state.mat[, c("SRC", "CSK", "MEK_f", "STAT1", "PTPN6")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
   caption = htmltools::tags$caption(caption.title.1, style="color:#dd4814; font-size: 18px")) %>% 
   formatRound(1:ncol(diff.state.mat), digits = 3)
+```
 
+<div id="Table2"></div>
+```{r Table2, cache=TRUE}
 caption.title.2 = "Table 2: Average link operator difference values across all synergy set comparisons (AK-PD)"
 datatable(data = diff.link.mat[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
@@ -411,7 +416,7 @@ datatable(data = diff.link.mat[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], o
   formatRound(1:ncol(diff.link.mat), digits = 3)
 ```
 
-Using the matrix from Table 1 (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
+Using the matrix from [Table 1](#Table1) (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 ```{r Activity State Biomarker contingency table across all comparison sets (AK-PD - Cell-specific), results='asis'}
 threshold = 0.8
 biomarker.state.mat = binarize_to_thres(mat = diff.state.mat, threshold)
@@ -425,14 +430,14 @@ The above means that there were $141$ nodes that were *zero* times found as **ac
 pretty_print_vector_names(biomarker.state.counts[biomarker.state.counts == 11])
 ```
 
-If we visualize the **average activity state difference across all synergy comparison sets** from Table 1 we can see that the previous $2$ nodes are more pronounced:
+If we visualize the **average activity state difference across all synergy comparison sets** from [Table 1](#Table1) we can see that the previous $2$ nodes are more pronounced:
 
 ```{r Average activity state diff across all synergy subsets (AK-PD), cache=TRUE, fig.align='center'}
 plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat), layout = nice.layout, 
   title = "Average activity state diff across all synergy subsets (AK-PD)")
 ```
 
-We also visualize the **median activity difference per node from Table 1** using a `dotchart`, where we have excluded the nodes that have an absolute median activity difference of $0.05$ or less:
+We also visualize the **median activity difference per node** from [Table 1](#Table1) using a `dotchart`, where we have excluded the nodes that have an absolute median activity difference of $0.05$ or less:
 ```{r Median activity state diff across all synergy subsets (AK-PD) - dotchart, cache=TRUE, fig.align='center'}
 df = as.data.frame(apply(diff.state.mat, 2, median))
 colnames(df) = "median.state.diff"
@@ -519,7 +524,7 @@ From the above figure we see a weak signaling of this phoshosite for the `A498` 
 </div>
 </br>
 
-Using the matrix from Table 2, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
+Using the matrix from [Table 2](#Table2), we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
 ```{r Link Operator Biomarker contingency table across all comparison sets (AK-PK - Cell-specific - A498), results='asis'}
 biomarker.link.mat = binarize_to_thres(mat = diff.link.mat, thres = 0.8)
@@ -535,7 +540,7 @@ pretty_print_vector_names(biomarker.link.counts[biomarker.link.counts == 6])
 pretty_print_vector_names(biomarker.link.counts[biomarker.link.counts == 11])
 ```
 
-If we visualize the **average link operator difference across all of the synergy comparison sets** from Table 2, we can see the nodes mentioned above:
+If we visualize the **average link operator difference across all of the synergy comparison sets** from [Table 2](#Table2), we can see the nodes mentioned above:
 
 ```{r Average link operator diff across all synergy subsets (AK-PD), cache=TRUE, fig.align='center'}
 plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat), layout = nice.layout, 
@@ -679,13 +684,19 @@ for (i in 1:nrow(AK.PD.res)) {
 
 diff.state.mat.random = do.call(rbind, diff.state.list.random)
 diff.link.mat.random = do.call(rbind, diff.link.list.random)
+```
 
+<div id="Table3"></div>
+```{r Table 3, cache=TRUE}
 caption.title.3 = "Table 3: Average activity difference values across all synergy set comparisons (AK-PD)"
 datatable(data = diff.state.mat.random[, c("SRC", "CSK", "MEK_f", "STAT1", "PTPN6")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
     caption = htmltools::tags$caption(caption.title.3, style="color:#dd4814; font-size: 18px")) %>% 
       formatRound(1:ncol(diff.state.mat.random), digits = 3)
+```
 
+<div id="Table4"></div>
+```{r Table 4, cache=TRUE}
 caption.title.4 = "Table 4: Average link operator difference values across all synergy set comparisons (AK-PD)"
 datatable(data = diff.link.mat.random[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTEN")], options = list(
     searching = FALSE, pageLength = 5, lengthMenu = c(5, 10)),
@@ -693,7 +704,7 @@ datatable(data = diff.link.mat.random[, c("SRC", "RAC_f", "MEK_f", "STAT1", "PTE
       formatRound(1:ncol(diff.link.mat.random), digits = 3)
 ```
 
-Using the matrix from Table 3 (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
+Using the matrix from [Table 3](#Table3) (where we show just $5$ nodes), we count per network node **the number of times that the node's average activity difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 ```{r Activity State Biomarker contingency table across all comparison sets (AK-PD - Random), results='asis'}
 biomarker.state.mat.random = binarize_to_thres(mat = diff.state.mat.random, thres = 0.7)
 
@@ -707,14 +718,14 @@ So, there are $2$ nodes that were found as **activity state biomarkers** $6$ tim
 pretty_print_vector_names(biomarker.state.counts.random[biomarker.state.counts.random == 6])
 ```
 
-But the total number of comparisons was `r nrow(biomarker.state.mat.random)` so we could argue that **this is not a statistically significant result**, which can be seen clearly in the next graph where we visualize the **average activity state difference across all synergy comparison sets** from Table 3:
+But the total number of comparisons was `r nrow(biomarker.state.mat.random)` so we could argue that **this is not a statistically significant result**, which can be seen clearly in the next graph where we visualize the **average activity state difference across all synergy comparison sets** from [Table 3](#Table3):
 
 ```{r Average activity state diff across all synergy subsets (AK-PD, random models), cache=TRUE, fig.align='center'}
 plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat.random), layout = nice.layout, 
   title = "Average activity state diff across all synergy subsets (AK-PD)")
 ```
 
-Using the matrix from Table 4, we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
+Using the matrix from [Table 4](#Table4), we count per network node **the number of times that the node's average link operator difference value has surpassed a specified threshold** - i.e. the number of times it has been found as important (a biomarker) across all the synergy set comparisons (so the more the better):
 
 ```{r Link Operator Biomarker contingency table across all comparison sets (AK-PK - Random), results='asis'}
 biomarker.link.mat.random = binarize_to_thres(mat = diff.link.mat.random, thres = 0.7)
@@ -729,7 +740,7 @@ So, there was a node that was found $7$ times (out of a total of `r nrow(biomark
 pretty_print_vector_names(biomarker.link.counts.random[biomarker.link.counts.random == 7])
 ```
 
-We visualize the **average link operator difference across all synergy comparison sets** from Table 4:
+We visualize the **average link operator difference across all synergy comparison sets** from [Table 4](#Table4):
 ```{r Average link operator diff across all synergy subsets (AK-PD, random), cache=TRUE, fig.align='center'}
 plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat.random), layout = nice.layout, 
   title = "Average link operator diff across all synergy subsets (AK-PD)")
@@ -881,6 +892,7 @@ Thus we could find **synergy biomarkers that allow already good predicting model
 This investigation will allow us thus to refine the activity state biomarkers we found above.
 
 We first construct a matrix where **each row is a set vs subset average activity difference vector of the network nodes**:
+<div id="Table5"></div>
 ```{r Synergy Subsets Comparison PD-PI (Cell-specific - A498), cache=TRUE}
 model.predictions = model.predictions.per.cell.line$A498
 models.stable.state = models.stable.state.per.cell.line$A498
@@ -924,14 +936,14 @@ datatable(data = diff.state.mat[, c("SRC", "CSK", "MEK_f", "STAT1", "PTPN6")], o
   formatRound(1:ncol(diff.state.mat), digits = 3)
 ```
 
-If we visualize the **average activity state difference across all synergy comparison sets** from Table 5 in a network graph, we see that there are no nodes with significant average state difference:
+If we visualize the **average activity state difference across all synergy comparison sets** from [Table 5](#Table5) in a network graph, we see that there are no nodes with significant average state difference:
 
 ```{r Average activity state diff across all synergy subsets (PD-PI), cache=TRUE, fig.align='center'}
 plot_avg_state_diff_graph(net, diff = colMeans(diff.state.mat), layout = nice.layout, 
   title = "Average activity state diff across all synergy subsets (PD-PI)")
 ```
 
-We also visualize the **median activity difference per node from Table 5** using a `dotchart`, where we have excluded the nodes that have an absolute median activity difference of $0.05$ or less:
+We also visualize the **median activity difference per node** from [Table 5](#Table5) using a `dotchart`, where we have excluded the nodes that have an absolute median activity difference of $0.05$ or less:
 ```{r Average activity state diff across all synergy subsets (PD-PI) - dotchart, cache=TRUE, fig.align='center'}
 df = as.data.frame(apply(diff.state.mat, 2, median))
 colnames(df) = "median.state.diff"
