@@ -3,7 +3,7 @@ title: "Cascade 1.0: Test All Possible Models"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
-  html_document:
+  bookdown::html_document2:
     css: "../cell-lines-2500/style.css"
     theme: united
     toc: true
@@ -16,7 +16,11 @@ output:
 ---
 
 ```{r Render command, eval=FALSE, include=FALSE}
-#rmarkdown::render(input = "test.Rmd", output_format = "html_document", output_dir = "../../docs/cascade/cascade-1.0/")
+rmarkdown::render(input = "test.Rmd", output_dir = "docs")
+```
+
+```{r}
+knitr::opts_chunk$set(cache=TRUE, fig.align = 'center')
 ```
 
 ## Time Estimation {-}
