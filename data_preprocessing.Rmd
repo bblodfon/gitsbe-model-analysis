@@ -30,6 +30,8 @@ one or many `cell line` directories, each one having:
 The output will be two more files in each cell line directory: **models_stable_state** 
 and **models_equations** or **models_link_operator**.
 
+**Note** that if instead of a `models` directory a compressed file `models.tar.gz` is there, you will have to run the command `tar xzvf models.tar.gz`.
+
 ## Data extraction
 
 Necessary libraries:
