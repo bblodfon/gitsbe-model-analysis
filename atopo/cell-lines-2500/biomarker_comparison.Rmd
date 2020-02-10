@@ -61,6 +61,7 @@ model.predictions = get_model_predictions(model.predictions.file)
 drug.combos = colnames(model.predictions)
 
 # get the node names (same topology for all cell lines)
+# first run: `tar xzvf models.tar.gz` to extract the `models` dir (see `README.md`)
 models.dir = paste0(cell.line.dirs[1], "/models")
 node.names = get_node_names(models.dir)
 ```

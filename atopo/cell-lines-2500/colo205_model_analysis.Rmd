@@ -52,6 +52,7 @@ models.stable.state.file = paste0(data.dir, "models_stable_state")
 observed.synergies.file  = paste0(data.dir, "observed_synergies")
 model.predictions.file   = paste0(data.dir, "model_predictions")
 models.equations.file    = paste0(data.dir, "models_equations")
+# first run: `tar xzvf models.tar.gz` to extract the `models` dir
 models.dir = paste0(data.dir, "models")
 ```
 Now, we parse the data into proper R objects. First the synergy predictions 

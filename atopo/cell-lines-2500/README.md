@@ -12,3 +12,8 @@ http://localhost:1900/SINTEF/ROC_all/Default_1fd7002c59ef6ae0b56c825e207e0843
 # DOI                                                                           
                                                                                 
 https://doi.org/10.5281/zenodo.3520743
+
+# models dir 
+
+In each of the directories: *A498, AGS, DU145, MDA-MB-468, SF295, SW620, UACC62, colo205, random*, a `models` dir should be extracted from the compressed file before running the analysis, using the follow command: `tar czvf models.tar.gz`.
+
