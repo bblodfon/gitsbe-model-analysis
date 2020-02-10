@@ -12,3 +12,7 @@ http://localhost:1900/SINTEF/ROC_all/Default_33bf8bac2b06b4754afb162c0641a07f
 # DOI
 
 https://doi.org/10.5281/zenodo.3497553
+
+# models dir
+
+`tar xzvf models.tar.gz`

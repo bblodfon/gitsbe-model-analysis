@@ -65,6 +65,7 @@ generations. Higher fitness here means a better match of a model's stable state
 to the consensus steady state (a perfect match would result in a fitness of 1)
 ```{r Input: files}
 data.dir = paste0(getwd(), "/")
+# first run: `tar xzvf models.tar.gz` to extract the `models` dir
 models.dir = paste0(data.dir, "models")
 ```
 Now, we parse the data into proper R objects. First, we get the full stable 
