@@ -152,11 +152,8 @@ load(file = "cascade_synergy_biomarkers.RData")
 
 ## Observed synergies {-}
 
-Each of the cell lines studied has a different set of observed synergies (drug 
-comtions that were found synergistic across all the 
-`r length(drug.combos)` tested ones). In this section, we will 
-**visualize the cell lines' observed synergies and mark the synergies that were 
-also predicted by the cell-specific models and the random-generated ones**. 
+Each of the cell lines studied has a different set of observed synergies (drug combinations that were found synergistic across all the `r length(drug.combos)` tested ones). 
+In this section, we will **visualize the cell lines' observed synergies and mark the synergies that were also predicted by the cell-specific models and the random-generated ones**. 
 First, we get the biomarkers for these synergies from each cell line:
 ```{r Total predicted synergies by the cell-specific models}
 total.predicted.synergies.cell.specific =
@@ -315,7 +312,7 @@ pretty_print_vector_names(AK.PD.inhibited.biomarkers)
 ```
 
 <div class="green-box">
-We will demonstrate that the `PTPN11` and `GAB_f` inhibited biomarkers are a direct consequence of the overepression of `ERK_f`:
+We will demonstrate that the `PTPN11` and `GAB_f` inhibited biomarkers are a direct consequence of the overexpression of `ERK_f`:
 </div>
 </br>
 
@@ -550,7 +547,7 @@ plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat), layout = 
 ```
 
 <div class="orange-box">
-Some notes/observations on the structure of the boolean equations found above:
+Some notes/observations on the structure of the boolean equations of the nodes found above:
 </div>
 </br>
 
