@@ -23,7 +23,7 @@ rmarkdown::render(input = "test.Rmd", output_dir = "docs")
 knitr::opts_chunk$set(cache=TRUE, fig.align = 'center')
 ```
 
-## Time Estimation {-}
+## Libraries {-}
 
 Loading libraries:
 ```{r Load libraries, message = FALSE}
@@ -31,7 +31,12 @@ library(emba)
 library(usefun)
 ```
 
-Find all possible models generated through performing **all possible mutations of the Link Operator** in the models that can be generated using Cascade 1.0
+## Dataset {-}
+
+We generated all possible boolean models using [abmlog](https://github.com/druglogics/abmlog) by performing **all possible mutations of the link operator**, based on the input  of the Cascade 1.0
+
+Command to run: `java -cp target/abmlog-1.4.0-jar-with-dependencies.jar eu.druglogics.abmlog.BooleanModelGenerator --file=test/network.sif --attractors=fixpoints --parallel`
+
 
 ```{r}
 models.dir = paste0(getwd(), "/models")
@@ -41,22 +46,4 @@ net = construct_network(topology.file, models.dir)
 models.link.operator = get_link_operators_from_models_dir(models.dir)
 ```
 
-Target nodes whose boolean equation has a link operator:
-```{r, results='asis'}
-pretty_print_vector_values(colnames(models.link.operator))
-```
-
-Total number of models that can be generated:
-```{r, comment=""}
-n = ncol(models.link.operator)
-2^n
-```
-
-After generating all this models, you keep only those that have 1 stable state using the BNReduction (reduced version). If for every model, each perturbation lasts 50ms (overestimating) you have `50 * 8388608` msecs which equals to less than **5 days**. Then you end up with a subset of models (a lot less I guess), let's say around less than half of them: **3 million**.
-
-For a total of **28 perturbations** to test on each model (each done with BNReduction-areduced in Drabme) you want a total of `50 * 3000000 * 28` msecs which equals to a little less than **50 days**.
-
-Could be a lot less of course, these are crude estimations to get an idea!!!
-
-For an average of **10 msecs per perturbation** you get down to a little bit less than **10 days**.
 
