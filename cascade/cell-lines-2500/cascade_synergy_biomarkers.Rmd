@@ -32,7 +32,7 @@ the DrugLogics software modules `Gitsbe` and `Drabme`).
 
 ## Summary of results {-}
 
-The results will focus on the *activity state* biomarkers and not the *link operator* ones (since we didn't know how to best interpret them - though an effort has been made in the [AK-PD analysis](#ak-pd-biomarkers)).
+The results will focus on the **activity state biomarkers** and not the *link operator* ones (since we didn't know how to best interpret them - though an effort has been made in the [AK-PD analysis](#ak-pd-biomarkers)).
 
 <div class="green-box">
 - **AK-PD** (A498 cell line)
@@ -40,13 +40,16 @@ The results will focus on the *activity state* biomarkers and not the *link oper
   - `SRC` [inhibition](#Text01)
 - **PD-PI** (A498 cell line)
   - `ERK_f` overexpression ([random models](#Text2))
-  - `PTEN` inhibition - in [cell-specific models](#Text1) with `ERK_f` overexpression as well
-- **PD-G2** (A498 cell line) 
-  - `ERK_f` ([random models](#Text5)) and `PDPK1` [overexpression](#Text6)
-  - `PTEN` inhibition (see [here](#Text3), [here](#Text4))
-- **PI-D1** (all 8 cell lines)
-  - Something!
-
+  - `PTEN` inhibition - in [cell-specific models](#Text1) (with `ERK_f` overexpression)
+  - `SOS1` [inhibition](#sos1) in all cell lines except `A498` and `SW620`
+- **PD-G2** (A498 cell line)
+  - `ERK_f` overexpression ([random models](#Text5))
+  - `PDPK1` [overexpression](#Text6)
+  - `PTEN` inhibition (see [here](#Text3) and [here](#Text4))
+  - `SOS1` [inhibition](#sos2) in all cell lines except `A498` and `SW620`
+- **PI-D1** (all 9 model datasets)
+  - `ERK_f` [overexpression](#Table9)
+  - `CDC42` [inhibition](#Table9)
 </div>
 
 ## Input {-}
@@ -172,7 +175,7 @@ load(file = "cascade_synergy_biomarkers.RData")
 ## Observed synergies {-}
 
 Each of the cell lines studied has a different set of observed synergies (drug combinations that were found synergistic across all the `r length(drug.combos)` tested ones). 
-In this section, we will **visualize the cell lines' observed synergies and mark the synergies that were also predicted by the cell-specific models and the random-generated ones**. 
+In this section, we will **visualize the cell lines' observed synergies and mark the synergies that were also predicted by the cell-specific models and the random-generated ones (in one cell line at least)**. 
 First, we get the biomarkers for these synergies from each cell line:
 ```{r Total predicted synergies by the cell-specific models}
 total.predicted.synergies.cell.specific =
@@ -767,7 +770,7 @@ plot_avg_link_operator_diff_graph(net, diff = colMeans(diff.link.mat.random), la
 ### AK-PD in other cell lines {-}
 
 Though the `AK-PD` synergy was observed and predicted in the A498 model dataset, we investigate its biomarkers in the other cell lines where **it was predicted as a False Positive (FP) synergy (predicted by the models but not observed in the experiments)**. 
-Thus, we can still see if there are any common (activity state and link operator) biomarkers for `AK-PD` across the all the cell-specific models by contrasting in each cell line the models that predicted `AK-PD` vs the models that did not:
+Thus, we can still see if there are any common (activity state and link operator) biomarkers for `AK-PD` across the all the cell-specific models by contrasting in each cell line the models that predicted `AK-PD` (if there were any) vs the models that did not:
 
 ```{r AK-PD average activity state difference in all cell lines except A498}
 drug.comb = "AK-PD"
@@ -778,16 +781,15 @@ ak.pd.diff.link.list = list()
 for (cell.line in cell.lines) {
   if (cell.line == "A498") 
     next
+  model.predictions = model.predictions.per.cell.line[[cell.line]]
   
   ak.pd.diff.state.list[[cell.line]] = get_avg_activity_diff_based_on_specific_synergy_prediction(
-    model.predictions = model.predictions.per.cell.line[[cell.line]], 
-    models.stable.state = models.stable.state.per.cell.line[[cell.line]], 
-    drug.comb)
+    model.predictions, models.stable.state = models.stable.state.per.cell.line[[cell.line]], drug.comb)
   ak.pd.diff.link.list[[cell.line]] = get_avg_link_operator_diff_based_on_specific_synergy_prediction(
-    model.predictions = model.predictions.per.cell.line[[cell.line]], 
-    models.link.operator = models.link.operators.per.cell.line[[cell.line]], 
-    drug.comb)
-  # print(count_models_that_predict_synergies(drug.comb, model.predictions = model.predictions.per.cell.line[[cell.line]]))
+    model.predictions, models.link.operator = models.link.operators.per.cell.line[[cell.line]], drug.comb)
+  
+  # See the #models that predicted vs #models those that did not
+  # print(paste0(sum(model.predictions[,drug.comb], na.rm = T), " vs ", sum(!model.predictions[,drug.comb], na.rm = T)))
 }
 
 ak.pd.diff.state.mat = do.call(rbind, ak.pd.diff.state.list)
@@ -1122,6 +1124,63 @@ So **no significant nodes** whose activity plays important role in the manifesta
 </div>
 </br>
 
+
+### PD-PI in other cell lines 
+
+Though the `PD-PI` synergy was observed and predicted in the **A498 model dataset**, we investigate its biomarkers in the other cell lines where **it was predicted as a False Positive (FP) synergy (predicted by the models but not observed in the experiments)**. 
+Thus, we can still see if there are any common (activity state and link operator) biomarkers for this synergy across the all the cell-specific models by contrasting in each cell line the models that predicted `PD-PI` (if there were any) vs the models that did not:
+
+```{r PD-PI average activity state difference in all cell lines}
+drug.comb = "PD-PI"
+
+diff.state.list = list()
+
+for (cell.line in cell.lines) {
+  if (cell.line == "A498") next
+  
+  model.predictions = model.predictions.per.cell.line[[cell.line]]
+  models.stable.state = models.stable.state.per.cell.line[[cell.line]]
+  
+  models.predicted.num = sum(model.predictions[,drug.comb], na.rm = T)
+  models.not.predicted.num = sum(!model.predictions[,drug.comb], na.rm = T)
+  
+  # See the #models that predicted vs #models those that did not
+  # print(paste0(models.predicted.num, " vs ", models.not.predicted.num))
+  
+  if (models.predicted.num != 0 & models.not.predicted.num != 0)
+    diff.state.list[[cell.line]] = get_avg_activity_diff_based_on_specific_synergy_prediction(model.predictions, models.stable.state, drug.comb)
+}
+
+# combine the data to a single matrix
+diff.state.mat = do.call(rbind, diff.state.list)
+```
+
+Now, we **identify the biomarkers of interest** as those nodes that have surpassed a user-defined threshold ($0.6$) across as many as possible cell lines - counting thus the *frequency* that this has occured. 
+We show those nodes that surpassed the threshold in at least half of the cell lines:
+```{r PD-PI activity biomarkers frequency across cell lines, results = 'asis'}
+biomarker.state.mat = binarize_to_thres(mat = diff.state.mat, thres = 0.6)
+biomarkers.freq = colSums(biomarker.state.mat)/nrow(biomarker.state.mat)
+
+pretty_print_vector_names_and_values(biomarkers.freq[biomarkers.freq > 0.5])
+```
+
+So we identified two biomarkers, `ERK_f` (known from before) and `SOS1`.
+The average activity difference values for the `SOS1` per cell line model datasets were:
+<div id="sos1"></div>
+```{r SOS1 average diff values (PD-PI)}
+breaks.red = quantile(c(-1,0), probs = seq(.05, .95, .05), na.rm = TRUE)
+colors.red = sort(round(seq(255, 40, length.out = length(breaks.red) + 1), digits = 0)) %>%
+  {paste0("rgb(255,", ., ",", ., ")")} # red
+
+datatable(data = as.data.frame(diff.state.mat[,'SOS1']), colnames = "SOS1", 
+  options = list(dom = 't', order = list(list(1, 'asc'))), width = "470px",
+  caption = htmltools::tags$caption("Avg activity diff values (all cell lines except A498, PD-PI)", style="color:#dd4814; font-size: 18px")) %>% 
+  formatRound(columns = 1, digits = 3) %>%
+  formatStyle(columns = 1, backgroundColor = styleInterval(breaks.red, colors.red))
+```
+
+**TODO!!!! check with MCLP for `SOS1` or add some article!!!**
+
 ## PD-G2 activity biomarkers {-}
 
 As observed in the [heatmap above](#observed-synergies), the `PD-G2` synergy was predicted by both the **cell specific** and **random models** in the `A498` cell line.
@@ -1409,9 +1468,127 @@ These two biomarkers are connected with the boolean equation: `PDPK1 *= PIK3CA a
 </div>
 </br>
 
+
+### PD-G2 in other cell lines 
+
+Though the `PD-G2` synergy was observed and predicted in the **A498 model dataset**, we investigate its biomarkers in the other cell lines where **it was predicted as a False Positive (FP) synergy (predicted by the models but not observed in the experiments)**.
+Thus, we can still see if there are any common (activity state and link operator) biomarkers for this synergy across the all the cell-specific models by contrasting in each cell line the models that predicted `PD-G2` (if there were any) vs the models that did not:
+
+```{r PD-G2 average activity state difference in all cell lines}
+drug.comb = "PD-G2"
+
+diff.state.list = list()
+
+for (cell.line in cell.lines) {
+  if (cell.line == "A498") next
+  
+  model.predictions = model.predictions.per.cell.line[[cell.line]]
+  models.stable.state = models.stable.state.per.cell.line[[cell.line]]
+  
+  models.predicted.num = sum(model.predictions[,drug.comb], na.rm = T)
+  models.not.predicted.num = sum(!model.predictions[,drug.comb], na.rm = T)
+  
+  # See the #models that predicted vs #models those that did not
+  # print(paste0(models.predicted.num, " vs ", models.not.predicted.num))
+  
+  if (models.predicted.num != 0 & models.not.predicted.num != 0)
+    diff.state.list[[cell.line]] = get_avg_activity_diff_based_on_specific_synergy_prediction(model.predictions, models.stable.state, drug.comb)
+}
+
+# combine the data to a single matrix
+diff.state.mat = do.call(rbind, diff.state.list)
+```
+
+Now, we **identify the biomarkers of interest** as those nodes that have surpassed a user-defined threshold ($0.6$) across as many as possible cell lines - counting thus the *frequency* that this has occured. 
+We show those nodes that surpassed the threshold in at least half of the cell lines:
+```{r PD-G2 activity biomarkers frequency across cell lines, results = 'asis'}
+biomarker.state.mat = binarize_to_thres(mat = diff.state.mat, thres = 0.6)
+biomarkers.freq = colSums(biomarker.state.mat)/nrow(biomarker.state.mat)
+
+pretty_print_vector_names_and_values(biomarkers.freq[biomarkers.freq > 0.5])
+```
+
+So we identified two biomarkers, `ERK_f` (known from before) and `SOS1`.
+The average activity difference values for the `SOS1` per cell line model datasets were:
+<div id="sos2"></div>
+```{r SOS1 average diff values (PD-G2)}
+datatable(data = as.data.frame(diff.state.mat[,'SOS1']), colnames = "SOS1", 
+  options = list(dom = 't', order = list(list(1, 'asc'))), width = "470px",
+  caption = htmltools::tags$caption("Avg activity diff values (all cell lines except A498, PD-G2)", style="color:#dd4814; font-size: 18px")) %>%
+  formatRound(columns = 1, digits = 3) %>%
+  formatStyle(columns = 1, backgroundColor = styleInterval(breaks.red, colors.red))
+```
+
+**TODO!!!! check with MCLP for `SOS1` or add some article!!!**
+
 ## PI-D1 activity biomarkers {-}
 
-As observed in the [heatmap above](#observed-synergies), the `PI-D1` synergy was predicted by both the **cell specific** and **random models** in **all the cell lines tested**.
+As observed in the [heatmap above](#observed-synergies), the `PI-D1` synergy was predicted by both the **cell specific** and **random models** in **some of the cell lines tested**.
+So, for each seperate model dataset, we are going to contrast the models that predicted the `PI-D1` synergy vs the models that did not (if these two sets of models do exist for each cell line) and find the average activity difference per node in each case:
+
+```{r PI-D1 average activity state difference in all cell lines}
+drug.comb = "PI-D1"
+
+diff.state.list = list()
+
+# cell-specific data
+for (cell.line in cell.lines) {
+  model.predictions = model.predictions.per.cell.line[[cell.line]]
+  models.stable.state = models.stable.state.per.cell.line[[cell.line]]
+  
+  models.predicted.num = sum(model.predictions[,drug.comb], na.rm = T)
+  models.not.predicted.num = sum(!model.predictions[,drug.comb], na.rm = T)
+  
+  # See the #models that predicted vs #models those that did not
+  # print(paste0(models.predicted.num, " vs ", models.not.predicted.num))
+  
+  if (models.predicted.num != 0 & models.not.predicted.num != 0)
+    diff.state.list[[cell.line]] = get_avg_activity_diff_based_on_specific_synergy_prediction(model.predictions, models.stable.state, drug.comb)
+}
+
+# random model data
+#random.models.predicted.num = sum(random.model.predictions[,drug.comb], na.rm = T)
+#random.models.not.predicted.num = sum(!random.model.predictions[,drug.comb], na.rm = T)
+diff.state.list[["random"]] = get_avg_activity_diff_based_on_specific_synergy_prediction(random.model.predictions, random.models.stable.state, drug.comb)
+
+# combine the data to a single matrix
+diff.state.mat = do.call(rbind, diff.state.list)
+```
+
+Now, we **identify the biomarkers of interest** as those nodes that have surpassed a user-defined threshold ($0.6$) across as many as possible cell lines - counting thus the *frequency* that this has occured. 
+We show those nodes that surpassed the threshold in at least half of the cell lines:
+```{r PI-D1 activity biomarkers frequency across cell lines, results = 'asis'}
+biomarker.state.mat = binarize_to_thres(mat = diff.state.mat, thres = 0.6)
+biomarkers.freq = colSums(biomarker.state.mat)/nrow(biomarker.state.mat)
+
+pretty_print_vector_names_and_values(biomarkers.freq[biomarkers.freq > 0.5])
+```
+
+So, `ERK_f` was a biomarker for all the cell lines that predicted the `PI-D1` synergy and the nodes `ILK`, `CDC42` and `PAK1` in more than half of them.
+If we see the actual numbers we can clarify their state as well:
+
+<div id="Table9"></div>
+```{r PI-D1 biomarkers (table 9)}
+breaks.green = quantile(c(0,1), probs = seq(.05, .95, .05), na.rm = TRUE)
+colors.green = round(seq(255, 40, length.out = length(breaks.red) + 1), digits = 0) %>%
+  {paste0("rgb(", ., ",255,", ., ")")} # green
+
+caption.title.9 = "Table 9: Average activity state difference values across all model datasets that predicted PI-D1"
+datatable(data = diff.state.mat[,c("ILK","PAK1","CDC42","ERK_f","RAC_f","ARHGAP24","SRC")], options = list(dom = 't'),
+  caption = htmltools::tags$caption(caption.title.9, style="color:#dd4814; font-size: 18px")) %>% 
+  formatRound(1:11, digits = 3) %>%
+  formatStyle(columns = c(1:3), backgroundColor = styleInterval(breaks.red, colors.red)) %>%
+  formatStyle(columns = 4, backgroundColor = styleInterval(breaks.green, colors.green))
+```
+
+<div class="orange-box">
+If we examine the boolean equations: `ILK *= PAK1`, `PAK1 *= CDC42 or RAC_f` and `CDC42 *= SRC and/or not ARHGAP24` as well as the information from the [table 9](#Table9), then we can clearly see that **the only inhibited node of interest is `CDC42` among the 3 most frequent inhibited biomarkers**.
+</div>
+<br>
+
+<div class="blue-box">
+The **overexpression** of `ERK_f` and the **inhibition** of `CDC42` are the two most common biomarkers that characterize the models that are able to predict the `PI-D1` observed synergy.
+</div>
 
 ## R session info {-}
 
