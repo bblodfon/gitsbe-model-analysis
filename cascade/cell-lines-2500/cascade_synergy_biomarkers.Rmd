@@ -3,7 +3,7 @@ title: "Cascade Synergy Biomarkers for AK-PD, PD-PI, PD-G2, PI-D1 synergies"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 output:
-  bookdown::html_document2:
+  html_document:
     css: style.css
     theme: united
     toc: true
