@@ -46,6 +46,7 @@ The results will focus on the **activity state biomarkers** and not the *link op
   - `ERK_f` overexpression ([random models](#Text5))
   - `PDPK1` [overexpression](#Text6)
   - `PTEN` inhibition (see [here](#Text3) and [here](#Text4))
+  - `PIK3CA` and `PTEN` share an [`OR NOT` relationship as regulators of `PDPK1`](#pdpk1-eq)
   - `SOS1` [inhibition](#sos2) in all cell lines except `A498` and `SW620`
 - **PI-D1** (all 9 model datasets)
   - `ERK_f` [overexpression](#Table9)
@@ -1179,7 +1180,11 @@ datatable(data = as.data.frame(diff.state.mat[,'SOS1']), colnames = "SOS1",
   formatStyle(columns = 1, backgroundColor = styleInterval(breaks.red, colors.red))
 ```
 
-**TODO!!!! check with MCLP for `SOS1` or add some article!!!**
+Some article evidence *against* the above (so `SOS1` is somewhat expressed in these cancer cell lines):
+
+- [DU145](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3727633/)
+- [AGS and other gastric cell lines](https://doi.org/10.1038/s41598-018-24969-w)
+- [SW620](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5921181/)
 
 ## PD-G2 activity biomarkers {-}
 
@@ -1455,21 +1460,68 @@ This means that models that responded to the `PD-G2` combination are the ones th
 <br><br>
 Also again from the equation: `PPM1A *= PTEN`, we have that `PTEN` is the only **inhibited** node of interest
 <br><br>
-So, according to this analysis, `PTEN` **inhibition** and `PDPK1` **overexpression** are the main biomarkers that cause the random models to respond to the `PD-G2` drug combination. 
-These two biomarkers are connected with the boolean equation: `PDPK1 *= PIK3CA and/or not PTEN`, which for `PDPK1 == TRUE` and `PTEN == FALSE`, corresponds to 2 out of 3 cases to `PIK3CA` being **activated** too!
+So, according to this analysis, `PTEN` **inhibition** and `PDPK1` **overexpression** are the main biomarkers that cause the random models to respond synergistically to the `PD-G2` drug combination. 
 </div>
+<br>
 
-<br>
-**TODO**: check the MCLP-dataset for `PDPK1` and `PIK3CA`!!!
-<br>
+We will again use the MCLP-dataset to check for the activity/signaling values of `PDPK1` and `PIK3CA` (the later because it's strongly connected with the others based on the following boolean equation in our model: `PDPK1 *= PIK3CA and/or not PTEN`).
+
+We check the phosphorylation value of the `PDK1_pS241` across all cell lines:
+```{r MCLP Data Visualization (PDPK1), cache=TRUE, fig.align='center'}
+PDPK1.data = mclp.data %>% select(Sample_Name, PDK1_pS241) %>% na.omit()
+
+# find the activity classes (3 classes: low activity, no activity, high activity)
+res = Ckmeans.1d.dp(x = PDPK1.data$PDK1_pS241, k = 3)
+activity = as.factor(res$cluster)
+levels(activity) = c("low", "medium", "high")
+PDPK1.data = cbind(PDPK1.data, activity)
+
+ggdotchart(data = PDPK1.data, x = "Sample_Name", y = "PDK1_pS241", 
+  title = "PDK1_pS241 signaling across all cell lines in MCLP Dataset",
+  color = "activity", palette = c("red", "grey", "green"), 
+  label = "Sample_Name", label.select = cell.lines.in.mclp, repel = TRUE,
+  add = "segments", label.rectangle = TRUE,
+  xlab = "Cell Lines", ylab = "PDK1_pS241 Signaling",
+  add.params = list(color = "activity", palette = c("red", "grey", "green"))) + 
+    theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
 
 <div class="blue-box">
+Since for `A498` cell line we observe one of the largest signaling measurements compared to all the cell lines for the `PDK1_pS241` site, this means that `PDPK1` is **overexpressed**, which is exactly what we found from our analysis above.
+</div>
+<br>
+
+Also, we check the phosphorylation value of the `PI3K-p110-alpha` across all cell lines:
+```{r MCLP Data Visualization (PIK3CA), cache=TRUE, fig.align='center'}
+PIK3CA.data = mclp.data %>% select(Sample_Name, PI3KP110ALPHA) %>% na.omit()
+
+# find the activity classes (3 classes: low activity, no activity, high activity)
+res = Ckmeans.1d.dp(x = PIK3CA.data$PI3KP110ALPHA, k = 3)
+activity = as.factor(res$cluster)
+levels(activity) = c("low", "medium", "high")
+PIK3CA.data = cbind(PIK3CA.data, activity)
+
+ggdotchart(data = PIK3CA.data, x = "Sample_Name", y = "PI3KP110ALPHA", 
+  title = "PI3K-p110-alpha signaling across all cell lines in MCLP Dataset",
+  color = "activity", palette = c("red", "grey", "green"), 
+  label = "Sample_Name", label.select = cell.lines.in.mclp, repel = TRUE,
+  add = "segments", label.rectangle = TRUE,
+  xlab = "Cell Lines", ylab = "PI3K-p110-alpha Signaling",
+  add.params = list(color = "activity", palette = c("red", "grey", "green"))) + 
+    theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+```
+
+<div class="orange-box" id="pdpk1-eq">
+So, the results above hint that `PIK3CA` might be inhibited in the `A498` cell line, which considering the `PTEN` **inhibition**, `PDPK1` **overexpression** and their boolean equation (which connects all of them together): `PDPK1 *= PIK3CA and/or not PTEN`, we conclude that there must be an `or not` link operator between the 2 regulators.
+</div>
+<br>
+<div class="blue-box">
 `PTEN` **inhibition** and `PDPK1` **overexpression** play both an important role in the manifestation of the `PD-G2` synergy as was found with the [synergy subset analysis](#ss5) method for the random models.
+Also, `PIK3CA` has an `or not` (link operator) relationship with `PTEN` (according to our model's equation) as regulators of `PDPK1`.
 </div>
 </br>
 
-
-### PD-G2 in other cell lines 
+### PD-G2 in other cell lines
 
 Though the `PD-G2` synergy was observed and predicted in the **A498 model dataset**, we investigate its biomarkers in the other cell lines where **it was predicted as a False Positive (FP) synergy (predicted by the models but not observed in the experiments)**.
 Thus, we can still see if there are any common (activity state and link operator) biomarkers for this synergy across the all the cell-specific models by contrasting in each cell line the models that predicted `PD-G2` (if there were any) vs the models that did not:
@@ -1519,7 +1571,7 @@ datatable(data = as.data.frame(diff.state.mat[,'SOS1']), colnames = "SOS1",
   formatStyle(columns = 1, backgroundColor = styleInterval(breaks.red, colors.red))
 ```
 
-**TODO!!!! check with MCLP for `SOS1` or add some article!!!**
+I found some [articles](#sos1) that I believe show that `SOS1` is expressed in some of the above cancer cell lines (in contrast to the results [above](#sos2)).
 
 ## PI-D1 activity biomarkers {-}
 
