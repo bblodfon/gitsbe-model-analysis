@@ -1512,7 +1512,7 @@ ggdotchart(data = PIK3CA.data, x = "Sample_Name", y = "PI3KP110ALPHA",
 ```
 
 <div class="orange-box" id="pdpk1-eq">
-So, the results above hint that `PIK3CA` might be inhibited in the `A498` cell line, which considering the `PTEN` **inhibition**, `PDPK1` **overexpression** and their boolean equation (which connects all of them together): `PDPK1 *= PIK3CA and/or not PTEN`, we conclude that there must be an `or not` link operator between the 2 regulators.
+So, the results above hint that `PIK3CA` might be **inhibited** in the `A498` cell line, which considering the `PTEN` **inhibition**, `PDPK1` **overexpression** and their boolean equation (which connects all of them together): `PDPK1 *= PIK3CA and/or not PTEN` (`PDPK1 = TRUE` and `PIK3CA = PTEN = FALSE`), we conclude that there must be an `or not` link operator between the 2 regulators.
 </div>
 <br>
 <div class="blue-box">
