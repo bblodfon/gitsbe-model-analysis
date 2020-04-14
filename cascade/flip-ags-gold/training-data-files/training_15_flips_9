@@ -1,6 +1,0 @@
-# AGS training data
-Condition
--
-Response
-Antisurvival:1	CASP3:1	Prosurvival:1	CCND1:1	MYC:0	RAC_f:0	JNK_f:0	MAPK14:0	AKT_f:0	MMP_f:0	PTEN:0	ERK_f:0	KRAS:0	PIK3CA:0	S6K_f:0	GSK3_f:1	TP53:1	BAX:0	BCL2:1	CASP8:0	CTNNB1:0	TCF7_f:0	NFKB_f:0
-Weight:1
