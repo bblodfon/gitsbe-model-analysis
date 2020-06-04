@@ -2,7 +2,7 @@
 title: "Fitness vs Performance Analysis (AGS paper I)"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: 05 June, 2020"
-description: "Fitness vs Performance Analysis (AGS paper I)"
+description: "An investigation analysis"
 url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/index.html'
 github-repo: "bblodfon/gitsbe-model-analysis"
 link-citations: true
@@ -125,23 +125,23 @@ Locale:
 Package version:
   assertthat_0.2.1    base64enc_0.1.3     BH_1.72.0.3        
   bibtex_0.4.2.2      bookdown_0.19       Ckmeans.1d.dp_4.3.2
-  cli_2.0.2           clipr_0.7.0         codetools_0.2-16   
-  compiler_3.6.3      crayon_1.3.4        digest_0.6.25      
-  dplyr_0.8.5         ellipsis_0.3.1      emba_0.1.5         
-  evaluate_0.14       fansi_0.4.1         gbRd_0.4-11        
-  glue_1.4.1          graphics_3.6.3      grDevices_3.6.3    
-  grid_3.6.3          highr_0.8           hms_0.5.3          
-  htmltools_0.4.0     htmlwidgets_1.5.1   igraph_1.2.5       
-  jsonlite_1.6.1      knitr_1.28          lattice_0.20.41    
-  lifecycle_0.2.0     magrittr_1.5        markdown_1.1       
-  Matrix_1.2.18       methods_3.6.3       mime_0.9           
-  pillar_1.4.4        pkgconfig_2.0.3     plogr_0.2.0        
-  purrr_0.3.4         R6_2.4.1            Rcpp_1.0.4.6       
-  Rdpack_0.11-1       readr_1.3.1         rje_1.10.15        
-  rlang_0.4.6         rmarkdown_2.1       stats_3.6.3        
-  stringi_1.4.6       stringr_1.4.0       tibble_3.0.1       
-  tidyr_1.1.0         tidyselect_1.1.0    tinytex_0.23       
-  tools_3.6.3         usefun_0.4.7        utf8_1.1.4         
-  utils_3.6.3         vctrs_0.3.0         visNetwork_2.0.9   
-  xfun_0.14           yaml_2.2.1         
+  cli_2.0.2           clipr_0.7.0         compiler_3.6.3     
+  crayon_1.3.4        digest_0.6.25       dplyr_0.8.5        
+  ellipsis_0.3.1      emba_0.1.5          evaluate_0.14      
+  fansi_0.4.1         gbRd_0.4-11         glue_1.4.1         
+  graphics_3.6.3      grDevices_3.6.3     grid_3.6.3         
+  highr_0.8           hms_0.5.3           htmltools_0.4.0    
+  htmlwidgets_1.5.1   igraph_1.2.5        jsonlite_1.6.1     
+  knitr_1.28          lattice_0.20.41     lifecycle_0.2.0    
+  magrittr_1.5        markdown_1.1        Matrix_1.2.18      
+  methods_3.6.3       mime_0.9            pillar_1.4.4       
+  pkgconfig_2.0.3     plogr_0.2.0         purrr_0.3.4        
+  R6_2.4.1            Rcpp_1.0.4.6        Rdpack_0.11-1      
+  readr_1.3.1         rje_1.10.15         rlang_0.4.6        
+  rmarkdown_2.1       stats_3.6.3         stringi_1.4.6      
+  stringr_1.4.0       tibble_3.0.1        tidyr_1.1.0        
+  tidyselect_1.1.0    tinytex_0.23        tools_3.6.3        
+  usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
+  vctrs_0.3.0         visNetwork_2.0.9    xfun_0.14          
+  yaml_2.2.1         
 ```
