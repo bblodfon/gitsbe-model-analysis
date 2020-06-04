@@ -2,7 +2,7 @@
 title: "Fitness vs Performance Analysis (AGS paper I)"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
-description: "Fitness vs Performance Analysis (AGS paper I)"
+description: "An investigation analysis"
 url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/index.html'
 github-repo: "bblodfon/gitsbe-model-analysis"
 link-citations: true
