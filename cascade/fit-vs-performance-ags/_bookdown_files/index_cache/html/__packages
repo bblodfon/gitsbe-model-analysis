@@ -5,3 +5,6 @@ usefun
 dplyr
 tibble
 stringr
+ggplot2
+ggpubr
+Ckmeans.1d.dp
