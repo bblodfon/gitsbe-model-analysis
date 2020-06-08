@@ -137,7 +137,7 @@ res = bind_rows(data_list)
 # prune to unique models
 res = res %>% distinct(model_code, .keep_all = TRUE)
 
-saveRDS(object = res, file = "res_flip.rds")
+saveRDS(object = res, file = "data/res_flip.rds")
 ```
 
 We split the models from the simulations to $10$ fitness classes, their centers being:
@@ -191,6 +191,107 @@ ggboxplot(res, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
 No correlation whatsoever!
 :::
 
+Note though that **the results are very dependent on the dataset and the observed synergies** used.
+For example, using the following observed synergies vector:
+
+
+```r
+# get observed synergies for Cascade 2.0 (new)
+observed_synergies_file = "data/observed_synergies"
+observed_synergies_2 = emba::get_observed_synergies(observed_synergies_file)
+
+pretty_print_vector_values(vec = observed_synergies, vector.values.str = "observed synergies")
+```
+
+> 6 observed synergies: AK-BI, 5Z-PI, PD-PI, BI-D1, PI-D1, PI-G2
+
+New scores (already saved):
+
+```r
+# change appropriately
+data_dir = "/home/john/tmp/ags_paper_res/fit-vs-performance-results"
+res_dirs = list.files(data_dir, full.names = TRUE)
+
+data_list = list()
+index = 1
+for (res_dir in res_dirs) {
+  model_predictions_file = list.files(path = res_dir, pattern = "model_predictions.tab", full.names = TRUE)
+  models_dir = paste0(res_dir, "/models")
+  
+  model_predictions = emba::get_model_predictions(model_predictions_file)
+  models_link_operators = emba::get_link_operators_from_models_dir(models_dir)
+  # you get messages for models with {#stable states} != 1
+  models_stable_states = emba::get_stable_state_from_models_dir(models_dir)
+  
+  # same order => same model per row (also pruned if != 1 stable states)
+  model_predictions = model_predictions[rownames(models_stable_states),]
+  models_link_operators = models_link_operators[rownames(models_stable_states),]
+  
+  # calculate models MCC scores
+  models_mcc = calculate_models_mcc(
+    observed.model.predictions = model_predictions %>% select(all_of(observed_synergies_2)),
+    unobserved.model.predictions = model_predictions %>% select(-all_of(observed_synergies_2)),
+    number.of.drug.comb.tested = ncol(model_predictions))
+  
+  # calculate models fitness to AGS steady state
+  models_fit = apply(models_stable_states[, names(steady_state)], 1, 
+    usefun::get_percentage_of_matches, steady_state)
+  
+  # check data consistency
+  stopifnot(all(names(models_mcc) == rownames(models_link_operators)))
+  stopifnot(all(names(models_mcc) == names(models_fit)))
+  
+  # get link operator mutation code per model
+  # same code => exactly same link operator mutations => exactly the same model
+  link_mutation_binary_code = unname(apply(models_link_operators, 1, paste, collapse = ""))
+  
+  # bind all to one (OneForAll)
+  df = bind_cols(model_code = link_mutation_binary_code, mcc = models_mcc, fitness = models_fit)
+  
+  data_list[[index]] = df
+  index = index + 1
+}
+
+res = bind_rows(data_list)
+
+# prune to unique models
+res = res %>% distinct(model_code, .keep_all = TRUE)
+
+saveRDS(object = res, file = "data/res_flip_2.rds")
+```
+
+New figures:
+
+```r
+res = readRDS(file = "data/res_flip_2.rds")
+
+### Fitness classes vs MCC
+fit_classes = res %>% pull(fitness) %>% unique() %>% length()
+fit_result = Ckmeans.1d.dp(x = res$fitness, k = round(fit_classes/2))
+fitness_class_id = fit_result$cluster
+res = res %>% add_column(fitness_class_id = fitness_class_id)
+fit_stats = desc_statby(res, measure.var = "mcc", grps = c("fitness_class_id"), ci = 0.95)
+
+ggbarplot(fit_stats, title = "Fitness Class vs Performance (MCC)",
+  x = "fitness_class_id", y = "mean", xlab = "Fitness Class",
+  ylab = "Mean MCC", ylim = c(min(fit_stats$mean - 2*fit_stats$se), max(fit_stats$mean) + 0.1),
+  label = fit_stats$length, lab.vjust = -5,  fill = "fitness_class_id") + 
+  scale_x_discrete(labels = round(fit_stats$fitness, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high = "red", name = "Fitness Class", 
+    guide = "legend", breaks = c(1,4,7,10)) + 
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9))
+```
+
+<img src="index_files/figure-html/figures-1-new-1.png" width="2100" style="display: block; margin: auto;" />
+
+```r
+ggboxplot(res, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
+```
+
+<img src="index_files/figure-html/figures-1-new-2.png" width="2100" style="display: block; margin: auto;" />
+
+Well, now there is correlation (but the observed synergies have been cherry-picked to get this result - so be careful!).
+
 # Reverse SS vs SS method {-}
 
 Next, I tried increasing the simulation output data and run only the *extreme* cases. 
@@ -198,6 +299,7 @@ So the next results are for a total of $5000$ simulations ($15000$ models), fitt
 I ran these simulations 3 times, one with **link operator mutations only, one with topology mutations only and one with both mutations** applied in the models.
 The drabme synergy method used was `HSA`.
 For the link operator models the `biolqm_stable_states` *attractor_tool* option was used and for the other 2 parameterizations the `bnet_reduction_reduced`.
+And of course, the proper/initial observed synergies vector was used as the gold standard.
 
 First download the [Zenodo dataset]() and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
 
@@ -275,12 +377,12 @@ saveRDS(res_topo, file = "data/res_topo.rds")
 
 
 ```r
-res = readRDS(file = "data/res_link.rds")
+res_link = readRDS(file = "data/res_link.rds")
 
-mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+mean_fit = res_link %>% group_by(type) %>% summarise(mean = mean(fitness))
 
 ggplot() + 
-  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_density(data = res_link, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
   geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
   xlab("Fitness Score") +
   ylab("Density") + 
@@ -292,7 +394,7 @@ ggplot() +
 
 
 ```r
-ggboxplot(data = res, x = "type", y = "mcc", 
+ggboxplot(data = res_link, x = "type", y = "mcc", 
   color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
   bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
   title = "Performance (MCC) of different training data schemes",
@@ -303,7 +405,7 @@ ggboxplot(data = res, x = "type", y = "mcc",
 <img src="index_files/figure-html/figures-3-1.png" width="2100" style="display: block; margin: auto;" />
 
 ```r
-ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+ggdensity(data = res_link, x = "mcc", color = "type", add = "mean",
   fill = "type", palette = "Set1", xlab = "MCC score",
   title = "MCC density profile for different training data schemes")
 ```
@@ -314,12 +416,12 @@ ggdensity(data = res, x = "mcc", color = "type", add = "mean",
 
 
 ```r
-res = readRDS(file = "data/res_topo.rds")
+res_topo = readRDS(file = "data/res_topo.rds")
 
-mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+mean_fit = res_topo %>% group_by(type) %>% summarise(mean = mean(fitness))
 
 ggplot() + 
-  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_density(data = res_topo, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
   geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
   xlab("Fitness Score") +
   ylab("Density") + 
@@ -327,11 +429,11 @@ ggplot() +
   ggpubr::theme_pubr()
 ```
 
-<img src="index_files/figure-html/figures-4-1.png" width="2100" style="display: block; margin: auto;" />
+<img src="index_files/figure-html/figures-4-1.png" width="2100" />
 
 
 ```r
-ggboxplot(data = res, x = "type", y = "mcc", 
+ggboxplot(data = res_topo, x = "type", y = "mcc", 
   color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
   bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
   title = "Performance (MCC) of different training data schemes",
@@ -342,7 +444,7 @@ ggboxplot(data = res, x = "type", y = "mcc",
 <img src="index_files/figure-html/figures-5-1.png" width="2100" style="display: block; margin: auto;" />
 
 ```r
-ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+ggdensity(data = res_topo, x = "mcc", color = "type", add = "mean",
   fill = "type", palette = "Set1", xlab = "MCC score",
   title = "MCC density profile for different training data schemes")
 ```
@@ -353,12 +455,12 @@ ggdensity(data = res, x = "mcc", color = "type", add = "mean",
 
 
 ```r
-res = readRDS(file = "data/res_link_and_topo.rds")
+res_link_and_topo = readRDS(file = "data/res_link_and_topo.rds")
 
-mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+mean_fit = res_link_and_topo %>% group_by(type) %>% summarise(mean = mean(fitness))
 
 ggplot() + 
-  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_density(data = res_link_and_topo, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
   geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
   xlab("Fitness Score") +
   ylab("Density") + 
@@ -370,7 +472,7 @@ ggplot() +
 
 
 ```r
-ggboxplot(data = res, x = "type", y = "mcc", 
+ggboxplot(data = res_link_and_topo, x = "type", y = "mcc", 
   color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
   bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
   title = "Performance (MCC) of different training data schemes",
@@ -381,12 +483,17 @@ ggboxplot(data = res, x = "type", y = "mcc",
 <img src="index_files/figure-html/figures-7-1.png" width="2100" style="display: block; margin: auto;" />
 
 ```r
-ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+ggdensity(data = res_link_and_topo, x = "mcc", color = "type", add = "mean",
   fill = "type", palette = "Set1", xlab = "MCC score",
   title = "MCC density profile for different training data schemes")
 ```
 
 <img src="index_files/figure-html/figures-7-2.png" width="2100" style="display: block; margin: auto;" />
+
+:::{.blue-box}
+- Note that most of the models trained to the complete **reverse** steady state have an MCC score exactly equal to $0$, since the denominator is also zero ($TP+FP = 0$).
+So, in a way the steady state models are better in that regard (i.e. they make predictions, even though most of them have negative MCC scores).
+:::
 
 # R session info {-}
 
@@ -414,43 +521,43 @@ Package version:
   bookdown_0.19       boot_1.3.25         broom_0.5.6        
   callr_3.4.3         car_3.0-8           carData_3.0-4      
   cellranger_1.1.0    Ckmeans.1d.dp_4.3.2 cli_2.0.2          
-  clipr_0.7.0         codetools_0.2-16    colorspace_1.4-1   
-  compiler_3.6.3      corrplot_0.84       cowplot_1.0.0      
-  crayon_1.3.4        curl_4.3            data.table_1.12.8  
-  desc_1.2.0          digest_0.6.25       dplyr_0.8.5        
-  ellipsis_0.3.1      emba_0.1.5          evaluate_0.14      
-  fansi_0.4.1         farver_2.0.3        forcats_0.5.0      
-  foreign_0.8-76      gbRd_0.4-11         generics_0.0.2     
-  ggplot2_3.3.0       ggpubr_0.3.0        ggrepel_0.8.2      
-  ggsci_2.9           ggsignif_0.6.0      glue_1.4.1         
-  graphics_3.6.3      grDevices_3.6.3     grid_3.6.3         
-  gridExtra_2.3       gtable_0.3.0        haven_2.3.0        
-  highr_0.8           hms_0.5.3           htmltools_0.4.0    
-  htmlwidgets_1.5.1   igraph_1.2.5        isoband_0.2.1      
-  jsonlite_1.6.1      knitr_1.28          labeling_0.3       
-  lattice_0.20-41     lifecycle_0.2.0     lme4_1.1.23        
-  magrittr_1.5        maptools_1.0.1      markdown_1.1       
-  MASS_7.3.51.6       Matrix_1.2.18       MatrixModels_0.4.1 
-  methods_3.6.3       mgcv_1.8.31         mime_0.9           
-  minqa_1.2.4         munsell_0.5.0       nlme_3.1-148       
-  nloptr_1.2.2.1      nnet_7.3.14         openxlsx_4.1.5     
-  parallel_3.6.3      pbkrtest_0.4.8.6    pillar_1.4.4       
-  pkgbuild_1.0.8      pkgconfig_2.0.3     pkgload_1.0.2      
-  plogr_0.2.0         plyr_1.8.6          polynom_1.4.0      
-  praise_1.0.0        prettyunits_1.1.1   processx_3.4.2     
-  progress_1.2.2      ps_1.3.3            purrr_0.3.4        
-  quantreg_5.55       R6_2.4.1            RColorBrewer_1.1-2 
-  Rcpp_1.0.4.6        RcppEigen_0.3.3.7.0 Rdpack_0.11-1      
-  readr_1.3.1         readxl_1.3.1        rematch_1.0.1      
-  reshape2_1.4.4      rio_0.5.16          rje_1.10.15        
-  rlang_0.4.6         rmarkdown_2.1       rprojroot_1.3.2    
-  rstatix_0.5.0       rstudioapi_0.11     scales_1.1.1       
-  sp_1.4.2            SparseM_1.78        splines_3.6.3      
-  statmod_1.4.34      stats_3.6.3         stringi_1.4.6      
-  stringr_1.4.0       testthat_2.3.2      tibble_3.0.1       
-  tidyr_1.1.0         tidyselect_1.1.0    tinytex_0.23       
-  tools_3.6.3         usefun_0.4.7        utf8_1.1.4         
-  utils_3.6.3         vctrs_0.3.0         viridisLite_0.3.0  
-  visNetwork_2.0.9    withr_2.2.0         xfun_0.14          
-  yaml_2.2.1          zip_2.0.4          
+  clipr_0.7.0         colorspace_1.4-1    compiler_3.6.3     
+  corrplot_0.84       cowplot_1.0.0       crayon_1.3.4       
+  curl_4.3            data.table_1.12.8   desc_1.2.0         
+  digest_0.6.25       dplyr_0.8.5         ellipsis_0.3.1     
+  emba_0.1.5          evaluate_0.14       fansi_0.4.1        
+  farver_2.0.3        forcats_0.5.0       foreign_0.8-76     
+  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.0      
+  ggpubr_0.3.0        ggrepel_0.8.2       ggsci_2.9          
+  ggsignif_0.6.0      glue_1.4.1          graphics_3.6.3     
+  grDevices_3.6.3     grid_3.6.3          gridExtra_2.3      
+  gtable_0.3.0        haven_2.3.0         highr_0.8          
+  hms_0.5.3           htmltools_0.4.0     htmlwidgets_1.5.1  
+  igraph_1.2.5        isoband_0.2.1       jsonlite_1.6.1     
+  knitr_1.28          labeling_0.3        lattice_0.20-41    
+  lifecycle_0.2.0     lme4_1.1.23         magrittr_1.5       
+  maptools_1.0.1      markdown_1.1        MASS_7.3.51.6      
+  Matrix_1.2.18       MatrixModels_0.4.1  methods_3.6.3      
+  mgcv_1.8.31         mime_0.9            minqa_1.2.4        
+  munsell_0.5.0       nlme_3.1-148        nloptr_1.2.2.1     
+  nnet_7.3.14         openxlsx_4.1.5      parallel_3.6.3     
+  pbkrtest_0.4.8.6    pillar_1.4.4        pkgbuild_1.0.8     
+  pkgconfig_2.0.3     pkgload_1.0.2       plogr_0.2.0        
+  plyr_1.8.6          polynom_1.4.0       praise_1.0.0       
+  prettyunits_1.1.1   processx_3.4.2      progress_1.2.2     
+  ps_1.3.3            purrr_0.3.4         quantreg_5.55      
+  R6_2.4.1            RColorBrewer_1.1.2  Rcpp_1.0.4.6       
+  RcppEigen_0.3.3.7.0 Rdpack_0.11-1       readr_1.3.1        
+  readxl_1.3.1        rematch_1.0.1       reshape2_1.4.4     
+  rio_0.5.16          rje_1.10.15         rlang_0.4.6        
+  rmarkdown_2.1       rprojroot_1.3.2     rstatix_0.5.0      
+  rstudioapi_0.11     scales_1.1.1        sp_1.4.2           
+  SparseM_1.78        splines_3.6.3       statmod_1.4.34     
+  stats_3.6.3         stringi_1.4.6       stringr_1.4.0      
+  testthat_2.3.2      tibble_3.0.1        tidyr_1.1.0        
+  tidyselect_1.1.0    tinytex_0.23        tools_3.6.3        
+  usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
+  vctrs_0.3.0         viridisLite_0.3.0   visNetwork_2.0.9   
+  withr_2.2.0         xfun_0.14           yaml_2.2.1         
+  zip_2.0.4          
 ```
