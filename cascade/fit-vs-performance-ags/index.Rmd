@@ -52,7 +52,7 @@ usefun::pretty_print_vector_names_and_values(vec = steady_state)
 ```
 
 Load observed synergies:
-```{r load obs synergies, results = 'asis', cache=TRUE}
+```{r load-obs-synergies, results = 'asis', cache=TRUE}
 # get observed synergies for Cascade 2.0
 observed_synergies_file = "data/observed_synergies_cascade_2.0"
 observed_synergies = emba::get_observed_synergies(observed_synergies_file)
@@ -129,7 +129,7 @@ res = bind_rows(data_list)
 # prune to unique models
 res = res %>% distinct(model_code, .keep_all = TRUE)
 
-saveRDS(object = res, file = "res_flip.rds")
+saveRDS(object = res, file = "data/res_flip.rds")
 ```
 
 We split the models from the simulations to $10$ fitness classes, their centers being:
@@ -168,6 +168,96 @@ ggboxplot(res, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
 No correlation whatsoever!
 :::
 
+Note though that **the results are very dependent on the dataset and the observed synergies** used.
+For example, using the following observed synergies vector:
+
+```{r load-obs-synergies-2, results = 'asis', cache=TRUE}
+# get observed synergies for Cascade 2.0 (new)
+observed_synergies_file = "data/observed_synergies"
+observed_synergies_2 = emba::get_observed_synergies(observed_synergies_file)
+
+pretty_print_vector_values(vec = observed_synergies, vector.values.str = "observed synergies")
+```
+
+New scores (already saved):
+```{r load-data-1-new, eval=FALSE}
+# change appropriately
+data_dir = "/home/john/tmp/ags_paper_res/fit-vs-performance-results"
+res_dirs = list.files(data_dir, full.names = TRUE)
+
+data_list = list()
+index = 1
+for (res_dir in res_dirs) {
+  model_predictions_file = list.files(path = res_dir, pattern = "model_predictions.tab", full.names = TRUE)
+  models_dir = paste0(res_dir, "/models")
+  
+  model_predictions = emba::get_model_predictions(model_predictions_file)
+  models_link_operators = emba::get_link_operators_from_models_dir(models_dir)
+  # you get messages for models with {#stable states} != 1
+  models_stable_states = emba::get_stable_state_from_models_dir(models_dir)
+  
+  # same order => same model per row (also pruned if != 1 stable states)
+  model_predictions = model_predictions[rownames(models_stable_states),]
+  models_link_operators = models_link_operators[rownames(models_stable_states),]
+  
+  # calculate models MCC scores
+  models_mcc = calculate_models_mcc(
+    observed.model.predictions = model_predictions %>% select(all_of(observed_synergies_2)),
+    unobserved.model.predictions = model_predictions %>% select(-all_of(observed_synergies_2)),
+    number.of.drug.comb.tested = ncol(model_predictions))
+  
+  # calculate models fitness to AGS steady state
+  models_fit = apply(models_stable_states[, names(steady_state)], 1, 
+    usefun::get_percentage_of_matches, steady_state)
+  
+  # check data consistency
+  stopifnot(all(names(models_mcc) == rownames(models_link_operators)))
+  stopifnot(all(names(models_mcc) == names(models_fit)))
+  
+  # get link operator mutation code per model
+  # same code => exactly same link operator mutations => exactly the same model
+  link_mutation_binary_code = unname(apply(models_link_operators, 1, paste, collapse = ""))
+  
+  # bind all to one (OneForAll)
+  df = bind_cols(model_code = link_mutation_binary_code, mcc = models_mcc, fitness = models_fit)
+  
+  data_list[[index]] = df
+  index = index + 1
+}
+
+res = bind_rows(data_list)
+
+# prune to unique models
+res = res %>% distinct(model_code, .keep_all = TRUE)
+
+saveRDS(object = res, file = "data/res_flip_2.rds")
+```
+
+New figures:
+```{r figures-1-new, cache=TRUE, fig.align='center', dpi=300}
+res = readRDS(file = "data/res_flip_2.rds")
+
+### Fitness classes vs MCC
+fit_classes = res %>% pull(fitness) %>% unique() %>% length()
+fit_result = Ckmeans.1d.dp(x = res$fitness, k = round(fit_classes/2))
+fitness_class_id = fit_result$cluster
+res = res %>% add_column(fitness_class_id = fitness_class_id)
+fit_stats = desc_statby(res, measure.var = "mcc", grps = c("fitness_class_id"), ci = 0.95)
+
+ggbarplot(fit_stats, title = "Fitness Class vs Performance (MCC)",
+  x = "fitness_class_id", y = "mean", xlab = "Fitness Class",
+  ylab = "Mean MCC", ylim = c(min(fit_stats$mean - 2*fit_stats$se), max(fit_stats$mean) + 0.1),
+  label = fit_stats$length, lab.vjust = -5,  fill = "fitness_class_id") + 
+  scale_x_discrete(labels = round(fit_stats$fitness, digits = 2)) + 
+  scale_fill_gradient(low = "lightblue", high = "red", name = "Fitness Class", 
+    guide = "legend", breaks = c(1,4,7,10)) + 
+  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9))
+
+ggboxplot(res, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
+```
+
+Well, now there is correlation (but the observed synergies have been cherry-picked to get this result - so be careful!).
+
 # Reverse SS vs SS method {-}
 
 Next, I tried increasing the simulation output data and run only the *extreme* cases. 
@@ -175,6 +265,7 @@ So the next results are for a total of $5000$ simulations ($15000$ models), fitt
 I ran these simulations 3 times, one with **link operator mutations only, one with topology mutations only and one with both mutations** applied in the models.
 The drabme synergy method used was `HSA`.
 For the link operator models the `biolqm_stable_states` *attractor_tool* option was used and for the other 2 parameterizations the `bnet_reduction_reduced`.
+And of course, the proper/initial observed synergies vector was used as the gold standard.
 
 First download the [Zenodo dataset]() and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
 
@@ -182,9 +273,14 @@ Load the data using the following `R` code (I have already saved the results):
 ```{r load-data-3, eval=FALSE}
 # simulation results directories (do not add the ending path character '/')
 res_dirs = c(
-  "/home/john/tmp/ags_paper_res/link-only/hsa/5000-sim-res/cascade_2.0_rev_5000sim_fixpoints_hsa_20200521_212600/", 
-  "/home/john/tmp/ags_paper_res/link-only/hsa/5000-sim-res/cascade_2.0_rand_5000sim_fixpoints_hsa_20200524_210427/",
-  "/home/john/tmp/ags_paper_res/link-only/hsa/5000-sim-res/cascade_2.0_ss_5000sim_fixpoints_hsa_20200526_213812/")
+  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rev_5000sim_bnet_hsa_20200601_054944/", 
+  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rand_5000sim_bnet_hsa_20200601_155644/",
+  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_ss_5000sim_bnet_hsa_20200531_202847/")
+
+res_dirs = c(
+  "/home/john/tmp/ags_paper_res/topology-only/5000-sim-hsa-res/cascade_2.0_rev_5000sim_bnet_hsa_20200530_153927/", 
+  "/home/john/tmp/ags_paper_res/topology-only/5000-sim-hsa-res/cascade_2.0_rand_5000sim_bnet_hsa_20200531_014742/",
+  "/home/john/tmp/ags_paper_res/topology-only/5000-sim-hsa-res/cascade_2.0_ss_5000sim_bnet_hsa_20200531_080616/")
 
 data_list = list()
 index = 1
@@ -231,12 +327,12 @@ for (res_dir in res_dirs) {
 res = bind_rows(data_list)
 
 # choose one (depends on the `res_dirs`)
-res_link = res
-#res_topo = res
+#res_link = res
+res_topo = res
 #res_link_and_topo = res
 
-saveRDS(res_link, file = "data/res_link.rds")
-#saveRDS(res_topo, file = "data/res_topo.rds")
+#saveRDS(res_link, file = "data/res_link.rds")
+saveRDS(res_topo, file = "data/res_topo.rds")
 #saveRDS(res_link_and_topo, file = "data/res_link_and_topo.rds")
 ```
 
@@ -245,12 +341,12 @@ saveRDS(res_link, file = "data/res_link.rds")
 ## Link operator mutated models {-}
 
 ```{r figures-2, cache=TRUE, fig.align='center', dpi=300}
-res = readRDS(file = "data/res_link.rds")
+res_link = readRDS(file = "data/res_link.rds")
 
-mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+mean_fit = res_link %>% group_by(type) %>% summarise(mean = mean(fitness))
 
 ggplot() + 
-  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_density(data = res_link, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
   geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
   xlab("Fitness Score") +
   ylab("Density") + 
@@ -259,27 +355,27 @@ ggplot() +
 ```
 
 ```{r figures-3, cache=TRUE, fig.align='center', dpi=300}
-ggboxplot(data = res, x = "type", y = "mcc", 
+ggboxplot(data = res_link, x = "type", y = "mcc", 
   color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
   bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
   title = "Performance (MCC) of different training data schemes",
   ylab = "MCC score", xlab = "Training Data Type") + 
   stat_compare_means(label.x = 2.5)
 
-ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+ggdensity(data = res_link, x = "mcc", color = "type", add = "mean",
   fill = "type", palette = "Set1", xlab = "MCC score",
   title = "MCC density profile for different training data schemes")
 ```
 
 ## Topology-mutated models {-}
 
-```{r figures-4, cache=TRUE, fig.align='center', dpi=300}
-res = readRDS(file = "data/res_topo.rds")
+```{r figures-4, cache=TRUE, dpi=300}
+res_topo = readRDS(file = "data/res_topo.rds")
 
-mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+mean_fit = res_topo %>% group_by(type) %>% summarise(mean = mean(fitness))
 
 ggplot() + 
-  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_density(data = res_topo, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
   geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
   xlab("Fitness Score") +
   ylab("Density") + 
@@ -288,14 +384,14 @@ ggplot() +
 ```
 
 ```{r figures-5, cache=TRUE, fig.align='center', dpi=300}
-ggboxplot(data = res, x = "type", y = "mcc", 
+ggboxplot(data = res_topo, x = "type", y = "mcc", 
   color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
   bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
   title = "Performance (MCC) of different training data schemes",
   ylab = "MCC score", xlab = "Training Data Type") + 
   stat_compare_means(label.x = 2.5)
 
-ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+ggdensity(data = res_topo, x = "mcc", color = "type", add = "mean",
   fill = "type", palette = "Set1", xlab = "MCC score",
   title = "MCC density profile for different training data schemes")
 ```
@@ -303,12 +399,12 @@ ggdensity(data = res, x = "mcc", color = "type", add = "mean",
 ## Both mutations on models {-}
 
 ```{r figures-6, cache=TRUE, fig.align='center', dpi=300}
-res = readRDS(file = "data/res_link_and_topo.rds")
+res_link_and_topo = readRDS(file = "data/res_link_and_topo.rds")
 
-mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+mean_fit = res_link_and_topo %>% group_by(type) %>% summarise(mean = mean(fitness))
 
 ggplot() + 
-  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_density(data = res_link_and_topo, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
   geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
   xlab("Fitness Score") +
   ylab("Density") + 
@@ -317,17 +413,22 @@ ggplot() +
 ```
 
 ```{r figures-7, cache=TRUE, fig.align='center', dpi=300}
-ggboxplot(data = res, x = "type", y = "mcc", 
+ggboxplot(data = res_link_and_topo, x = "type", y = "mcc", 
   color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
   bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
   title = "Performance (MCC) of different training data schemes",
   ylab = "MCC score", xlab = "Training Data Type") + 
   stat_compare_means(label.x = 2.5)
 
-ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+ggdensity(data = res_link_and_topo, x = "mcc", color = "type", add = "mean",
   fill = "type", palette = "Set1", xlab = "MCC score",
   title = "MCC density profile for different training data schemes")
 ```
+
+:::{.blue-box}
+- Note that most of the models trained to the complete **reverse** steady state have an MCC score exactly equal to $0$, since the denominator is also zero ($TP+FP = 0$).
+So, in a way the steady state models are better in that regard (i.e. they make predictions, even though most of them have negative MCC scores).
+:::
 
 # R session info {-}
 
