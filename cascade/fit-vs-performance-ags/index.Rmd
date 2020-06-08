@@ -30,6 +30,9 @@ library(usefun)
 library(dplyr)
 library(tibble)
 library(stringr)
+library(ggpubr)
+library(ggplot2)
+library(Ckmeans.1d.dp)
 ```
 
 Load the AGS steady state:
@@ -69,12 +72,14 @@ Thus, in total, $205$ training data files were produced ($205 = 9 \times 20 + 24
 Running the script [run_druglogics_synergy_training.sh](TODO add link) from the `druglogics-synergy` repository root (version `1.2.0`: `git checkout v1.2.0`), we get the simulation results for each of these training data files.
 Note that in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to ($15$) for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: hsa`.
 
-The generated training data files and the results from the simulations are stored here [`training-data-files` DOI ZENODO].
+:::{.orange-box}
+The generated training data files (`training-data-files.tar.gz`) and the results from the simulations (`fit-vs-performance-results.tar.gz`) are stored in [Zenodo](https://doi.org/10.5281/zenodo.3877493).
+:::
 
-To load the data, download the file of interest (`fit-vs-performance-results.tar.gz`) and extract it to a directory of your choice with the following commands: `mkdir fit-vs-performance-results` and `tar -C fit-vs-performance-results/ -xzvf fit-vs-performance-results.tar.gz`.
-Then use the next R code to create the `res` data.frame (I have already saved the result):
+To load the data, download the results (`fit-vs-performance-results.tar.gz`) and extract it to a directory of your choice with the following commands: `mkdir fit-vs-performance-results` and `tar -C fit-vs-performance-results/ -xzvf fit-vs-performance-results.tar.gz`.
+Then use the next `R` code to create the `res` data.frame (I have already saved the result):
 
-```{r load fit-vs-performance dataset 1, include=FALSE, eval=FALSE}
+```{r load-data-1, eval=FALSE}
 # change appropriately
 data_dir = "/home/john/tmp/ags_paper_res/fit-vs-performance-results"
 res_dirs = list.files(data_dir, full.names = TRUE)
@@ -113,9 +118,7 @@ for (res_dir in res_dirs) {
   link_mutation_binary_code = unname(apply(models_link_operators, 1, paste, collapse = ""))
   
   # bind all to one (OneForAll)
-  df = bind_cols(
-    model_code = link_mutation_binary_code, 
-    mcc = models_mcc, fitness = models_fit)
+  df = bind_cols(model_code = link_mutation_binary_code, mcc = models_mcc, fitness = models_fit)
   
   data_list[[index]] = df
   index = index + 1
@@ -124,26 +127,27 @@ for (res_dir in res_dirs) {
 res = bind_rows(data_list)
 
 # prune to unique models
-res_unique = res %>% distinct(model_code, .keep_all = TRUE)
+res = res %>% distinct(model_code, .keep_all = TRUE)
+
+saveRDS(object = res, file = "res_flip.rds")
 ```
 
-```{r fit-vs-perf-figures, include=FALSE, eval=FALSE}
-library(ggpubr)
-library(Ckmeans.1d.dp)
+We split the models from the simulations to $10$ fitness classes, their centers being:
 
-# remove models with MCC = 0 (denominator = 0)
-#res_unique = res_unique %>% filter(mcc != 0)
+```{r load-data-2}
+res = readRDS(file = "data/res_flip.rds")
 
-ggscatter(res_unique, x = "fitness", y = "mcc", add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.coeff.args = list(method = "kendall"))
+### Fitness classes vs MCC
+fit_classes = res %>% pull(fitness) %>% unique() %>% length()
+fit_result = Ckmeans.1d.dp(x = res$fitness, k = round(fit_classes/2))
 
-### Fitness classes vs Fitness
-fit_classes = res_unique %>% pull(fitness) %>% unique() %>% length()
-fit_result = Ckmeans.1d.dp(x = res_unique$fitness, k = round(fit_classes/2))
+fit_result$centers
+```
+
+```{r figures-1, cache=TRUE, fig.align='center', dpi=300}
 fitness_class_id = fit_result$cluster
-#res_unique = res_unique %>% select(-fitness_class_id)
-res_unique = res_unique %>% add_column(fitness_class_id = fitness_class_id)
-fit_stats = desc_statby(res_unique, measure.var = "mcc", grps = c("fitness_class_id"), ci = 0.95)
+res = res %>% add_column(fitness_class_id = fitness_class_id)
+fit_stats = desc_statby(res, measure.var = "mcc", grps = c("fitness_class_id"), ci = 0.95)
 
 ggbarplot(fit_stats, title = "Fitness Class vs Performance (MCC)",
   x = "fitness_class_id", y = "mean", xlab = "Fitness Class",
@@ -154,44 +158,32 @@ ggbarplot(fit_stats, title = "Fitness Class vs Performance (MCC)",
     guide = "legend", breaks = c(1,4,7,10)) + 
   geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9))
 
-ggboxplot(res_unique, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
+ggboxplot(res, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
 
 # useful
-res_unique %>% group_by(fitness_class_id) %>% summarise(avg = mean(mcc), count = n()) %>% print(n = 21)
+#res %>% group_by(fitness_class_id) %>% summarise(avg = mean(mcc), count = n()) %>% print(n = 21)
 ```
+
+:::{.orange-box}
+No correlation whatsoever!
+:::
 
 # Reverse SS vs SS method {-}
 
-- 5000 simulations => `15000` models
-- `HSA` synergy assessement (Drabme)
-- res_link: `biolqm_stable_states`
-- res_topo: `bnet_reduction_reduced`
-- res_link_and_topo: `bnet_reduction_reduced`
+Next, I tried increasing the simulation output data and run only the *extreme* cases. 
+So the next results are for a total of $5000$ simulations ($15000$ models), fitting to steady state (**ss**), the complete opposite/flipped steady state (**rev**) and also the [proliferation profile](https://druglogics.github.io/druglogics-doc/training-data.html#unperturbed-condition---globaloutput-response) (**prolif**).
+I ran these simulations 3 times, one with **link operator mutations only, one with topology mutations only and one with both mutations** applied in the models.
+The drabme synergy method used was `HSA`.
+For the link operator models the `biolqm_stable_states` *attractor_tool* option was used and for the other 2 parameterizations the `bnet_reduction_reduced`.
 
-Fit to steady state, to reverse steady state and proliferation profile
+First download the [Zenodo dataset]() and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
 
-```{r a, include=FALSE, eval=FALSE}
-# get observed synergies for Cascade 2.0
-observed_synergies_file = "results/observed_synergies_cascade_2.0"
-observed_synergies = emba::get_observed_synergies(observed_synergies_file)
-
-# get the AGS steady state
-steady_state_file = "scripts/steadystate"
-lines = readLines(steady_state_file)
-ss_data = unlist(strsplit(x = lines[8], split = "\t"))
-ss_mat = stringr::str_split(string = ss_data, pattern = ":", simplify = TRUE)
-colnames(ss_mat) = c("nodes", "states")
-ss_tbl = ss_mat %>% as_tibble() %>% mutate_at(vars(states), as.integer)
-
-steady_state = ss_tbl %>% pull(states)
-names(steady_state) = ss_tbl %>% pull(nodes)
-
+Load the data using the following `R` code (I have already saved the results):
+```{r load-data-3, eval=FALSE}
 # simulation results directories (do not add the ending path character '/')
-res_dirs = c("/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rev_5000sim_bnet_hsa_20200601_054944", 
-  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rand_5000sim_bnet_hsa_20200601_155644",
-  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_ss_5000sim_bnet_hsa_20200531_202847")
-
-res_dir = "/home/john/tmp/ags_paper_res/link-only/hsa/cascade_2.0_random_20200417_011251"
+res_dirs = c("/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rev_5000sim_bnet_hsa_20200601_054944/", 
+  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rand_5000sim_bnet_hsa_20200601_155644/",
+  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_ss_5000sim_bnet_hsa_20200531_202847/")
 
 data_list = list()
 index = 1
@@ -208,13 +200,11 @@ for (res_dir in res_dirs) {
   models_dir = paste0(res_dir, "/models")
   
   model_predictions = emba::get_model_predictions(model_predictions_file)
-  #models_link_operators = emba::get_link_operators_from_models_dir(models_dir)
   # you get messages for models with {#stable states} != 1
   models_stable_states = emba::get_stable_state_from_models_dir(models_dir)
   
   # same order => same model per row (also pruned if != 1 stable states)
   model_predictions = model_predictions[rownames(models_stable_states),]
-  #models_link_operators = models_link_operators[rownames(models_stable_states),]
   
   # calculate models MCC scores
   models_mcc = calculate_models_mcc(
@@ -227,16 +217,10 @@ for (res_dir in res_dirs) {
     usefun::get_percentage_of_matches, steady_state)
   
   # check data consistency
-  #stopifnot(all(names(models_mcc) == rownames(models_link_operators)))
   stopifnot(all(names(models_mcc) == names(models_fit)))
   
-  # get link operator mutation code per model
-  # same code => exactly same link operator mutations => exactly the same model
-  #link_mutation_binary_code = unname(apply(models_link_operators, 1, paste, collapse = ""))
   
   # bind all to one (OneForAll)
-  #df = bind_cols(model_code = link_mutation_binary_code, mcc = models_mcc, 
-  #  fitness = models_fit, type = rep(type, length(models_fit)))
   df = bind_cols(mcc = models_mcc, fitness = models_fit, type = rep(type, length(models_fit)))
   
   data_list[[index]] = df
@@ -244,56 +228,104 @@ for (res_dir in res_dirs) {
 }
 
 res = bind_rows(data_list)
+
+# choose one (depends on the `res_dirs`)
 res_link = res
-res_topo = res
-res_link_and_topo = res
+#res_topo = res
+#res_link_and_topo = res
 
 saveRDS(res_link, file = "res_link.rds")
-saveRDS(res_topo, file = "res_topo.rds")
-saveRDS(res_link_and_topo, file = "res_link_and_topo.rds")
-
-# prune to unique models
-#res_unique = res %>% distinct(model_code, .keep_all = TRUE)
+#saveRDS(res_topo, file = "res_topo.rds")
+#saveRDS(res_link_and_topo, file = "res_link_and_topo.rds")
 ```
 
-```{r, include=FALSE, eval=FALSE}
-# res %>% sample_n(size = 1000)
-# res %>% filter(mcc > 0)
-ggboxplot(data = res %>% filter(mcc > 0), x = "type", y = "mcc", 
+# Results {-}
+
+## Link operator mutated models {-}
+
+```{r figures-2, cache=TRUE, fig.align='center', dpi=300}
+res = readRDS(file = "data/res_link.rds")
+
+mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+
+ggplot() + 
+  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
+  xlab("Fitness Score") +
+  ylab("Density") + 
+  ggtitle("Fitness density profile for different training data schemes") +
+  ggpubr::theme_pubr()
+```
+
+```{r figures-3, cache=TRUE, fig.align='center', dpi=300}
+ggboxplot(data = res, x = "type", y = "mcc", 
   color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
   bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
-  #add = "mean_se", add.params = list(color='green', size=0.8),
+  title = "Performance (MCC) of different training data schemes",
   ylab = "MCC score", xlab = "Training Data Type") + 
-  stat_compare_means(label.x = 2.5) +
-  ggtitle(label = "Performance (MCC) of different training data schemes", 
-    subtitle = "Models with Link Operator Mutations")
+  stat_compare_means(label.x = 2.5)
 
-ggdensity(data = res %>% filter(mcc > 0), x = "mcc", color = "type", add = "mean", #rug = TRUE,
-  fill = "type", palette = "Set1", xlab = "MCC score") + 
-  ggtitle(label = "MCC density profile for different training data schemes", 
-    subtitle = "Models with Link Operator Mutations")
+ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+  fill = "type", palette = "Set1", xlab = "MCC score",
+  title = "MCC density profile for different training data schemes")
 ```
 
+## Topology-mutated models {-}
 
-```{r include=FALSE, eval=FALSE}
-### Fitness classes vs Fitness
-fit_classes = res %>% pull(fitness) %>% unique() %>% length()
-fit_result = Ckmeans.1d.dp(x = res$fitness, k = 5)
-fitness_class_id = fit_result$cluster
-#res_unique = res_unique %>% select(-fitness_class_id)
-res = res %>% add_column(fitness_class_id = fitness_class_id)
-fit_stats = desc_statby(res, measure.var = "mcc", grps = c("fitness_class_id"), ci = 0.95)
+```{r figures-4, cache=TRUE, fig.align='center', dpi=300}
+res = readRDS(file = "data/res_topo.rds")
 
-ggbarplot(fit_stats, title = "Fitness Class vs Performance (MCC)",
-  x = "fitness_class_id", y = "mean", xlab = "Fitness Class",
-  ylab = "Mean MCC", ylim = c(min(fit_stats$mean - 2*fit_stats$se), max(fit_stats$mean) + 0.1),
-  label = fit_stats$length, lab.vjust = -5,  fill = "fitness_class_id") + 
-  scale_x_discrete(labels = round(fit_stats$fitness, digits = 2)) + 
-  scale_fill_gradient(low = "lightblue", high = "red", name = "Fitness Class", 
-    guide = "legend", breaks = c(1,4,7,10)) + 
-  geom_errorbar(aes(ymin=mean-2*se, ymax=mean+2*se), width = 0.2, position = position_dodge(0.9))
+mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
 
-ggboxplot(res_unique, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
+ggplot() + 
+  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
+  xlab("Fitness Score") +
+  ylab("Density") + 
+  ggtitle("Fitness density profile for different training data schemes") +
+  ggpubr::theme_pubr()
+```
+
+```{r figures-5, cache=TRUE, fig.align='center', dpi=300}
+ggboxplot(data = res, x = "type", y = "mcc", 
+  color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
+  bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
+  title = "Performance (MCC) of different training data schemes",
+  ylab = "MCC score", xlab = "Training Data Type") + 
+  stat_compare_means(label.x = 2.5)
+
+ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+  fill = "type", palette = "Set1", xlab = "MCC score",
+  title = "MCC density profile for different training data schemes")
+```
+
+## Both mutations on models {-}
+
+```{r figures-6, cache=TRUE, fig.align='center', dpi=300}
+res = readRDS(file = "data/res_link_and_topo.rds")
+
+mean_fit = res %>% group_by(type) %>% summarise(mean = mean(fitness))
+
+ggplot() + 
+  geom_density(data = res, aes(x=fitness, group=type, fill=type), alpha=0.5, adjust=3) + 
+  geom_vline(data = mean_fit, aes(xintercept = mean, color=type), linetype="dashed") +
+  xlab("Fitness Score") +
+  ylab("Density") + 
+  ggtitle("Fitness density profile for different training data schemes") +
+  ggpubr::theme_pubr()
+```
+
+```{r figures-7, cache=TRUE, fig.align='center', dpi=300}
+ggboxplot(data = res, x = "type", y = "mcc", 
+  color = "type", palette = "Set1", order = c("rev", "prolif", "ss"),
+  bxp.errorbar = TRUE, bxp.errorbar.width = 0.2,
+  title = "Performance (MCC) of different training data schemes",
+  ylab = "MCC score", xlab = "Training Data Type") + 
+  stat_compare_means(label.x = 2.5)
+
+ggdensity(data = res, x = "mcc", color = "type", add = "mean",
+  fill = "type", palette = "Set1", xlab = "MCC score",
+  title = "MCC density profile for different training data schemes")
 ```
 
 # R session info {-}
