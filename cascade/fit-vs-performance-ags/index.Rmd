@@ -181,9 +181,10 @@ First download the [Zenodo dataset]() and then extract the `5000sim-hsa-*-res.ta
 Load the data using the following `R` code (I have already saved the results):
 ```{r load-data-3, eval=FALSE}
 # simulation results directories (do not add the ending path character '/')
-res_dirs = c("/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rev_5000sim_bnet_hsa_20200601_054944/", 
-  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_rand_5000sim_bnet_hsa_20200601_155644/",
-  "/home/john/tmp/ags_paper_res/topo-and-link/5000-sim-hsa-res/cascade_2.0_ss_5000sim_bnet_hsa_20200531_202847/")
+res_dirs = c(
+  "/home/john/tmp/ags_paper_res/link-only/hsa/5000-sim-res/cascade_2.0_rev_5000sim_fixpoints_hsa_20200521_212600/", 
+  "/home/john/tmp/ags_paper_res/link-only/hsa/5000-sim-res/cascade_2.0_rand_5000sim_fixpoints_hsa_20200524_210427/",
+  "/home/john/tmp/ags_paper_res/link-only/hsa/5000-sim-res/cascade_2.0_ss_5000sim_fixpoints_hsa_20200526_213812/")
 
 data_list = list()
 index = 1
@@ -234,9 +235,9 @@ res_link = res
 #res_topo = res
 #res_link_and_topo = res
 
-saveRDS(res_link, file = "res_link.rds")
-#saveRDS(res_topo, file = "res_topo.rds")
-#saveRDS(res_link_and_topo, file = "res_link_and_topo.rds")
+saveRDS(res_link, file = "data/res_link.rds")
+#saveRDS(res_topo, file = "data/res_topo.rds")
+#saveRDS(res_link_and_topo, file = "data/res_link_and_topo.rds")
 ```
 
 # Results {-}
