@@ -1,7 +1,7 @@
 ---
 title: "Fitness vs Performance Analysis (AGS paper I)"
 author: "[John Zobolas](https://github.com/bblodfon)"
-date: "Last updated: 08 June, 2020"
+date: "Last updated: 17 June, 2020"
 description: "An investigation analysis"
 url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/index.html'
 github-repo: "bblodfon/gitsbe-model-analysis"
@@ -55,7 +55,7 @@ usefun::pretty_print_vector_names_and_values(vec = steady_state)
 
 > CASP3: 0, CASP8: 0, CASP9: 0, FOXO_f: 0, RSK_f: 1, CCND1: 1, MYC: 1, RAC_f: 1, JNK_f: 0, MAPK14: 0, AKT_f: 1, MMP_f: 1, PTEN: 0, ERK_f: 1, KRAS: 1, PIK3CA: 1, S6K_f: 1, GSK3_f: 0, TP53: 0, BAX: 0, BCL2: 1, CTNNB1: 1, TCF7_f: 1, NFKB_f: 1
 
-Load observed synergies:
+Load observed synergies (the *Gold Standard* for the AGS cell line, as it was found by complete agreement of all curators [here](http://tiny.cc/sintefGS)):
 
 ```r
 # get observed synergies for Cascade 2.0
@@ -192,7 +192,7 @@ No correlation whatsoever!
 :::
 
 Note though that **the results are very dependent on the dataset and the observed synergies** used.
-For example, using the following observed synergies vector:
+For example, using the following observed synergies vector (we also show the previous one for comparison purposes - **3 out of 6 synergies remain the same**):
 
 
 ```r
@@ -200,10 +200,16 @@ For example, using the following observed synergies vector:
 observed_synergies_file = "data/observed_synergies"
 observed_synergies_2 = emba::get_observed_synergies(observed_synergies_file)
 
-pretty_print_vector_values(vec = observed_synergies, vector.values.str = "observed synergies")
+pretty_print_vector_values(vec = observed_synergies, vector.values.str = "GS observed synergies")
 ```
 
-> 6 observed synergies: AK-BI, 5Z-PI, PD-PI, BI-D1, PI-D1, PI-G2
+> 6 GS observed synergies: AK-BI, 5Z-PI, PD-PI, BI-D1, PI-D1, PI-G2
+
+```r
+pretty_print_vector_values(vec = observed_synergies_2, vector.values.str = "New observed synergies")
+```
+
+> 6 New observed synergies: AK-BI, 5Z-D1, AK-D1, BI-D1, PI-D1, PK-ST
 
 New scores (already saved):
 
