@@ -51,7 +51,7 @@ names(steady_state) = ss_tbl %>% pull(nodes)
 usefun::pretty_print_vector_names_and_values(vec = steady_state)
 ```
 
-Load observed synergies:
+Load observed synergies (the *Gold Standard* for the AGS cell line, as it was found by complete agreement of all curators [here](http://tiny.cc/sintefGS)):
 ```{r load-obs-synergies, results = 'asis', cache=TRUE}
 # get observed synergies for Cascade 2.0
 observed_synergies_file = "data/observed_synergies_cascade_2.0"
@@ -169,14 +169,15 @@ No correlation whatsoever!
 :::
 
 Note though that **the results are very dependent on the dataset and the observed synergies** used.
-For example, using the following observed synergies vector:
+For example, using the following observed synergies vector (we also show the previous one for comparison purposes - **3 out of 6 synergies remain the same**):
 
 ```{r load-obs-synergies-2, results = 'asis', cache=TRUE}
 # get observed synergies for Cascade 2.0 (new)
 observed_synergies_file = "data/observed_synergies"
 observed_synergies_2 = emba::get_observed_synergies(observed_synergies_file)
 
-pretty_print_vector_values(vec = observed_synergies, vector.values.str = "observed synergies")
+pretty_print_vector_values(vec = observed_synergies, vector.values.str = "GS observed synergies")
+pretty_print_vector_values(vec = observed_synergies_2, vector.values.str = "New observed synergies")
 ```
 
 New scores (already saved):
