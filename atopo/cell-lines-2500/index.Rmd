@@ -27,7 +27,7 @@ In the last chapter, we conlude the analysis by comparing the results between th
 
 The **main purpose of this analysis** is two-fold: 
 
-1. Show how to use the functions of the [emba](https://github.com/bblodfon/emba) R package [@R-emba] on a real dataset. This means that this analysis can be used as a **long-form documentation (vignette)** for the R package itself. 
+1. Show how to use the functions of the [emba](https://github.com/bblodfon/emba) R package [@R-emba] on a real dataset. This means that this analysis can be used as a **long-form documentation (vignette)** for the R package itself.
 Also, functions from the [usefun](https://github.com/bblodfon/usefun) R package [@R-usefun] are used in this analysis.
 2. Investigate if there are common biomarkers between the 8 cell lines
 
@@ -44,3 +44,8 @@ To refer to these **generic analysis functions**, check the corresponding docume
 
 An example use of two of these functions is on the [Random Model Analysis] 
 chapter.
+
+---
+
+The version of the [emba](https://github.com/bblodfon/emba) package used in this analysis is `0.1.1`.
+For a repository of different versions see [here](https://cran.r-project.org/src/contrib/Archive/emba/).
