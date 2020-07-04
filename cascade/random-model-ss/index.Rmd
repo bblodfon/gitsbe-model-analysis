@@ -1,0 +1,55 @@
+---
+title: "Random model predictions (CASCADE 2.0) vs Number of Stable States"
+author: "[John Zobolas](https://github.com/bblodfon)"
+date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
+description: "An investigation"
+url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/random-model-ss/index.html'
+github-repo: "bblodfon/gitsbe-model-analysis"
+link-citations: true
+site: bookdown::bookdown_site
+---
+
+# Intro {-}
+
+:::{.green-box}
+Main question: is there a relation between random models stable state number and their performance as measured by the MCC score or AUC ROC?
+:::
+
+# Input {-}
+
+The *random link-operator mutated* models were generated from the **CASCADE 2.0** topology, using the [abmlog software](https://github.com/druglogics/abmlog), version `1.6.0`.
+Their prediction performance was assessed by the `Drabme` software module, via the `druglogics-synergy` Java module, version `1.2.0`.
+
+I run the following command to get the random models from the `abmlog` repo root:
+```{r, eval=FALSE}
+java -cp target/abmlog-1.6.0-jar-with-dependencies.jar eu.druglogics.abmlog.RandomBooleanModelGenerator --file=test/cascade_2_0.sif --num=50000
+```
+
+I splitted the models to **3 groups**: those that have no stable state, 1 or 2 (there were no models with 3 or more stable states).
+The percentages in each category were (use the [count_ss.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh) script).
+
+From the `ags_cascade_2.0` directory of the `druglogics-synergy` module I ran the [run.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/run.sh) script.
+This script samples $50$ models ($20$ times in total) from each category and runs the Drabme with those.
+So $50$ models $\times \text{ }20$ times with 0 stable states, $50$ models $\times \text{ }20$ times with 1 stable state, etc.
+We also try all pair-wise combinations: {($25$ models with 0 stable states) + ($25$ models with 1 stable state)} $\times\text{ }20$ times, etc.
+Lastly, we merge all of the different stable state models together in a pool of $25\times3=75$ models (again $20$ such samples).
+
+# Libraries {-}
+
+```{r Load libraries, message = FALSE}
+library(emba)
+library(xfun)
+```
+
+# Analysis {-}
+
+
+
+
+# R session info {-}
+
+```{r session info, comment=""}
+xfun::session_info()
+```
+
+# References {-}
