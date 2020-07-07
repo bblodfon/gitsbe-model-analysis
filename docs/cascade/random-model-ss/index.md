@@ -1,7 +1,7 @@
 ---
 title: "Random model predictions (CASCADE 2.0) vs Number of Stable States"
 author: "[John Zobolas](https://github.com/bblodfon)"
-date: "Last updated: 04 July, 2020"
+date: "Last updated: 07 July, 2020"
 description: "An investigation"
 url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/random-model-ss/index.html'
 github-repo: "bblodfon/gitsbe-model-analysis"
@@ -12,41 +12,191 @@ site: bookdown::bookdown_site
 # Intro {-}
 
 :::{.green-box}
-Main question: is there a relation between random models stable state number and their performance as measured by the MCC score or AUC ROC?
+Main question: is there a relation between *random* models **stable state number** and their **performance** as measured by AUC PR (Precision-Recall) or AUC ROC (Receiver Operatoring Characteristic)?
 :::
+
+This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper I (see [here](https://bblodfon.github.io/ags-paper-1/index.html)).
+In that analysis, I generated a $3000$ random model sample, and took only the models that had 1 stable state to compute their ROC performance. 
+So maybe I neede to generate more models or bootstrap (re-sample) these models to get a better picture of what is going on and that's what I am trying to do here :)
 
 # Input {-}
 
 The *random link-operator mutated* models were generated from the **CASCADE 2.0** topology, using the [abmlog software](https://github.com/druglogics/abmlog), version `1.6.0`.
 Their prediction performance was assessed by the `Drabme` software module, via the `druglogics-synergy` Java module, version `1.2.0`.
 
-I run the following command to get the random models from the `abmlog` repo root:
+I run the following command to get the random models from the `abmlog` repo root (took ~165 min to **generate all $50000$ models**):
 
 ```r
 java -cp target/abmlog-1.6.0-jar-with-dependencies.jar eu.druglogics.abmlog.RandomBooleanModelGenerator --file=test/cascade_2_0.sif --num=50000
 ```
 
-I splitted the models to **3 groups**: those that have no stable state, 1 or 2 (there were no models with 3 or more stable states).
-The percentages in each category were (use the [count_ss.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh) script).
+---
+
+I splitted the models to **3 groups**: those that have no 1 stable state, 2 stable states or none at all.
+There was only 1 model in $50000$ (`cascade_2_0_418669279901714.gitsbe`) that had 3 stable states and so we will not take into account models with more than 2 stable states (very rare and almost impossible to be chosen via `Gitsbe` since it indirectly penalizes models with more than 1 attractors).
+The distribution of models in each category were (use the [count_ss.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh) script):
+
+| #Stable states | #Models | Percentage |
+|---|---|---|
+| 0 | 29027 | 58% |
+| 1 | 20672 | 41% |
+| 2 | 300   | 1%  |
+| 3 | 1     | less than 0.01%  |
 
 From the `ags_cascade_2.0` directory of the `druglogics-synergy` module I ran the [run.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/run.sh) script.
-This script samples $50$ models ($20$ times in total) from each category and runs the Drabme with those.
-So $50$ models $\times \text{ }20$ times with 0 stable states, $50$ models $\times \text{ }20$ times with 1 stable state, etc.
+This script bootstraps $50$ models ($20$ times in total) from each category and runs the Drabme with those.
+So bootstraping $50$ models $\times \text{ }20$ times with 0 stable states, $50$ models $\times \text{ }20$ times with 1 stable state, etc.
 We also try all pair-wise combinations: {($25$ models with 0 stable states) + ($25$ models with 1 stable state)} $\times\text{ }20$ times, etc.
-Lastly, we merge all of the different stable state models together in a pool of $25\times3=75$ models (again $20$ such samples).
+Lastly, we merge all of the different stable state models together in a pool of $25\times3=75$ models (again bootstraping $20$ such samples).
+
+:::{.orange-box}
+The generated random models and the results of the `Drabme` simulations are stored in 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3932382.svg)](https://doi.org/10.5281/zenodo.3932382)
+:::
 
 # Libraries {-}
 
 
 ```r
 library(emba)
+library(stringr)
 library(xfun)
+library(PRROC)
+library(dplyr)
+library(ggpubr)
 ```
 
 # Analysis {-}
 
+Note that `data_dir` in the next code-block is the directory where you uncompress the Zenodo dataset file (`tar -xzvf boot_random_ss.tar.gz`).
+The `ss_class` denotes the model group.
+E.g. `ss0` is the group with models with zero stable state, `ss12` is the group with half the models having 1 stable state and half of the others having 2 stable states, etc.
 
 
+```r
+observed_synergies_file = "data/observed_synergies_cascade_2.0"
+observed_synergies = emba::get_observed_synergies(observed_synergies_file)
+
+data_dir = "/home/john/tmp/ags_paper_res/link-only/hsa/bootstrap_random_ss"
+res_dirs = list.files(data_dir, full.names = TRUE)
+
+data_list = list()
+index = 1
+for (dir in res_dirs) {
+  if (stringr::str_detect(string = dir, pattern = "cascade_2.0_random_hsa_ss")) {
+    # How many stable states the models had?
+    ss_class = str_match(string = dir, pattern = "_(ss\\d+)_")[1,2]
+    
+    # Get the ensemble-wise synergies
+    ew_syn_file = list.files(path = dir, pattern = "_ensemblewise_synergies.tab", full.names = TRUE)
+    ew_synergies = emba::get_synergy_scores(ew_syn_file)
+    
+    observed = sapply(ew_synergies$perturbation %in% observed_synergies, as.integer)
+    
+    # ROC AUC (Ensemble-wise)
+    ew_roc = roc.curve(scores.class0 = ew_synergies %>% pull(score) %>% (function(x) {-x}), 
+      weights.class0 = observed)
+    ew_roc_auc = ew_roc$auc
+    
+    # PR AUC (Ensemble-wise)
+    ew_pr = pr.curve(scores.class0 = ew_synergies %>% pull(score) %>% (function(x) {-x}), 
+  weights.class0 = observed)
+    ew_pr_auc = ew_pr$auc.davis.goadrich
+    
+    # Get the model-wise synergies
+    mw_syn_file = list.files(path = dir, pattern = "_modelwise_synergies.tab", full.names = TRUE)
+    mw_synergies = emba::get_synergy_scores(mw_syn_file, file_type = "modelwise")
+    
+    mw_synergies = mw_synergies %>% 
+      mutate(synergy_prob = case_when(
+        synergies == 0 & `non-synergies` == 0 ~ 0, 
+        TRUE ~ synergies/(synergies + `non-synergies`)))
+    
+    # ROC AUC (Model-wise)
+    mw_roc = roc.curve(scores.class0 = mw_synergies %>% pull(synergy_prob), weights.class0 = observed)
+    mw_roc_auc = mw_roc$auc
+    
+    # PR AUC (Model-wise)
+    mw_pr = pr.curve(scores.class0 = mw_synergies %>% pull(synergy_prob), weights.class0 = observed)
+    mw_pr_auc = mw_pr$auc.davis.goadrich
+    
+    # Merge results
+    data_list[[index]] = dplyr::bind_cols(ss_class = ss_class, 
+      roc_auc = ew_roc_auc, pr_auc = ew_pr_auc, method = "ensemble-wise")
+    index = index + 1
+    data_list[[index]] = dplyr::bind_cols(ss_class = ss_class, 
+      roc_auc = mw_roc_auc, pr_auc = mw_pr_auc, method = "model-wise")
+    index = index + 1
+  }
+}
+
+res = dplyr::bind_rows(data_list)
+
+saveRDS(res, file = "data/res.rds")
+```
+
+We will just load the result for efficiency:
+
+```r
+res = readRDS(file = "data/res.rds")
+```
+
+## Ensemble-wise Synergies {-}
+
+
+```r
+my_comparisons = list(c("ss0", "ss1"), c("ss0", "ss2"), c("ss1", "ss2"), 
+  c("ss0", "ss01"), c("ss1", "ss01"), c("ss2", "ss02"), c("ss01", "ss012"),  c("ss12", "ss012"))
+ggboxplot(data = res %>% filter(method == "ensemble-wise"), 
+  x = "ss_class", y = "roc_auc", fill = "ss_class",
+  xlab = "Random Model Group (#Stable States)", ylab = "ROC AUC",
+  order = c("ss0", "ss1", "ss2", "ss01", "ss02", "ss12", "ss012")) + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+```
+
+<img src="index_files/figure-html/data-vis-ew-1.png" width="672" />
+
+```r
+ggboxplot(data = res %>% filter(method == "ensemble-wise"),
+  x = "ss_class", y = "pr_auc", fill = "ss_class", 
+  xlab = "Random Model Group (#Stable States)", ylab = "PR AUC",
+  order = c("ss0", "ss1", "ss2", "ss01", "ss02", "ss12", "ss012")) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+```
+
+<img src="index_files/figure-html/data-vis-ew-2.png" width="672" />
+
+- ROC AUC results are somewhat analogous to the PR AUC results
+- Getting a **complete random sample of models with 1 stable state** is enough to give you a *valid* ROC AUC (average AUC: 0.659212) - the *ss1* group is one of the highest-performing groups
+- Getting a **decent random sample** (keeping true to the models proportions as seeing in the table above) means being close to what the class *ss01* represents.
+The class **ss01** is 50-50 and a genuine decent random sample would be ~60-40 (60% models with 0 stable states and 40% models with 1 stable state), but we see that the 0 stable state models do not add *AUC points* (if I am allowed such terminology :) to any group that they are combined with!
+- Continuing, the *ss01* group is **indistiguisable performance-wise** from the *ss1* group - meaning that **using just the $1$ stable state models as a random sample for this topology (CASCADE 2.0) is a good enough choice**!
+
+## Model-wise Synergies {-}
+
+
+```r
+ggboxplot(data = res %>% filter(method == "model-wise"),
+  x = "ss_class", y = "roc_auc", fill = "ss_class",
+  xlab = "Random Model Group (#Stable States)", ylab = "ROC AUC",
+  order = c("ss0", "ss1", "ss2", "ss01", "ss02", "ss12", "ss012")) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+```
+
+<img src="index_files/figure-html/data-vis-mw-1.png" width="672" />
+
+```r
+ggboxplot(data = res %>% filter(method == "model-wise"),
+  x = "ss_class", y = "pr_auc", fill = "ss_class",
+  xlab = "Random Model Group (#Stable States)", ylab = "PR AUC",
+  order = c("ss0", "ss1", "ss2", "ss01", "ss02", "ss12", "ss012")) + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+```
+
+<img src="index_files/figure-html/data-vis-mw-2.png" width="672" />
+
+- Same results as above.
+Note that the model-wise methodology (used to calculate the synergy scores) seems to be more *granular*: it's easier to distinguish the different categories performance using this methodology.
 
 # R session info {-}
 
@@ -69,27 +219,50 @@ Locale:
   LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 Package version:
-  assertthat_0.2.1    base64enc_0.1.3     BH_1.72.0.3        
-  bibtex_0.4.2.2      bookdown_0.20       Ckmeans.1d.dp_4.3.2
-  cli_2.0.2           clipr_0.7.0         compiler_3.6.3     
-  crayon_1.3.4        digest_0.6.25       dplyr_1.0.0        
-  ellipsis_0.3.1      emba_0.1.5          evaluate_0.14      
-  fansi_0.4.1         gbRd_0.4-11         generics_0.0.2     
-  glue_1.4.1          graphics_3.6.3      grDevices_3.6.3    
-  grid_3.6.3          highr_0.8           hms_0.5.3          
-  htmltools_0.5.0     htmlwidgets_1.5.1   igraph_1.2.5       
-  jsonlite_1.7.0      knitr_1.29          lattice_0.20.41    
-  lifecycle_0.2.0     magrittr_1.5        markdown_1.1       
-  Matrix_1.2.18       methods_3.6.3       mime_0.9           
-  pillar_1.4.4        pkgconfig_2.0.3     purrr_0.3.4        
-  R6_2.4.1            Rcpp_1.0.4.6        Rdpack_1.0.0       
-  readr_1.3.1         rje_1.10.16         rlang_0.4.6        
-  rmarkdown_2.3       stats_3.6.3         stringi_1.4.6      
-  stringr_1.4.0       tibble_3.0.1        tidyr_1.1.0        
+  abind_1.4-5         assertthat_0.2.1    backports_1.1.8    
+  base64enc_0.1.3     BH_1.72.0.3         bibtex_0.4.2.2     
+  bookdown_0.20       boot_1.3.25         broom_0.5.6        
+  callr_3.4.3         car_3.0-8           carData_3.0-4      
+  cellranger_1.1.0    Ckmeans.1d.dp_4.3.2 cli_2.0.2          
+  clipr_0.7.0         colorspace_1.4-1    compiler_3.6.3     
+  corrplot_0.84       cowplot_1.0.0       crayon_1.3.4       
+  curl_4.3            data.table_1.12.8   desc_1.2.0         
+  digest_0.6.25       dplyr_1.0.0         ellipsis_0.3.1     
+  emba_0.1.5          evaluate_0.14       fansi_0.4.1        
+  farver_2.0.3        forcats_0.5.0       foreign_0.8-75     
+  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.2      
+  ggpubr_0.4.0        ggrepel_0.8.2       ggsci_2.9          
+  ggsignif_0.6.0      glue_1.4.1          graphics_3.6.3     
+  grDevices_3.6.3     grid_3.6.3          gridExtra_2.3      
+  gtable_0.3.0        haven_2.3.1         highr_0.8          
+  hms_0.5.3           htmltools_0.5.0     htmlwidgets_1.5.1  
+  igraph_1.2.5        isoband_0.2.2       jsonlite_1.7.0     
+  knitr_1.29          labeling_0.3        lattice_0.20-41    
+  lifecycle_0.2.0     lme4_1.1.23         magrittr_1.5       
+  maptools_1.0.1      markdown_1.1        MASS_7.3.51.6      
+  Matrix_1.2.18       MatrixModels_0.4.1  methods_3.6.3      
+  mgcv_1.8.31         mime_0.9            minqa_1.2.4        
+  munsell_0.5.0       nlme_3.1-148        nloptr_1.2.2.1     
+  nnet_7.3.14         openxlsx_4.1.5      parallel_3.6.3     
+  pbkrtest_0.4.8.6    pillar_1.4.4        pkgbuild_1.0.8     
+  pkgconfig_2.0.3     pkgload_1.1.0       plyr_1.8.6         
+  polynom_1.4.0       praise_1.0.0        prettyunits_1.1.1  
+  processx_3.4.2      progress_1.2.2      PRROC_1.3.1        
+  ps_1.3.3            purrr_0.3.4         quantreg_5.55      
+  R6_2.4.1            RColorBrewer_1.1.2  Rcpp_1.0.4.6       
+  RcppEigen_0.3.3.7.0 Rdpack_1.0.0        readr_1.3.1        
+  readxl_1.3.1        rematch_1.0.1       reshape2_1.4.4     
+  rio_0.5.16          rje_1.10.16         rlang_0.4.6        
+  rmarkdown_2.3       rprojroot_1.3.2     rstatix_0.6.0      
+  rstudioapi_0.11     scales_1.1.1        sp_1.4.2           
+  SparseM_1.78        splines_3.6.3       statmod_1.4.34     
+  stats_3.6.3         stringi_1.4.6       stringr_1.4.0      
+  testthat_2.3.2      tibble_3.0.1        tidyr_1.1.0        
   tidyselect_1.1.0    tinytex_0.24        tools_3.6.3        
   usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
-  vctrs_0.3.1         visNetwork_2.0.9    xfun_0.15          
-  yaml_2.2.1         
+  vctrs_0.3.1         viridisLite_0.3.0   visNetwork_2.0.9   
+  withr_2.2.0         xfun_0.15           yaml_2.2.1         
+  zip_2.0.4          
 ```
 
 # References {-}

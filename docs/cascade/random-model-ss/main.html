@@ -861,7 +861,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="" data-path=""><a href="#intro"><i class="fa fa-check"></i>Intro</a></li>
 <li class="chapter" data-level="" data-path=""><a href="#input"><i class="fa fa-check"></i>Input</a></li>
 <li class="chapter" data-level="" data-path=""><a href="#libraries"><i class="fa fa-check"></i>Libraries</a></li>
-<li class="chapter" data-level="" data-path=""><a href="#analysis"><i class="fa fa-check"></i>Analysis</a></li>
+<li class="chapter" data-level="" data-path=""><a href="#analysis"><i class="fa fa-check"></i>Analysis</a>
+<ul>
+<li class="chapter" data-level="" data-path=""><a href="#ensemble-wise-synergies"><i class="fa fa-check"></i>Ensemble-wise Synergies</a></li>
+<li class="chapter" data-level="" data-path=""><a href="#model-wise-synergies"><i class="fa fa-check"></i>Model-wise Synergies</a></li>
+</ul></li>
 <li class="chapter" data-level="" data-path=""><a href="#r-session-info"><i class="fa fa-check"></i>R session info</a></li>
 <li class="chapter" data-level="" data-path=""><a href="#references"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
@@ -887,39 +891,190 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="header">
 <h1 class="title">Random model predictions (CASCADE 2.0) vs Number of Stable States</h1>
 <p class="author"><em><a href="https://github.com/bblodfon">John Zobolas</a></em></p>
-<p class="date"><em>Last updated: 04 July, 2020</em></p>
+<p class="date"><em>Last updated: 07 July, 2020</em></p>
 </div>
 <div id="intro" class="section level1 unnumbered" number="">
 <h1>Intro</h1>
 <div class="green-box">
-<p>Main question: is there a relation between random models stable state number and their performance as measured by the MCC score or AUC ROC?</p>
+<p>Main question: is there a relation between <em>random</em> models <strong>stable state number</strong> and their <strong>performance</strong> as measured by AUC PR (Precision-Recall) or AUC ROC (Receiver Operatoring Characteristic)?</p>
 </div>
+<p>This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper I (see <a href="https://bblodfon.github.io/ags-paper-1/index.html">here</a>).
+In that analysis, I generated a <span class="math inline">\(3000\)</span> random model sample, and took only the models that had 1 stable state to compute their ROC performance.
+So maybe I neede to generate more models or bootstrap (re-sample) these models to get a better picture of what is going on and that’s what I am trying to do here :)</p>
 </div>
 <div id="input" class="section level1 unnumbered" number="">
 <h1>Input</h1>
 <p>The <em>random link-operator mutated</em> models were generated from the <strong>CASCADE 2.0</strong> topology, using the <a href="https://github.com/druglogics/abmlog">abmlog software</a>, version <code>1.6.0</code>.
 Their prediction performance was assessed by the <code>Drabme</code> software module, via the <code>druglogics-synergy</code> Java module, version <code>1.2.0</code>.</p>
-<p>I run the following command to get the random models from the <code>abmlog</code> repo root:</p>
+<p>I run the following command to get the random models from the <code>abmlog</code> repo root (took ~165 min to <strong>generate all <span class="math inline">\(50000\)</span> models</strong>):</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>java <span class="op">-</span>cp target<span class="op">/</span>abmlog<span class="dv">-1</span>.<span class="fl">6.0</span><span class="op">-</span>jar<span class="op">-</span>with<span class="op">-</span>dependencies.jar eu.druglogics.abmlog.RandomBooleanModelGenerator <span class="op">--</span>file=test<span class="op">/</span>cascade_<span class="dv">2</span>_<span class="fl">0.</span>sif <span class="op">--</span>num=<span class="dv">50000</span></span></code></pre></div>
-<p>I splitted the models to <strong>3 groups</strong>: those that have no stable state, 1 or 2 (there were no models with 3 or more stable states).
-The percentages in each category were (use the <a href="https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh">count_ss.sh</a> script).</p>
+<hr />
+<p>I splitted the models to <strong>3 groups</strong>: those that have no 1 stable state, 2 stable states or none at all.
+There was only 1 model in <span class="math inline">\(50000\)</span> (<code>cascade_2_0_418669279901714.gitsbe</code>) that had 3 stable states and so we will not take into account models with more than 2 stable states (very rare and almost impossible to be chosen via <code>Gitsbe</code> since it indirectly penalizes models with more than 1 attractors).
+The distribution of models in each category were (use the <a href="https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh">count_ss.sh</a> script):</p>
+<table>
+<thead>
+<tr class="header">
+<th>#Stable states</th>
+<th>#Models</th>
+<th>Percentage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>29027</td>
+<td>58%</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>20672</td>
+<td>41%</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>300</td>
+<td>1%</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>1</td>
+<td>less than 0.01%</td>
+</tr>
+</tbody>
+</table>
 <p>From the <code>ags_cascade_2.0</code> directory of the <code>druglogics-synergy</code> module I ran the <a href="https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/run.sh">run.sh</a> script.
-This script samples <span class="math inline">\(50\)</span> models (<span class="math inline">\(20\)</span> times in total) from each category and runs the Drabme with those.
-So <span class="math inline">\(50\)</span> models <span class="math inline">\(\times \text{ }20\)</span> times with 0 stable states, <span class="math inline">\(50\)</span> models <span class="math inline">\(\times \text{ }20\)</span> times with 1 stable state, etc.
+This script bootstraps <span class="math inline">\(50\)</span> models (<span class="math inline">\(20\)</span> times in total) from each category and runs the Drabme with those.
+So bootstraping <span class="math inline">\(50\)</span> models <span class="math inline">\(\times \text{ }20\)</span> times with 0 stable states, <span class="math inline">\(50\)</span> models <span class="math inline">\(\times \text{ }20\)</span> times with 1 stable state, etc.
 We also try all pair-wise combinations: {(<span class="math inline">\(25\)</span> models with 0 stable states) + (<span class="math inline">\(25\)</span> models with 1 stable state)} <span class="math inline">\(\times\text{ }20\)</span> times, etc.
-Lastly, we merge all of the different stable state models together in a pool of <span class="math inline">\(25\times3=75\)</span> models (again <span class="math inline">\(20\)</span> such samples).</p>
+Lastly, we merge all of the different stable state models together in a pool of <span class="math inline">\(25\times3=75\)</span> models (again bootstraping <span class="math inline">\(20\)</span> such samples).</p>
+<div class="orange-box">
+<p>The generated random models and the results of the <code>Drabme</code> simulations are stored in
+<a href="https://doi.org/10.5281/zenodo.3932382"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3932382.svg" alt="DOI" /></a></p>
+</div>
 </div>
 <div id="libraries" class="section level1 unnumbered" number="">
 <h1>Libraries</h1>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">library</span>(emba)</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">library</span>(xfun)</span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">library</span>(stringr)</span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">library</span>(xfun)</span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">library</span>(PRROC)</span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">library</span>(dplyr)</span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="kw">library</span>(ggpubr)</span></code></pre></div>
 </div>
 <div id="analysis" class="section level1 unnumbered" number="">
 <h1>Analysis</h1>
+<p>Note that <code>data_dir</code> in the next code-block is the directory where you uncompress the Zenodo dataset file (<code>tar -xzvf boot_random_ss.tar.gz</code>).
+The <code>ss_class</code> denotes the model group.
+E.g. <code>ss0</code> is the group with models with zero stable state, <code>ss12</code> is the group with half the models having 1 stable state and half of the others having 2 stable states, etc.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>observed_synergies_file =<span class="st"> &quot;data/observed_synergies_cascade_2.0&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>observed_synergies =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_observed_synergies</span>(observed_synergies_file)</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a>data_dir =<span class="st"> &quot;/home/john/tmp/ags_paper_res/link-only/hsa/bootstrap_random_ss&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>res_dirs =<span class="st"> </span><span class="kw">list.files</span>(data_dir, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a>data_list =<span class="st"> </span><span class="kw">list</span>()</span>
+<span id="cb3-8"><a href="#cb3-8"></a>index =<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="cf">for</span> (dir <span class="cf">in</span> res_dirs) {</span>
+<span id="cb3-10"><a href="#cb3-10"></a>  <span class="cf">if</span> (stringr<span class="op">::</span><span class="kw">str_detect</span>(<span class="dt">string =</span> dir, <span class="dt">pattern =</span> <span class="st">&quot;cascade_2.0_random_hsa_ss&quot;</span>)) {</span>
+<span id="cb3-11"><a href="#cb3-11"></a>    <span class="co"># How many stable states the models had?</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>    ss_class =<span class="st"> </span><span class="kw">str_match</span>(<span class="dt">string =</span> dir, <span class="dt">pattern =</span> <span class="st">&quot;_(ss</span><span class="ch">\\</span><span class="st">d+)_&quot;</span>)[<span class="dv">1</span>,<span class="dv">2</span>]</span>
+<span id="cb3-13"><a href="#cb3-13"></a>    </span>
+<span id="cb3-14"><a href="#cb3-14"></a>    <span class="co"># Get the ensemble-wise synergies</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a>    ew_syn_file =<span class="st"> </span><span class="kw">list.files</span>(<span class="dt">path =</span> dir, <span class="dt">pattern =</span> <span class="st">&quot;_ensemblewise_synergies.tab&quot;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb3-16"><a href="#cb3-16"></a>    ew_synergies =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_synergy_scores</span>(ew_syn_file)</span>
+<span id="cb3-17"><a href="#cb3-17"></a>    </span>
+<span id="cb3-18"><a href="#cb3-18"></a>    observed =<span class="st"> </span><span class="kw">sapply</span>(ew_synergies<span class="op">$</span>perturbation <span class="op">%in%</span><span class="st"> </span>observed_synergies, as.integer)</span>
+<span id="cb3-19"><a href="#cb3-19"></a>    </span>
+<span id="cb3-20"><a href="#cb3-20"></a>    <span class="co"># ROC AUC (Ensemble-wise)</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a>    ew_roc =<span class="st"> </span><span class="kw">roc.curve</span>(<span class="dt">scores.class0 =</span> ew_synergies <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(score) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb3-22"><a href="#cb3-22"></a>      <span class="dt">weights.class0 =</span> observed)</span>
+<span id="cb3-23"><a href="#cb3-23"></a>    ew_roc_auc =<span class="st"> </span>ew_roc<span class="op">$</span>auc</span>
+<span id="cb3-24"><a href="#cb3-24"></a>    </span>
+<span id="cb3-25"><a href="#cb3-25"></a>    <span class="co"># PR AUC (Ensemble-wise)</span></span>
+<span id="cb3-26"><a href="#cb3-26"></a>    ew_pr =<span class="st"> </span><span class="kw">pr.curve</span>(<span class="dt">scores.class0 =</span> ew_synergies <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(score) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb3-27"><a href="#cb3-27"></a>  <span class="dt">weights.class0 =</span> observed)</span>
+<span id="cb3-28"><a href="#cb3-28"></a>    ew_pr_auc =<span class="st"> </span>ew_pr<span class="op">$</span>auc.davis.goadrich</span>
+<span id="cb3-29"><a href="#cb3-29"></a>    </span>
+<span id="cb3-30"><a href="#cb3-30"></a>    <span class="co"># Get the model-wise synergies</span></span>
+<span id="cb3-31"><a href="#cb3-31"></a>    mw_syn_file =<span class="st"> </span><span class="kw">list.files</span>(<span class="dt">path =</span> dir, <span class="dt">pattern =</span> <span class="st">&quot;_modelwise_synergies.tab&quot;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb3-32"><a href="#cb3-32"></a>    mw_synergies =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_synergy_scores</span>(mw_syn_file, <span class="dt">file_type =</span> <span class="st">&quot;modelwise&quot;</span>)</span>
+<span id="cb3-33"><a href="#cb3-33"></a>    </span>
+<span id="cb3-34"><a href="#cb3-34"></a>    mw_synergies =<span class="st"> </span>mw_synergies <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb3-35"><a href="#cb3-35"></a><span class="st">      </span><span class="kw">mutate</span>(<span class="dt">synergy_prob =</span> <span class="kw">case_when</span>(</span>
+<span id="cb3-36"><a href="#cb3-36"></a>        synergies <span class="op">==</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> `</span><span class="dt">non-synergies</span><span class="st">`</span> <span class="op">==</span><span class="st"> </span><span class="dv">0</span> <span class="op">~</span><span class="st"> </span><span class="dv">0</span>, </span>
+<span id="cb3-37"><a href="#cb3-37"></a>        <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span>synergies<span class="op">/</span>(synergies <span class="op">+</span><span class="st"> `</span><span class="dt">non-synergies</span><span class="st">`</span>)))</span>
+<span id="cb3-38"><a href="#cb3-38"></a>    </span>
+<span id="cb3-39"><a href="#cb3-39"></a>    <span class="co"># ROC AUC (Model-wise)</span></span>
+<span id="cb3-40"><a href="#cb3-40"></a>    mw_roc =<span class="st"> </span><span class="kw">roc.curve</span>(<span class="dt">scores.class0 =</span> mw_synergies <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(synergy_prob), <span class="dt">weights.class0 =</span> observed)</span>
+<span id="cb3-41"><a href="#cb3-41"></a>    mw_roc_auc =<span class="st"> </span>mw_roc<span class="op">$</span>auc</span>
+<span id="cb3-42"><a href="#cb3-42"></a>    </span>
+<span id="cb3-43"><a href="#cb3-43"></a>    <span class="co"># PR AUC (Model-wise)</span></span>
+<span id="cb3-44"><a href="#cb3-44"></a>    mw_pr =<span class="st"> </span><span class="kw">pr.curve</span>(<span class="dt">scores.class0 =</span> mw_synergies <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(synergy_prob), <span class="dt">weights.class0 =</span> observed)</span>
+<span id="cb3-45"><a href="#cb3-45"></a>    mw_pr_auc =<span class="st"> </span>mw_pr<span class="op">$</span>auc.davis.goadrich</span>
+<span id="cb3-46"><a href="#cb3-46"></a>    </span>
+<span id="cb3-47"><a href="#cb3-47"></a>    <span class="co"># Merge results</span></span>
+<span id="cb3-48"><a href="#cb3-48"></a>    data_list[[index]] =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">ss_class =</span> ss_class, </span>
+<span id="cb3-49"><a href="#cb3-49"></a>      <span class="dt">roc_auc =</span> ew_roc_auc, <span class="dt">pr_auc =</span> ew_pr_auc, <span class="dt">method =</span> <span class="st">&quot;ensemble-wise&quot;</span>)</span>
+<span id="cb3-50"><a href="#cb3-50"></a>    index =<span class="st"> </span>index <span class="op">+</span><span class="st"> </span><span class="dv">1</span></span>
+<span id="cb3-51"><a href="#cb3-51"></a>    data_list[[index]] =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">ss_class =</span> ss_class, </span>
+<span id="cb3-52"><a href="#cb3-52"></a>      <span class="dt">roc_auc =</span> mw_roc_auc, <span class="dt">pr_auc =</span> mw_pr_auc, <span class="dt">method =</span> <span class="st">&quot;model-wise&quot;</span>)</span>
+<span id="cb3-53"><a href="#cb3-53"></a>    index =<span class="st"> </span>index <span class="op">+</span><span class="st"> </span><span class="dv">1</span></span>
+<span id="cb3-54"><a href="#cb3-54"></a>  }</span>
+<span id="cb3-55"><a href="#cb3-55"></a>}</span>
+<span id="cb3-56"><a href="#cb3-56"></a></span>
+<span id="cb3-57"><a href="#cb3-57"></a>res =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_rows</span>(data_list)</span>
+<span id="cb3-58"><a href="#cb3-58"></a></span>
+<span id="cb3-59"><a href="#cb3-59"></a><span class="kw">saveRDS</span>(res, <span class="dt">file =</span> <span class="st">&quot;data/res.rds&quot;</span>)</span></code></pre></div>
+<p>We will just load the result for efficiency:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>res =<span class="st"> </span><span class="kw">readRDS</span>(<span class="dt">file =</span> <span class="st">&quot;data/res.rds&quot;</span>)</span></code></pre></div>
+<div id="ensemble-wise-synergies" class="section level2 unnumbered" number="">
+<h2>Ensemble-wise Synergies</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>my_comparisons =<span class="st"> </span><span class="kw">list</span>(<span class="kw">c</span>(<span class="st">&quot;ss0&quot;</span>, <span class="st">&quot;ss1&quot;</span>), <span class="kw">c</span>(<span class="st">&quot;ss0&quot;</span>, <span class="st">&quot;ss2&quot;</span>), <span class="kw">c</span>(<span class="st">&quot;ss1&quot;</span>, <span class="st">&quot;ss2&quot;</span>), </span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">c</span>(<span class="st">&quot;ss0&quot;</span>, <span class="st">&quot;ss01&quot;</span>), <span class="kw">c</span>(<span class="st">&quot;ss1&quot;</span>, <span class="st">&quot;ss01&quot;</span>), <span class="kw">c</span>(<span class="st">&quot;ss2&quot;</span>, <span class="st">&quot;ss02&quot;</span>), <span class="kw">c</span>(<span class="st">&quot;ss01&quot;</span>, <span class="st">&quot;ss012&quot;</span>),  <span class="kw">c</span>(<span class="st">&quot;ss12&quot;</span>, <span class="st">&quot;ss012&quot;</span>))</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(method <span class="op">==</span><span class="st"> &quot;ensemble-wise&quot;</span>), </span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="dt">x =</span> <span class="st">&quot;ss_class&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;ss_class&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Random Model Group (#Stable States)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6"></a>  <span class="dt">order =</span> <span class="kw">c</span>(<span class="st">&quot;ss0&quot;</span>, <span class="st">&quot;ss1&quot;</span>, <span class="st">&quot;ss2&quot;</span>, <span class="st">&quot;ss01&quot;</span>, <span class="st">&quot;ss02&quot;</span>, <span class="st">&quot;ss12&quot;</span>, <span class="st">&quot;ss012&quot;</span>)) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<p><img src="index_files/figure-html/data-vis-ew-1.png" width="672" /></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(method <span class="op">==</span><span class="st"> &quot;ensemble-wise&quot;</span>),</span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="dt">x =</span> <span class="st">&quot;ss_class&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;ss_class&quot;</span>, </span>
+<span id="cb6-3"><a href="#cb6-3"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Random Model Group (#Stable States)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4"></a>  <span class="dt">order =</span> <span class="kw">c</span>(<span class="st">&quot;ss0&quot;</span>, <span class="st">&quot;ss1&quot;</span>, <span class="st">&quot;ss2&quot;</span>, <span class="st">&quot;ss01&quot;</span>, <span class="st">&quot;ss02&quot;</span>, <span class="st">&quot;ss12&quot;</span>, <span class="st">&quot;ss012&quot;</span>)) <span class="op">+</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<p><img src="index_files/figure-html/data-vis-ew-2.png" width="672" /></p>
+<ul>
+<li>ROC AUC results are somewhat analogous to the PR AUC results</li>
+<li>Getting a <strong>complete random sample of models with 1 stable state</strong> is enough to give you a <em>valid</em> ROC AUC (average AUC: 0.659212) - the <em>ss1</em> group is one of the highest-performing groups</li>
+<li>Getting a <strong>decent random sample</strong> (keeping true to the models proportions as seeing in the table above) means being close to what the class <em>ss01</em> represents.
+The class <strong>ss01</strong> is 50-50 and a genuine decent random sample would be ~60-40 (60% models with 0 stable states and 40% models with 1 stable state), but we see that the 0 stable state models do not add <em>AUC points</em> (if I am allowed such terminology :) to any group that they are combined with!</li>
+<li>Continuing, the <em>ss01</em> group is <strong>indistiguisable performance-wise</strong> from the <em>ss1</em> group - meaning that <strong>using just the <span class="math inline">\(1\)</span> stable state models as a random sample for this topology (CASCADE 2.0) is a good enough choice</strong>!</li>
+</ul>
+</div>
+<div id="model-wise-synergies" class="section level2 unnumbered" number="">
+<h2>Model-wise Synergies</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(method <span class="op">==</span><span class="st"> &quot;model-wise&quot;</span>),</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  <span class="dt">x =</span> <span class="st">&quot;ss_class&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;ss_class&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Random Model Group (#Stable States)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  <span class="dt">order =</span> <span class="kw">c</span>(<span class="st">&quot;ss0&quot;</span>, <span class="st">&quot;ss1&quot;</span>, <span class="st">&quot;ss2&quot;</span>, <span class="st">&quot;ss01&quot;</span>, <span class="st">&quot;ss02&quot;</span>, <span class="st">&quot;ss12&quot;</span>, <span class="st">&quot;ss012&quot;</span>)) <span class="op">+</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<p><img src="index_files/figure-html/data-vis-mw-1.png" width="672" /></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(method <span class="op">==</span><span class="st"> &quot;model-wise&quot;</span>),</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="dt">x =</span> <span class="st">&quot;ss_class&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;ss_class&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Random Model Group (#Stable States)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4"></a>  <span class="dt">order =</span> <span class="kw">c</span>(<span class="st">&quot;ss0&quot;</span>, <span class="st">&quot;ss1&quot;</span>, <span class="st">&quot;ss2&quot;</span>, <span class="st">&quot;ss01&quot;</span>, <span class="st">&quot;ss02&quot;</span>, <span class="st">&quot;ss12&quot;</span>, <span class="st">&quot;ss012&quot;</span>)) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<p><img src="index_files/figure-html/data-vis-mw-2.png" width="672" /></p>
+<ul>
+<li>Same results as above.
+Note that the model-wise methodology (used to calculate the synergy scores) seems to be more <em>granular</em>: it’s easier to distinguish the different categories performance using this methodology.</li>
+</ul>
+</div>
 </div>
 <div id="r-session-info" class="section level1 unnumbered" number="">
 <h1>R session info</h1>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>xfun<span class="op">::</span><span class="kw">session_info</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>xfun<span class="op">::</span><span class="kw">session_info</span>()</span></code></pre></div>
 <pre><code>R version 3.6.3 (2020-02-29)
 Platform: x86_64-pc-linux-gnu (64-bit)
 Running under: Ubuntu 18.04.4 LTS
@@ -933,27 +1088,50 @@ Locale:
   LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 Package version:
-  assertthat_0.2.1    base64enc_0.1.3     BH_1.72.0.3        
-  bibtex_0.4.2.2      bookdown_0.20       Ckmeans.1d.dp_4.3.2
-  cli_2.0.2           clipr_0.7.0         compiler_3.6.3     
-  crayon_1.3.4        digest_0.6.25       dplyr_1.0.0        
-  ellipsis_0.3.1      emba_0.1.5          evaluate_0.14      
-  fansi_0.4.1         gbRd_0.4-11         generics_0.0.2     
-  glue_1.4.1          graphics_3.6.3      grDevices_3.6.3    
-  grid_3.6.3          highr_0.8           hms_0.5.3          
-  htmltools_0.5.0     htmlwidgets_1.5.1   igraph_1.2.5       
-  jsonlite_1.7.0      knitr_1.29          lattice_0.20.41    
-  lifecycle_0.2.0     magrittr_1.5        markdown_1.1       
-  Matrix_1.2.18       methods_3.6.3       mime_0.9           
-  pillar_1.4.4        pkgconfig_2.0.3     purrr_0.3.4        
-  R6_2.4.1            Rcpp_1.0.4.6        Rdpack_1.0.0       
-  readr_1.3.1         rje_1.10.16         rlang_0.4.6        
-  rmarkdown_2.3       stats_3.6.3         stringi_1.4.6      
-  stringr_1.4.0       tibble_3.0.1        tidyr_1.1.0        
+  abind_1.4-5         assertthat_0.2.1    backports_1.1.8    
+  base64enc_0.1.3     BH_1.72.0.3         bibtex_0.4.2.2     
+  bookdown_0.20       boot_1.3.25         broom_0.5.6        
+  callr_3.4.3         car_3.0-8           carData_3.0-4      
+  cellranger_1.1.0    Ckmeans.1d.dp_4.3.2 cli_2.0.2          
+  clipr_0.7.0         colorspace_1.4-1    compiler_3.6.3     
+  corrplot_0.84       cowplot_1.0.0       crayon_1.3.4       
+  curl_4.3            data.table_1.12.8   desc_1.2.0         
+  digest_0.6.25       dplyr_1.0.0         ellipsis_0.3.1     
+  emba_0.1.5          evaluate_0.14       fansi_0.4.1        
+  farver_2.0.3        forcats_0.5.0       foreign_0.8-75     
+  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.2      
+  ggpubr_0.4.0        ggrepel_0.8.2       ggsci_2.9          
+  ggsignif_0.6.0      glue_1.4.1          graphics_3.6.3     
+  grDevices_3.6.3     grid_3.6.3          gridExtra_2.3      
+  gtable_0.3.0        haven_2.3.1         highr_0.8          
+  hms_0.5.3           htmltools_0.5.0     htmlwidgets_1.5.1  
+  igraph_1.2.5        isoband_0.2.2       jsonlite_1.7.0     
+  knitr_1.29          labeling_0.3        lattice_0.20-41    
+  lifecycle_0.2.0     lme4_1.1.23         magrittr_1.5       
+  maptools_1.0.1      markdown_1.1        MASS_7.3.51.6      
+  Matrix_1.2.18       MatrixModels_0.4.1  methods_3.6.3      
+  mgcv_1.8.31         mime_0.9            minqa_1.2.4        
+  munsell_0.5.0       nlme_3.1-148        nloptr_1.2.2.1     
+  nnet_7.3.14         openxlsx_4.1.5      parallel_3.6.3     
+  pbkrtest_0.4.8.6    pillar_1.4.4        pkgbuild_1.0.8     
+  pkgconfig_2.0.3     pkgload_1.1.0       plyr_1.8.6         
+  polynom_1.4.0       praise_1.0.0        prettyunits_1.1.1  
+  processx_3.4.2      progress_1.2.2      PRROC_1.3.1        
+  ps_1.3.3            purrr_0.3.4         quantreg_5.55      
+  R6_2.4.1            RColorBrewer_1.1.2  Rcpp_1.0.4.6       
+  RcppEigen_0.3.3.7.0 Rdpack_1.0.0        readr_1.3.1        
+  readxl_1.3.1        rematch_1.0.1       reshape2_1.4.4     
+  rio_0.5.16          rje_1.10.16         rlang_0.4.6        
+  rmarkdown_2.3       rprojroot_1.3.2     rstatix_0.6.0      
+  rstudioapi_0.11     scales_1.1.1        sp_1.4.2           
+  SparseM_1.78        splines_3.6.3       statmod_1.4.34     
+  stats_3.6.3         stringi_1.4.6       stringr_1.4.0      
+  testthat_2.3.2      tibble_3.0.1        tidyr_1.1.0        
   tidyselect_1.1.0    tinytex_0.24        tools_3.6.3        
   usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
-  vctrs_0.3.1         visNetwork_2.0.9    xfun_0.15          
-  yaml_2.2.1         </code></pre>
+  vctrs_0.3.1         viridisLite_0.3.0   visNetwork_2.0.9   
+  withr_2.2.0         xfun_0.15           yaml_2.2.1         
+  zip_2.0.4          </code></pre>
 </div>
 <div id="references" class="section level1 unnumbered" number="">
 <h1>References</h1>
