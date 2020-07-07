@@ -15,8 +15,9 @@ site: bookdown::bookdown_site
 Main question: is there a relation between *random* models **stable state number** and their **performance** as measured by AUC PR (Precision-Recall) or AUC ROC (Receiver Operatoring Characteristic)?
 :::
 
-This investigation can be considered as an extension of the random model ROC and PR curves I created for the AGS paper I (see [here](https://bblodfon.github.io/ags-paper-1/index.html)).
-I took there from the $3000$ model sample, only the models that had 1 stable state to compute their ROC performance and maybe that wasn't a good sampling :)
+This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper I (see [here](https://bblodfon.github.io/ags-paper-1/index.html)).
+In that analysis, I generated a $3000$ random model sample, and took only the models that had 1 stable state to compute their ROC performance. 
+So maybe I neede to generate more models or bootstrap (re-sample) these models to get a better picture of what is going on and that's what I am trying to do here :)
 
 # Input {-}
 
@@ -158,7 +159,7 @@ ggboxplot(data = res %>% filter(method == "ensemble-wise"),
 - Getting a **complete random sample of models with 1 stable state** is enough to give you a *valid* ROC AUC (average AUC: `r res %>% filter(method == "ensemble-wise", ss_class == "ss1") %>% summarise(mean(roc_auc))`) - the *ss1* group is one of the highest-performing groups
 - Getting a **decent random sample** (keeping true to the models proportions as seeing in the table above) means being close to what the class *ss01* represents.
 The class **ss01** is 50-50 and a genuine decent random sample would be ~60-40 (60% models with 0 stable states and 40% models with 1 stable state), but we see that the 0 stable state models do not add *AUC points* (if I am allowed such terminology :) to any group that they are combined with!
-- Continuing, the *ss01* group is **indistiguisable performance-wise** from the *ss1* group - meaning that **using just the $1$ stable state models as a random sample for this topology (CASCADE 2.0) is a good enough choice** (so, we did alright)!
+- Continuing, the *ss01* group is **indistiguisable performance-wise** from the *ss1* group - meaning that **using just the $1$ stable state models as a random sample for this topology (CASCADE 2.0) is a good enough choice**!
 
 ## Model-wise Synergies {-}
 
