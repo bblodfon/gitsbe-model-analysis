@@ -12,13 +12,10 @@ site: bookdown::bookdown_site
 # Intro {-}
 
 :::{.green-box}
-Main question: is there a correlation between models fitness to the steady state and their performance as measured by the MCC score?
+Main question: is there a correlation between models fitness to the steady state and their performance?
 :::
 
 All boolean model simulations were done using the `druglogics-synergy` Java module, version `1.2.0`: `git checkout v1.2.0`.
-
-This analysis was done after I concluded the ROC and PR analysis for the AGS paper I (see [here](https://bblodfon.github.io/ags-paper-1/index.html)).
-Since the results of this analysis are negative, I put them here as an investigation and a reference guide for future endeavors!
 
 # Input {-}
 
@@ -33,6 +30,7 @@ library(stringr)
 library(ggpubr)
 library(ggplot2)
 library(Ckmeans.1d.dp)
+library(PRROC)
 ```
 
 Load the AGS steady state:
@@ -70,10 +68,11 @@ Then, for each such *flipping-nodes* value, we generated $20$ new steady states 
 Thus, in total, $205$ training data files were produced ($205 = 9 \times 20 + 24 + 1$, where from the $11$ number of flips, the one flip happens for every node ($24$ different steady states) and flipping all the nodes generates $1$ completely reversed steady state). 
 
 Running the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`: `git checkout v1.2.0`), we get the simulation results for each of these training data files.
+We mainly going to use the **MCC performance score** for each model in the subsequent analyses.
 Note that in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to ($15$) for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: hsa`.
 
 :::{.orange-box}
-The generated training data files (`training-data-files.tar.gz`) and the results from the simulations (`fit-vs-performance-results.tar.gz`) are stored in [Zenodo](https://doi.org/10.5281/zenodo.3877493).
+For the generated training data files (`training-data-files.tar.gz`) and the results from the simulations (`fit-vs-performance-results.tar.gz`) see [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857).
 :::
 
 To load the data, download the results (`fit-vs-performance-results.tar.gz`) and extract it to a directory of your choice with the following commands: `mkdir fit-vs-performance-results` and `tar -C fit-vs-performance-results/ -xzvf fit-vs-performance-results.tar.gz`.
@@ -165,7 +164,7 @@ ggboxplot(res, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
 ```
 
 :::{.orange-box}
-No correlation whatsoever!
+No correlation whatsoever between models fitness and performance (as measured by the MCC score)
 :::
 
 Note though that **the results are very dependent on the dataset and the observed synergies** used.
@@ -268,7 +267,7 @@ The drabme synergy method used was `HSA`.
 For the link operator models the `biolqm_stable_states` *attractor_tool* option was used and for the other 2 parameterizations the `bnet_reduction_reduced`.
 And of course, the proper/initial observed synergies vector was used as the gold standard.
 
-First download the [Zenodo dataset]() and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
+First download the dataset [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857) and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
 
 Load the data using the following `R` code (I have already saved the results):
 ```{r load-data-3, eval=FALSE}
@@ -336,8 +335,6 @@ res_topo = res
 saveRDS(res_topo, file = "data/res_topo.rds")
 #saveRDS(res_link_and_topo, file = "data/res_link_and_topo.rds")
 ```
-
-# Results {-}
 
 ## Link operator mutated models {-}
 
@@ -429,6 +426,120 @@ ggdensity(data = res_link_and_topo, x = "mcc", color = "type", add = "mean",
 :::{.blue-box}
 - Note that most of the models trained to the complete **reverse** steady state have an MCC score exactly equal to $0$, since the denominator is also zero ($TP+FP = 0$).
 So, in a way the steady state models are better in that regard (i.e. they make predictions, even though most of them have negative MCC scores).
+:::
+
+
+# Fitness vs Ensemble performance {-}
+
+:::{.green-box}
+Is there any correlation between the **calibrated models fitness to the AGS steady state** and their ROC/PR AUC performance when they are **normalized to a random proliferative model ensemble**?
+:::
+
+In this section we use the same technique as in the [Flip training data analysis] section: we had already generated the flipped training data files which we now use again with the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`), to get the simulation results for each of these training data files.
+
+Differences are that now in the in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to $20$ for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: bliss`.
+
+Also, we used the `run_druglogics_synergy.sh` script at the root of the `druglogics-synergy` (script config: {`2.0`, `rand`, `150`, `biolqm_stable_states`, `bliss`}) repo to get the ensemble results of the **random (proliferative)** models that we will normalize the calibrated model performance at.
+
+:::{.orange-box}
+The dataset with the simulation results (`fit-vs-performance-results-bliss.tar.gz` file) is on [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857).
+With the code below you can load this data (but I have stored the data `tibble` for convenience):
+:::
+
+```{r load-data-fit-vs-auc, eval=FALSE}
+# random proliferative results
+random_ew_synergies_file = "data/cascade_2.0_rand_150sim_fixpoints_bliss_ensemblewise_synergies.tab"
+random_ew_synergies_150sim = emba::get_synergy_scores(random_ew_synergies_file)
+
+# 1 (positive/observed synergy) or 0 (negative/not observed) for all tested drug combinations
+observed = sapply(random_ew_synergies_150sim$perturbation %in% observed_synergies, as.integer)
+
+# get flipped training data results
+data_dir = "/home/john/tmp/ags_paper_res/fit-vs-performance-results-bliss"
+
+data_list = list()
+index = 1
+for (res_dir in list.dirs(data_dir, recursive = FALSE)) {
+  ew_synergies_file = list.files(path = res_dir, pattern = "ensemblewise_synergies", full.names = TRUE)
+  ew_ss_scores = emba::get_synergy_scores(ew_synergies_file)
+  
+  # get the models stable states
+  models_dir = paste0(res_dir, "/models")
+  # you get messages for models with {#stable states} != 1
+  models_stable_states = emba::get_stable_state_from_models_dir(models_dir)
+  
+  # calculate models fitness to AGS steady state
+  models_fit = apply(models_stable_states[, names(steady_state)], 1, 
+   usefun::get_percentage_of_matches, steady_state)
+  
+  # calculate normalized model performance (ROC-AUC)
+  pred = dplyr::bind_cols(random = random_ew_synergies_150sim %>% rename(random_score = score), 
+    ss = ew_ss_scores %>% select(score) %>% rename(ss_score = score), 
+    as_tibble_col(observed, column_name = "observed"))
+  
+  pred = pred %>% mutate(combined_score = ss_score - random_score)
+  res_roc = PRROC::roc.curve(scores.class0 = pred %>% pull(combined_score) %>% (function(x) {-x}), 
+    weights.class0 = pred %>% pull(observed))
+  res_pr = PRROC::pr.curve(scores.class0 = pred %>% pull(combined_score) %>% (function(x) {-x}), 
+    weights.class0 = pred %>% pull(observed))
+  
+  # bind all to one (OneForAll)
+  df = dplyr::bind_cols(roc_auc = res_roc$auc, pr_auc = res_pr$auc.davis.goadrich, 
+    avg_fit = mean(models_fit), median_fit = median(models_fit))
+  data_list[[index]] = df
+  index = index + 1
+}
+
+res = bind_rows(data_list)
+saveRDS(res, file = "data/res_fit_aucs.rds")
+```
+
+```{r quick-load-data}
+res = readRDS(file = "data/res_fit_aucs.rds")
+```
+
+Some scatter plots to get a first idea (every point is one of the $205$ simulations, normalized to the random proliferative models):
+```{r figures-8, cache=TRUE, fig.align='center', dpi=300, message=FALSE}
+ggscatter(data = res, x = "avg_fit", y = "roc_auc", xlab = "Average Fitness",
+  ylab = "ROC AUC", add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall"))
+ggscatter(data = res, x = "avg_fit", y = "pr_auc", xlab = "Average Fitness", 
+  ylab = "PR AUC", add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall"))
+
+# ggscatter(data = res, x = "median_fit", y = "roc_auc")
+# ggscatter(data = res, x = "median_fit", y = "pr_auc")
+```
+
+We will split the points to $4$ *fitness* groups (higher number group means **higher fitness**):
+
+```{r split-fit-groups}
+fit_classes_num = 4
+avg_fit_res = Ckmeans.1d.dp(x = res$avg_fit, k = fit_classes_num)
+median_fit_res = Ckmeans.1d.dp(x = res$median_fit, k = fit_classes_num)
+
+res = res %>% 
+  add_column(avg_fit_group = avg_fit_res$cluster) %>% 
+  add_column(median_fit_group = median_fit_res$cluster) 
+```
+
+And thus, we can show the following boxplots:
+
+```{r figures-9, cache=TRUE, fig.align='center', dpi=300}
+my_comparisons = list(c(1,2), c(1,3), c(1,4))
+ggboxplot(data = res, x = "avg_fit_group", y = "roc_auc", fill = "avg_fit_group",
+  xlab = "Fitness Group (Average fitness)", ylab = "ROC AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+ggboxplot(data = res, x = "avg_fit_group", y = "pr_auc", fill = "avg_fit_group",
+  xlab = "Fitness Group (Average fitness)", ylab = "PR AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+```
+
+:::{.green-box}
+There is seems to be some correlation between **fitness group and AUC performance of the calibrated models normalized to the random proliferative** ones.
+This manifests in **better PR AUC** for the higher fitness calibrated models subject to normalization.
+
+Note that PR AUC is a better indicator of performance for our imbalanced dataset than the ROC AUC.
 :::
 
 # R session info {-}
