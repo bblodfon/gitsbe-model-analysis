@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Fitness vs Performance Analysis (AGS paper I)</title>
   <meta name="description" content="An investigation analysis" />
-  <meta name="generator" content="bookdown 0.19 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.20 and GitBook 2.6.7" />
 
   <meta property="og:title" content="Fitness vs Performance Analysis (AGS paper I)" />
   <meta property="og:type" content="book" />
@@ -32,7 +32,7 @@
   
 
 
-<script src="libs/header-attrs-2.1/header-attrs.js"></script>
+<script src="libs/header-attrs-2.3/header-attrs.js"></script>
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
@@ -50,6 +50,7 @@
 
 
 
+<script src="libs/accessible-code-block-0.0.1/empty-anchor.js"></script>
 
 <script>
 /* ========================================================================
@@ -861,12 +862,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="" data-path=""><a href="#input"><i class="fa fa-check"></i>Input</a></li>
 <li class="chapter" data-level="" data-path=""><a href="#flip-training-data-analysis"><i class="fa fa-check"></i>Flip training data analysis</a></li>
 <li class="chapter" data-level="" data-path=""><a href="#reverse-ss-vs-ss-method"><i class="fa fa-check"></i>Reverse SS vs SS method</a></li>
-<li class="chapter" data-level="" data-path=""><a href="#results"><i class="fa fa-check"></i>Results</a>
-<ul>
-<li class="chapter" data-level="" data-path=""><a href="#link-operator-mutated-models"><i class="fa fa-check"></i>Link operator mutated models</a></li>
-<li class="chapter" data-level="" data-path=""><a href="#topology-mutated-models"><i class="fa fa-check"></i>Topology-mutated models</a></li>
-<li class="chapter" data-level="" data-path=""><a href="#both-mutations-on-models"><i class="fa fa-check"></i>Both mutations on models</a></li>
-</ul></li>
+<li class="chapter" data-level="" data-path=""><a href="#fitness-vs-ensemble-performance"><i class="fa fa-check"></i>Fitness vs Ensemble performance</a></li>
 <li class="chapter" data-level="" data-path=""><a href="#r-session-info"><i class="fa fa-check"></i>R session info</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
@@ -891,16 +887,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="header">
 <h1 class="title">Fitness vs Performance Analysis (AGS paper I)</h1>
 <p class="author"><em><a href="https://github.com/bblodfon">John Zobolas</a></em></p>
-<p class="date"><em>Last updated: 17 June, 2020</em></p>
+<p class="date"><em>Last updated: 03 August, 2020</em></p>
 </div>
 <div id="intro" class="section level1 unnumbered" number="">
 <h1>Intro</h1>
 <div class="green-box">
-<p>Main question: is there a correlation between models fitness to the steady state and their performance as measured by the MCC score?</p>
+<p>Main question: is there a correlation between models fitness to the steady state and their performance?</p>
 </div>
 <p>All boolean model simulations were done using the <code>druglogics-synergy</code> Java module, version <code>1.2.0</code>: <code>git checkout v1.2.0</code>.</p>
-<p>This analysis was done after I concluded the ROC and PR analysis for the AGS paper I (see <a href="https://bblodfon.github.io/ags-paper-1/index.html">here</a>).
-Since the results of this analysis are negative, I put them here as an investigation and a reference guide for future endeavors!</p>
 </div>
 <div id="input" class="section level1 unnumbered" number="">
 <h1>Input</h1>
@@ -913,7 +907,8 @@ Since the results of this analysis are negative, I put them here as an investiga
 <span id="cb1-6"><a href="#cb1-6"></a><span class="kw">library</span>(stringr)</span>
 <span id="cb1-7"><a href="#cb1-7"></a><span class="kw">library</span>(ggpubr)</span>
 <span id="cb1-8"><a href="#cb1-8"></a><span class="kw">library</span>(ggplot2)</span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="kw">library</span>(Ckmeans<span class="fl">.1</span>d.dp)</span></code></pre></div>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="kw">library</span>(Ckmeans<span class="fl">.1</span>d.dp)</span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="kw">library</span>(PRROC)</span></code></pre></div>
 <p>Load the AGS steady state:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># get the AGS steady state</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a>steady_state_file =<span class="st"> &quot;data/steadystate&quot;</span></span>
@@ -948,9 +943,10 @@ That way, we can train models to different steady states, ranging from ones that
 Then, for each such <em>flipping-nodes</em> value, we generated <span class="math inline">\(20\)</span> new steady states with a randomly chosen set of nodes whose value is going to flip.
 Thus, in total, <span class="math inline">\(205\)</span> training data files were produced (<span class="math inline">\(205 = 9 \times 20 + 24 + 1\)</span>, where from the <span class="math inline">\(11\)</span> number of flips, the one flip happens for every node (<span class="math inline">\(24\)</span> different steady states) and flipping all the nodes generates <span class="math inline">\(1\)</span> completely reversed steady state).</p>
 <p>Running the script <a href="https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh">run_druglogics_synergy_training.sh</a> from the <code>druglogics-synergy</code> repository root (version <code>1.2.0</code>: <code>git checkout v1.2.0</code>), we get the simulation results for each of these training data files.
+We mainly going to use the <strong>MCC performance score</strong> for each model in the subsequent analyses.
 Note that in the CASCADE 2.0 configuration file (<code>config</code>) we changed the number of simulations to (<span class="math inline">\(15\)</span>) for each training data file, the attractor tool used was <code>biolqm_stable_states</code> and the <code>synergy_method: hsa</code>.</p>
 <div class="orange-box">
-<p>The generated training data files (<code>training-data-files.tar.gz</code>) and the results from the simulations (<code>fit-vs-performance-results.tar.gz</code>) are stored in <a href="https://doi.org/10.5281/zenodo.3877493">Zenodo</a>.</p>
+<p>For the generated training data files (<code>training-data-files.tar.gz</code>) and the results from the simulations (<code>fit-vs-performance-results.tar.gz</code>) see <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a>.</p>
 </div>
 <p>To load the data, download the results (<code>fit-vs-performance-results.tar.gz</code>) and extract it to a directory of your choice with the following commands: <code>mkdir fit-vs-performance-results</code> and <code>tar -C fit-vs-performance-results/ -xzvf fit-vs-performance-results.tar.gz</code>.
 Then use the next <code>R</code> code to create the <code>res</code> data.frame (I have already saved the result):</p>
@@ -1032,7 +1028,7 @@ Then use the next <code>R</code> code to create the <code>res</code> data.frame 
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># useful</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a><span class="co">#res %&gt;% group_by(fitness_class_id) %&gt;% summarise(avg = mean(mcc), count = n()) %&gt;% print(n = 21)</span></span></code></pre></div>
 <div class="orange-box">
-<p>No correlation whatsoever!</p>
+<p>No correlation whatsoever between models fitness and performance (as measured by the MCC score)</p>
 </div>
 <p>Note though that <strong>the results are very dependent on the dataset and the observed synergies</strong> used.
 For example, using the following observed synergies vector (we also show the previous one for comparison purposes - <strong>3 out of 6 synergies remain the same</strong>):</p>
@@ -1130,7 +1126,7 @@ I ran these simulations 3 times, one with <strong>link operator mutations only, 
 The drabme synergy method used was <code>HSA</code>.
 For the link operator models the <code>biolqm_stable_states</code> <em>attractor_tool</em> option was used and for the other 2 parameterizations the <code>bnet_reduction_reduced</code>.
 And of course, the proper/initial observed synergies vector was used as the gold standard.</p>
-<p>First download the <a href="">Zenodo dataset</a> and then extract the <code>5000sim-hsa-*-res.tar.gz</code> compressed archives in a directory.</p>
+<p>First download the dataset <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a> and then extract the <code>5000sim-hsa-*-res.tar.gz</code> compressed archives in a directory.</p>
 <p>Load the data using the following <code>R</code> code (I have already saved the results):</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co"># simulation results directories (do not add the ending path character &#39;/&#39;)</span></span>
 <span id="cb15-2"><a href="#cb15-2"></a>res_dirs =<span class="st"> </span><span class="kw">c</span>(</span>
@@ -1195,9 +1191,6 @@ And of course, the proper/initial observed synergies vector was used as the gold
 <span id="cb15-61"><a href="#cb15-61"></a><span class="co">#saveRDS(res_link, file = &quot;data/res_link.rds&quot;)</span></span>
 <span id="cb15-62"><a href="#cb15-62"></a><span class="kw">saveRDS</span>(res_topo, <span class="dt">file =</span> <span class="st">&quot;data/res_topo.rds&quot;</span>)</span>
 <span id="cb15-63"><a href="#cb15-63"></a><span class="co">#saveRDS(res_link_and_topo, file = &quot;data/res_link_and_topo.rds&quot;)</span></span></code></pre></div>
-</div>
-<div id="results" class="section level1 unnumbered" number="">
-<h1>Results</h1>
 <div id="link-operator-mutated-models" class="section level2 unnumbered" number="">
 <h2>Link operator mutated models</h2>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>res_link =<span class="st"> </span><span class="kw">readRDS</span>(<span class="dt">file =</span> <span class="st">&quot;data/res_link.rds&quot;</span>)</span>
@@ -1283,9 +1276,102 @@ So, in a way the steady state models are better in that regard (i.e. they make 
 </div>
 </div>
 </div>
+<div id="fitness-vs-ensemble-performance" class="section level1 unnumbered" number="">
+<h1>Fitness vs Ensemble performance</h1>
+<div class="green-box">
+<p>Is there any correlation between the <strong>calibrated models fitness to the AGS steady state</strong> and their ROC/PR AUC performance when they are <strong>normalized to a random proliferative model ensemble</strong>?</p>
+</div>
+<p>In this section we use the same technique as in the <a href="#flip-training-data-analysis">Flip training data analysis</a> section: we had already generated the flipped training data files which we now use again with the script <a href="https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh">run_druglogics_synergy_training.sh</a> from the <code>druglogics-synergy</code> repository root (version <code>1.2.0</code>), to get the simulation results for each of these training data files.</p>
+<p>Differences are that now in the in the CASCADE 2.0 configuration file (<code>config</code>) we changed the number of simulations to <span class="math inline">\(20\)</span> for each training data file, the attractor tool used was <code>biolqm_stable_states</code> and the <code>synergy_method: bliss</code>.</p>
+<p>Also, we used the <code>run_druglogics_synergy.sh</code> script at the root of the <code>druglogics-synergy</code> (script config: {<code>2.0</code>, <code>rand</code>, <code>150</code>, <code>biolqm_stable_states</code>, <code>bliss</code>}) repo to get the ensemble results of the <strong>random (proliferative)</strong> models that we will normalize the calibrated model performance at.</p>
+<div class="orange-box">
+<p>The dataset with the simulation results (<code>fit-vs-performance-results-bliss.tar.gz</code> file) is on <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a>.
+With the code below you can load this data (but I have stored the data <code>tibble</code> for convenience):</p>
+</div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a><span class="co"># random proliferative results</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a>random_ew_synergies_file =<span class="st"> &quot;data/cascade_2.0_rand_150sim_fixpoints_bliss_ensemblewise_synergies.tab&quot;</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a>random_ew_synergies_150sim =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_synergy_scores</span>(random_ew_synergies_file)</span>
+<span id="cb25-4"><a href="#cb25-4"></a></span>
+<span id="cb25-5"><a href="#cb25-5"></a><span class="co"># 1 (positive/observed synergy) or 0 (negative/not observed) for all tested drug combinations</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a>observed =<span class="st"> </span><span class="kw">sapply</span>(random_ew_synergies_150sim<span class="op">$</span>perturbation <span class="op">%in%</span><span class="st"> </span>observed_synergies, as.integer)</span>
+<span id="cb25-7"><a href="#cb25-7"></a></span>
+<span id="cb25-8"><a href="#cb25-8"></a><span class="co"># get flipped training data results</span></span>
+<span id="cb25-9"><a href="#cb25-9"></a>data_dir =<span class="st"> &quot;/home/john/tmp/ags_paper_res/fit-vs-performance-results-bliss&quot;</span></span>
+<span id="cb25-10"><a href="#cb25-10"></a></span>
+<span id="cb25-11"><a href="#cb25-11"></a>data_list =<span class="st"> </span><span class="kw">list</span>()</span>
+<span id="cb25-12"><a href="#cb25-12"></a>index =<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb25-13"><a href="#cb25-13"></a><span class="cf">for</span> (res_dir <span class="cf">in</span> <span class="kw">list.dirs</span>(data_dir, <span class="dt">recursive =</span> <span class="ot">FALSE</span>)) {</span>
+<span id="cb25-14"><a href="#cb25-14"></a>  ew_synergies_file =<span class="st"> </span><span class="kw">list.files</span>(<span class="dt">path =</span> res_dir, <span class="dt">pattern =</span> <span class="st">&quot;ensemblewise_synergies&quot;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb25-15"><a href="#cb25-15"></a>  ew_ss_scores =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_synergy_scores</span>(ew_synergies_file)</span>
+<span id="cb25-16"><a href="#cb25-16"></a>  </span>
+<span id="cb25-17"><a href="#cb25-17"></a>  <span class="co"># get the models stable states</span></span>
+<span id="cb25-18"><a href="#cb25-18"></a>  models_dir =<span class="st"> </span><span class="kw">paste0</span>(res_dir, <span class="st">&quot;/models&quot;</span>)</span>
+<span id="cb25-19"><a href="#cb25-19"></a>  <span class="co"># you get messages for models with {#stable states} != 1</span></span>
+<span id="cb25-20"><a href="#cb25-20"></a>  models_stable_states =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_stable_state_from_models_dir</span>(models_dir)</span>
+<span id="cb25-21"><a href="#cb25-21"></a>  </span>
+<span id="cb25-22"><a href="#cb25-22"></a>  <span class="co"># calculate models fitness to AGS steady state</span></span>
+<span id="cb25-23"><a href="#cb25-23"></a>  models_fit =<span class="st"> </span><span class="kw">apply</span>(models_stable_states[, <span class="kw">names</span>(steady_state)], <span class="dv">1</span>, </span>
+<span id="cb25-24"><a href="#cb25-24"></a>   usefun<span class="op">::</span>get_percentage_of_matches, steady_state)</span>
+<span id="cb25-25"><a href="#cb25-25"></a>  </span>
+<span id="cb25-26"><a href="#cb25-26"></a>  <span class="co"># calculate normalized model performance (ROC-AUC)</span></span>
+<span id="cb25-27"><a href="#cb25-27"></a>  pred =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">random =</span> random_ew_synergies_150sim <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rename</span>(<span class="dt">random_score =</span> score), </span>
+<span id="cb25-28"><a href="#cb25-28"></a>    <span class="dt">ss =</span> ew_ss_scores <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(score) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rename</span>(<span class="dt">ss_score =</span> score), </span>
+<span id="cb25-29"><a href="#cb25-29"></a>    <span class="kw">as_tibble_col</span>(observed, <span class="dt">column_name =</span> <span class="st">&quot;observed&quot;</span>))</span>
+<span id="cb25-30"><a href="#cb25-30"></a>  </span>
+<span id="cb25-31"><a href="#cb25-31"></a>  pred =<span class="st"> </span>pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">combined_score =</span> ss_score <span class="op">-</span><span class="st"> </span>random_score)</span>
+<span id="cb25-32"><a href="#cb25-32"></a>  res_roc =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">roc.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb25-33"><a href="#cb25-33"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
+<span id="cb25-34"><a href="#cb25-34"></a>  res_pr =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">pr.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb25-35"><a href="#cb25-35"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
+<span id="cb25-36"><a href="#cb25-36"></a>  </span>
+<span id="cb25-37"><a href="#cb25-37"></a>  <span class="co"># bind all to one (OneForAll)</span></span>
+<span id="cb25-38"><a href="#cb25-38"></a>  df =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">roc_auc =</span> res_roc<span class="op">$</span>auc, <span class="dt">pr_auc =</span> res_pr<span class="op">$</span>auc.davis.goadrich, </span>
+<span id="cb25-39"><a href="#cb25-39"></a>    <span class="dt">avg_fit =</span> <span class="kw">mean</span>(models_fit), <span class="dt">median_fit =</span> <span class="kw">median</span>(models_fit))</span>
+<span id="cb25-40"><a href="#cb25-40"></a>  data_list[[index]] =<span class="st"> </span>df</span>
+<span id="cb25-41"><a href="#cb25-41"></a>  index =<span class="st"> </span>index <span class="op">+</span><span class="st"> </span><span class="dv">1</span></span>
+<span id="cb25-42"><a href="#cb25-42"></a>}</span>
+<span id="cb25-43"><a href="#cb25-43"></a></span>
+<span id="cb25-44"><a href="#cb25-44"></a>res =<span class="st"> </span><span class="kw">bind_rows</span>(data_list)</span>
+<span id="cb25-45"><a href="#cb25-45"></a><span class="kw">saveRDS</span>(res, <span class="dt">file =</span> <span class="st">&quot;data/res_fit_aucs.rds&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>res =<span class="st"> </span><span class="kw">readRDS</span>(<span class="dt">file =</span> <span class="st">&quot;data/res_fit_aucs.rds&quot;</span>)</span></code></pre></div>
+<p>Some scatter plots to get a first idea (every point is one of the <span class="math inline">\(205\)</span> simulations, normalized to the random proliferative models):</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>,</span>
+<span id="cb27-2"><a href="#cb27-2"></a>  <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </span>
+<span id="cb27-3"><a href="#cb27-3"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>))</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-8-1.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>, </span>
+<span id="cb28-2"><a href="#cb28-2"></a>  <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </span>
+<span id="cb28-3"><a href="#cb28-3"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>))</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-8-2.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a><span class="co"># ggscatter(data = res, x = &quot;median_fit&quot;, y = &quot;roc_auc&quot;)</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="co"># ggscatter(data = res, x = &quot;median_fit&quot;, y = &quot;pr_auc&quot;)</span></span></code></pre></div>
+<p>We will split the points to <span class="math inline">\(4\)</span> <em>fitness</em> groups (higher number group means <strong>higher fitness</strong>):</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>fit_classes_num =<span class="st"> </span><span class="dv">4</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a>avg_fit_res =<span class="st"> </span><span class="kw">Ckmeans.1d.dp</span>(<span class="dt">x =</span> res<span class="op">$</span>avg_fit, <span class="dt">k =</span> fit_classes_num)</span>
+<span id="cb30-3"><a href="#cb30-3"></a>median_fit_res =<span class="st"> </span><span class="kw">Ckmeans.1d.dp</span>(<span class="dt">x =</span> res<span class="op">$</span>median_fit, <span class="dt">k =</span> fit_classes_num)</span>
+<span id="cb30-4"><a href="#cb30-4"></a></span>
+<span id="cb30-5"><a href="#cb30-5"></a>res =<span class="st"> </span>res <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb30-6"><a href="#cb30-6"></a><span class="st">  </span><span class="kw">add_column</span>(<span class="dt">avg_fit_group =</span> avg_fit_res<span class="op">$</span>cluster) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb30-7"><a href="#cb30-7"></a><span class="st">  </span><span class="kw">add_column</span>(<span class="dt">median_fit_group =</span> median_fit_res<span class="op">$</span>cluster) </span></code></pre></div>
+<p>And thus, we can show the following boxplots:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a>my_comparisons =<span class="st"> </span><span class="kw">list</span>(<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>), <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">4</span>))</span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
+<span id="cb31-3"><a href="#cb31-3"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb31-4"><a href="#cb31-4"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-9-1.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
+<span id="cb32-2"><a href="#cb32-2"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-9-2.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="green-box">
+<p>There is seems to be some correlation between <strong>fitness group and AUC performance of the calibrated models normalized to the random proliferative</strong> ones.
+This manifests in <strong>better PR AUC</strong> for the higher fitness calibrated models subject to normalization.</p>
+<p>Note that PR AUC is a better indicator of performance for our imbalanced dataset than the ROC AUC.</p>
+</div>
+</div>
 <div id="r-session-info" class="section level1 unnumbered" number="">
 <h1>R session info</h1>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a>xfun<span class="op">::</span><span class="kw">session_info</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a>xfun<span class="op">::</span><span class="kw">session_info</span>()</span></code></pre></div>
 <pre><code>R version 3.6.3 (2020-02-29)
 Platform: x86_64-pc-linux-gnu (64-bit)
 Running under: Ubuntu 18.04.4 LTS
@@ -1299,25 +1385,25 @@ Locale:
   LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 Package version:
-  abind_1.4-5         assertthat_0.2.1    backports_1.1.7    
+  abind_1.4-5         assertthat_0.2.1    backports_1.1.8    
   base64enc_0.1.3     BH_1.72.0.3         bibtex_0.4.2.2     
-  bookdown_0.19       boot_1.3.25         broom_0.5.6        
+  bookdown_0.20       boot_1.3.25         broom_0.5.6        
   callr_3.4.3         car_3.0-8           carData_3.0-4      
   cellranger_1.1.0    Ckmeans.1d.dp_4.3.2 cli_2.0.2          
   clipr_0.7.0         colorspace_1.4-1    compiler_3.6.3     
   corrplot_0.84       cowplot_1.0.0       crayon_1.3.4       
   curl_4.3            data.table_1.12.8   desc_1.2.0         
-  digest_0.6.25       dplyr_0.8.5         ellipsis_0.3.1     
+  digest_0.6.25       dplyr_1.0.0         ellipsis_0.3.1     
   emba_0.1.5          evaluate_0.14       fansi_0.4.1        
-  farver_2.0.3        forcats_0.5.0       foreign_0.8-76     
-  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.0      
-  ggpubr_0.3.0        ggrepel_0.8.2       ggsci_2.9          
+  farver_2.0.3        forcats_0.5.0       foreign_0.8-75     
+  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.2      
+  ggpubr_0.4.0        ggrepel_0.8.2       ggsci_2.9          
   ggsignif_0.6.0      glue_1.4.1          graphics_3.6.3     
   grDevices_3.6.3     grid_3.6.3          gridExtra_2.3      
-  gtable_0.3.0        haven_2.3.0         highr_0.8          
-  hms_0.5.3           htmltools_0.4.0     htmlwidgets_1.5.1  
-  igraph_1.2.5        isoband_0.2.1       jsonlite_1.6.1     
-  knitr_1.28          labeling_0.3        lattice_0.20-41    
+  gtable_0.3.0        haven_2.3.1         highr_0.8          
+  hms_0.5.3           htmltools_0.5.0     htmlwidgets_1.5.1  
+  igraph_1.2.5        isoband_0.2.2       jsonlite_1.7.0     
+  knitr_1.29          labeling_0.3        lattice_0.20-41    
   lifecycle_0.2.0     lme4_1.1.23         magrittr_1.5       
   maptools_1.0.1      markdown_1.1        MASS_7.3.51.6      
   Matrix_1.2.18       MatrixModels_0.4.1  methods_3.6.3      
@@ -1325,23 +1411,23 @@ Package version:
   munsell_0.5.0       nlme_3.1-148        nloptr_1.2.2.1     
   nnet_7.3.14         openxlsx_4.1.5      parallel_3.6.3     
   pbkrtest_0.4.8.6    pillar_1.4.4        pkgbuild_1.0.8     
-  pkgconfig_2.0.3     pkgload_1.0.2       plogr_0.2.0        
-  plyr_1.8.6          polynom_1.4.0       praise_1.0.0       
-  prettyunits_1.1.1   processx_3.4.2      progress_1.2.2     
+  pkgconfig_2.0.3     pkgload_1.1.0       plyr_1.8.6         
+  polynom_1.4.0       praise_1.0.0        prettyunits_1.1.1  
+  processx_3.4.2      progress_1.2.2      PRROC_1.3.1        
   ps_1.3.3            purrr_0.3.4         quantreg_5.55      
   R6_2.4.1            RColorBrewer_1.1.2  Rcpp_1.0.4.6       
-  RcppEigen_0.3.3.7.0 Rdpack_0.11-1       readr_1.3.1        
+  RcppEigen_0.3.3.7.0 Rdpack_1.0.0        readr_1.3.1        
   readxl_1.3.1        rematch_1.0.1       reshape2_1.4.4     
-  rio_0.5.16          rje_1.10.15         rlang_0.4.6        
-  rmarkdown_2.1       rprojroot_1.3.2     rstatix_0.5.0      
+  rio_0.5.16          rje_1.10.16         rlang_0.4.6        
+  rmarkdown_2.3       rprojroot_1.3.2     rstatix_0.6.0      
   rstudioapi_0.11     scales_1.1.1        sp_1.4.2           
   SparseM_1.78        splines_3.6.3       statmod_1.4.34     
   stats_3.6.3         stringi_1.4.6       stringr_1.4.0      
   testthat_2.3.2      tibble_3.0.1        tidyr_1.1.0        
-  tidyselect_1.1.0    tinytex_0.23        tools_3.6.3        
+  tidyselect_1.1.0    tinytex_0.24        tools_3.6.3        
   usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
-  vctrs_0.3.0         viridisLite_0.3.0   visNetwork_2.0.9   
-  withr_2.2.0         xfun_0.14           yaml_2.2.1         
+  vctrs_0.3.1         viridisLite_0.3.0   visNetwork_2.0.9   
+  withr_2.2.0         xfun_0.15           yaml_2.2.1         
   zip_2.0.4          </code></pre>
 
 </div>

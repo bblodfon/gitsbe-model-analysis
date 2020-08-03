@@ -1,7 +1,7 @@
 ---
 title: "Fitness vs Performance Analysis (AGS paper I)"
 author: "[John Zobolas](https://github.com/bblodfon)"
-date: "Last updated: 17 June, 2020"
+date: "Last updated: 03 August, 2020"
 description: "An investigation analysis"
 url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/index.html'
 github-repo: "bblodfon/gitsbe-model-analysis"
@@ -12,13 +12,10 @@ site: bookdown::bookdown_site
 # Intro {-}
 
 :::{.green-box}
-Main question: is there a correlation between models fitness to the steady state and their performance as measured by the MCC score?
+Main question: is there a correlation between models fitness to the steady state and their performance?
 :::
 
 All boolean model simulations were done using the `druglogics-synergy` Java module, version `1.2.0`: `git checkout v1.2.0`.
-
-This analysis was done after I concluded the ROC and PR analysis for the AGS paper I (see [here](https://bblodfon.github.io/ags-paper-1/index.html)).
-Since the results of this analysis are negative, I put them here as an investigation and a reference guide for future endeavors!
 
 # Input {-}
 
@@ -34,6 +31,7 @@ library(stringr)
 library(ggpubr)
 library(ggplot2)
 library(Ckmeans.1d.dp)
+library(PRROC)
 ```
 
 Load the AGS steady state:
@@ -77,10 +75,11 @@ Then, for each such *flipping-nodes* value, we generated $20$ new steady states 
 Thus, in total, $205$ training data files were produced ($205 = 9 \times 20 + 24 + 1$, where from the $11$ number of flips, the one flip happens for every node ($24$ different steady states) and flipping all the nodes generates $1$ completely reversed steady state). 
 
 Running the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`: `git checkout v1.2.0`), we get the simulation results for each of these training data files.
+We mainly going to use the **MCC performance score** for each model in the subsequent analyses.
 Note that in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to ($15$) for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: hsa`.
 
 :::{.orange-box}
-The generated training data files (`training-data-files.tar.gz`) and the results from the simulations (`fit-vs-performance-results.tar.gz`) are stored in [Zenodo](https://doi.org/10.5281/zenodo.3877493).
+For the generated training data files (`training-data-files.tar.gz`) and the results from the simulations (`fit-vs-performance-results.tar.gz`) see [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857).
 :::
 
 To load the data, download the results (`fit-vs-performance-results.tar.gz`) and extract it to a directory of your choice with the following commands: `mkdir fit-vs-performance-results` and `tar -C fit-vs-performance-results/ -xzvf fit-vs-performance-results.tar.gz`.
@@ -188,7 +187,7 @@ ggboxplot(res, x = "fitness_class_id", y = "mcc", color = "fitness_class_id")
 ```
 
 :::{.orange-box}
-No correlation whatsoever!
+No correlation whatsoever between models fitness and performance (as measured by the MCC score)
 :::
 
 Note though that **the results are very dependent on the dataset and the observed synergies** used.
@@ -307,7 +306,7 @@ The drabme synergy method used was `HSA`.
 For the link operator models the `biolqm_stable_states` *attractor_tool* option was used and for the other 2 parameterizations the `bnet_reduction_reduced`.
 And of course, the proper/initial observed synergies vector was used as the gold standard.
 
-First download the [Zenodo dataset]() and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
+First download the dataset [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857) and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
 
 Load the data using the following `R` code (I have already saved the results):
 
@@ -376,8 +375,6 @@ res_topo = res
 saveRDS(res_topo, file = "data/res_topo.rds")
 #saveRDS(res_link_and_topo, file = "data/res_link_and_topo.rds")
 ```
-
-# Results {-}
 
 ## Link operator mutated models {-}
 
@@ -501,6 +498,141 @@ ggdensity(data = res_link_and_topo, x = "mcc", color = "type", add = "mean",
 So, in a way the steady state models are better in that regard (i.e. they make predictions, even though most of them have negative MCC scores).
 :::
 
+
+# Fitness vs Ensemble performance {-}
+
+:::{.green-box}
+Is there any correlation between the **calibrated models fitness to the AGS steady state** and their ROC/PR AUC performance when they are **normalized to a random proliferative model ensemble**?
+:::
+
+In this section we use the same technique as in the [Flip training data analysis] section: we had already generated the flipped training data files which we now use again with the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`), to get the simulation results for each of these training data files.
+
+Differences are that now in the in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to $20$ for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: bliss`.
+
+Also, we used the `run_druglogics_synergy.sh` script at the root of the `druglogics-synergy` (script config: {`2.0`, `rand`, `150`, `biolqm_stable_states`, `bliss`}) repo to get the ensemble results of the **random (proliferative)** models that we will normalize the calibrated model performance at.
+
+:::{.orange-box}
+The dataset with the simulation results (`fit-vs-performance-results-bliss.tar.gz` file) is on [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857).
+With the code below you can load this data (but I have stored the data `tibble` for convenience):
+:::
+
+
+```r
+# random proliferative results
+random_ew_synergies_file = "data/cascade_2.0_rand_150sim_fixpoints_bliss_ensemblewise_synergies.tab"
+random_ew_synergies_150sim = emba::get_synergy_scores(random_ew_synergies_file)
+
+# 1 (positive/observed synergy) or 0 (negative/not observed) for all tested drug combinations
+observed = sapply(random_ew_synergies_150sim$perturbation %in% observed_synergies, as.integer)
+
+# get flipped training data results
+data_dir = "/home/john/tmp/ags_paper_res/fit-vs-performance-results-bliss"
+
+data_list = list()
+index = 1
+for (res_dir in list.dirs(data_dir, recursive = FALSE)) {
+  ew_synergies_file = list.files(path = res_dir, pattern = "ensemblewise_synergies", full.names = TRUE)
+  ew_ss_scores = emba::get_synergy_scores(ew_synergies_file)
+  
+  # get the models stable states
+  models_dir = paste0(res_dir, "/models")
+  # you get messages for models with {#stable states} != 1
+  models_stable_states = emba::get_stable_state_from_models_dir(models_dir)
+  
+  # calculate models fitness to AGS steady state
+  models_fit = apply(models_stable_states[, names(steady_state)], 1, 
+   usefun::get_percentage_of_matches, steady_state)
+  
+  # calculate normalized model performance (ROC-AUC)
+  pred = dplyr::bind_cols(random = random_ew_synergies_150sim %>% rename(random_score = score), 
+    ss = ew_ss_scores %>% select(score) %>% rename(ss_score = score), 
+    as_tibble_col(observed, column_name = "observed"))
+  
+  pred = pred %>% mutate(combined_score = ss_score - random_score)
+  res_roc = PRROC::roc.curve(scores.class0 = pred %>% pull(combined_score) %>% (function(x) {-x}), 
+    weights.class0 = pred %>% pull(observed))
+  res_pr = PRROC::pr.curve(scores.class0 = pred %>% pull(combined_score) %>% (function(x) {-x}), 
+    weights.class0 = pred %>% pull(observed))
+  
+  # bind all to one (OneForAll)
+  df = dplyr::bind_cols(roc_auc = res_roc$auc, pr_auc = res_pr$auc.davis.goadrich, 
+    avg_fit = mean(models_fit), median_fit = median(models_fit))
+  data_list[[index]] = df
+  index = index + 1
+}
+
+res = bind_rows(data_list)
+saveRDS(res, file = "data/res_fit_aucs.rds")
+```
+
+
+```r
+res = readRDS(file = "data/res_fit_aucs.rds")
+```
+
+Some scatter plots to get a first idea (every point is one of the $205$ simulations, normalized to the random proliferative models):
+
+```r
+ggscatter(data = res, x = "avg_fit", y = "roc_auc", xlab = "Average Fitness",
+  ylab = "ROC AUC", add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall"))
+```
+
+<img src="index_files/figure-html/figures-8-1.png" width="2100" style="display: block; margin: auto;" />
+
+```r
+ggscatter(data = res, x = "avg_fit", y = "pr_auc", xlab = "Average Fitness", 
+  ylab = "PR AUC", add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall"))
+```
+
+<img src="index_files/figure-html/figures-8-2.png" width="2100" style="display: block; margin: auto;" />
+
+```r
+# ggscatter(data = res, x = "median_fit", y = "roc_auc")
+# ggscatter(data = res, x = "median_fit", y = "pr_auc")
+```
+
+We will split the points to $4$ *fitness* groups (higher number group means **higher fitness**):
+
+
+```r
+fit_classes_num = 4
+avg_fit_res = Ckmeans.1d.dp(x = res$avg_fit, k = fit_classes_num)
+median_fit_res = Ckmeans.1d.dp(x = res$median_fit, k = fit_classes_num)
+
+res = res %>% 
+  add_column(avg_fit_group = avg_fit_res$cluster) %>% 
+  add_column(median_fit_group = median_fit_res$cluster) 
+```
+
+And thus, we can show the following boxplots:
+
+
+```r
+my_comparisons = list(c(1,2), c(1,3), c(1,4))
+ggboxplot(data = res, x = "avg_fit_group", y = "roc_auc", fill = "avg_fit_group",
+  xlab = "Fitness Group (Average fitness)", ylab = "ROC AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+```
+
+<img src="index_files/figure-html/figures-9-1.png" width="2100" style="display: block; margin: auto;" />
+
+```r
+ggboxplot(data = res, x = "avg_fit_group", y = "pr_auc", fill = "avg_fit_group",
+  xlab = "Fitness Group (Average fitness)", ylab = "PR AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+```
+
+<img src="index_files/figure-html/figures-9-2.png" width="2100" style="display: block; margin: auto;" />
+
+:::{.green-box}
+There is seems to be some correlation between **fitness group and AUC performance of the calibrated models normalized to the random proliferative** ones.
+This manifests in **better PR AUC** for the higher fitness calibrated models subject to normalization.
+
+Note that PR AUC is a better indicator of performance for our imbalanced dataset than the ROC AUC.
+:::
+
 # R session info {-}
 
 
@@ -522,25 +654,25 @@ Locale:
   LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 Package version:
-  abind_1.4-5         assertthat_0.2.1    backports_1.1.7    
+  abind_1.4-5         assertthat_0.2.1    backports_1.1.8    
   base64enc_0.1.3     BH_1.72.0.3         bibtex_0.4.2.2     
-  bookdown_0.19       boot_1.3.25         broom_0.5.6        
+  bookdown_0.20       boot_1.3.25         broom_0.5.6        
   callr_3.4.3         car_3.0-8           carData_3.0-4      
   cellranger_1.1.0    Ckmeans.1d.dp_4.3.2 cli_2.0.2          
   clipr_0.7.0         colorspace_1.4-1    compiler_3.6.3     
   corrplot_0.84       cowplot_1.0.0       crayon_1.3.4       
   curl_4.3            data.table_1.12.8   desc_1.2.0         
-  digest_0.6.25       dplyr_0.8.5         ellipsis_0.3.1     
+  digest_0.6.25       dplyr_1.0.0         ellipsis_0.3.1     
   emba_0.1.5          evaluate_0.14       fansi_0.4.1        
-  farver_2.0.3        forcats_0.5.0       foreign_0.8-76     
-  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.0      
-  ggpubr_0.3.0        ggrepel_0.8.2       ggsci_2.9          
+  farver_2.0.3        forcats_0.5.0       foreign_0.8-75     
+  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.2      
+  ggpubr_0.4.0        ggrepel_0.8.2       ggsci_2.9          
   ggsignif_0.6.0      glue_1.4.1          graphics_3.6.3     
   grDevices_3.6.3     grid_3.6.3          gridExtra_2.3      
-  gtable_0.3.0        haven_2.3.0         highr_0.8          
-  hms_0.5.3           htmltools_0.4.0     htmlwidgets_1.5.1  
-  igraph_1.2.5        isoband_0.2.1       jsonlite_1.6.1     
-  knitr_1.28          labeling_0.3        lattice_0.20-41    
+  gtable_0.3.0        haven_2.3.1         highr_0.8          
+  hms_0.5.3           htmltools_0.5.0     htmlwidgets_1.5.1  
+  igraph_1.2.5        isoband_0.2.2       jsonlite_1.7.0     
+  knitr_1.29          labeling_0.3        lattice_0.20-41    
   lifecycle_0.2.0     lme4_1.1.23         magrittr_1.5       
   maptools_1.0.1      markdown_1.1        MASS_7.3.51.6      
   Matrix_1.2.18       MatrixModels_0.4.1  methods_3.6.3      
@@ -548,22 +680,22 @@ Package version:
   munsell_0.5.0       nlme_3.1-148        nloptr_1.2.2.1     
   nnet_7.3.14         openxlsx_4.1.5      parallel_3.6.3     
   pbkrtest_0.4.8.6    pillar_1.4.4        pkgbuild_1.0.8     
-  pkgconfig_2.0.3     pkgload_1.0.2       plogr_0.2.0        
-  plyr_1.8.6          polynom_1.4.0       praise_1.0.0       
-  prettyunits_1.1.1   processx_3.4.2      progress_1.2.2     
+  pkgconfig_2.0.3     pkgload_1.1.0       plyr_1.8.6         
+  polynom_1.4.0       praise_1.0.0        prettyunits_1.1.1  
+  processx_3.4.2      progress_1.2.2      PRROC_1.3.1        
   ps_1.3.3            purrr_0.3.4         quantreg_5.55      
   R6_2.4.1            RColorBrewer_1.1.2  Rcpp_1.0.4.6       
-  RcppEigen_0.3.3.7.0 Rdpack_0.11-1       readr_1.3.1        
+  RcppEigen_0.3.3.7.0 Rdpack_1.0.0        readr_1.3.1        
   readxl_1.3.1        rematch_1.0.1       reshape2_1.4.4     
-  rio_0.5.16          rje_1.10.15         rlang_0.4.6        
-  rmarkdown_2.1       rprojroot_1.3.2     rstatix_0.5.0      
+  rio_0.5.16          rje_1.10.16         rlang_0.4.6        
+  rmarkdown_2.3       rprojroot_1.3.2     rstatix_0.6.0      
   rstudioapi_0.11     scales_1.1.1        sp_1.4.2           
   SparseM_1.78        splines_3.6.3       statmod_1.4.34     
   stats_3.6.3         stringi_1.4.6       stringr_1.4.0      
   testthat_2.3.2      tibble_3.0.1        tidyr_1.1.0        
-  tidyselect_1.1.0    tinytex_0.23        tools_3.6.3        
+  tidyselect_1.1.0    tinytex_0.24        tools_3.6.3        
   usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
-  vctrs_0.3.0         viridisLite_0.3.0   visNetwork_2.0.9   
-  withr_2.2.0         xfun_0.14           yaml_2.2.1         
+  vctrs_0.3.1         viridisLite_0.3.0   visNetwork_2.0.9   
+  withr_2.2.0         xfun_0.15           yaml_2.2.1         
   zip_2.0.4          
 ```
