@@ -79,7 +79,7 @@ We mainly going to use the **MCC performance score** for each model in the subse
 Note that in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to ($15$) for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: hsa`.
 
 :::{.orange-box}
-For the generated training data files (`training-data-files.tar.gz`) and the results from the simulations (`fit-vs-performance-results.tar.gz`) see [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857).
+For the generated training data files (`training-data-files.tar.gz`) and the results from the simulations (`fit-vs-performance-results.tar.gz`) see [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3972340.svg)](https://doi.org/10.5281/zenodo.3972340).
 :::
 
 To load the data, download the results (`fit-vs-performance-results.tar.gz`) and extract it to a directory of your choice with the following commands: `mkdir fit-vs-performance-results` and `tar -C fit-vs-performance-results/ -xzvf fit-vs-performance-results.tar.gz`.
@@ -306,7 +306,7 @@ The drabme synergy method used was `HSA`.
 For the link operator models the `biolqm_stable_states` *attractor_tool* option was used and for the other 2 parameterizations the `bnet_reduction_reduced`.
 And of course, the proper/initial observed synergies vector was used as the gold standard.
 
-First download the dataset [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857) and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
+First download the dataset [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3972340.svg)](https://doi.org/10.5281/zenodo.3972340) and then extract the `5000sim-hsa-*-res.tar.gz` compressed archives in a directory.
 
 Load the data using the following `R` code (I have already saved the results):
 
@@ -512,7 +512,7 @@ Differences are that now in the in the CASCADE 2.0 configuration file (`config`)
 Also, we used the `run_druglogics_synergy.sh` script at the root of the `druglogics-synergy` (script config: {`2.0`, `rand`, `150`, `biolqm_stable_states`, `bliss`}) repo to get the ensemble results of the **random (proliferative)** models that we will normalize the calibrated model performance at.
 
 :::{.orange-box}
-The dataset with the simulation results (`fit-vs-performance-results-bliss.tar.gz` file) is on [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857).
+The dataset with the simulation results (`fit-vs-performance-results-bliss.tar.gz` file) is on [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3972340.svg)](https://doi.org/10.5281/zenodo.3972340).
 :::
 
 With the code below you can load this data (I have stored it in a `tibble` for convenience):

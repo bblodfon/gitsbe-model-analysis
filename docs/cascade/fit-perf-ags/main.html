@@ -946,7 +946,7 @@ Thus, in total, <span class="math inline">\(205\)</span> training data files wer
 We mainly going to use the <strong>MCC performance score</strong> for each model in the subsequent analyses.
 Note that in the CASCADE 2.0 configuration file (<code>config</code>) we changed the number of simulations to (<span class="math inline">\(15\)</span>) for each training data file, the attractor tool used was <code>biolqm_stable_states</code> and the <code>synergy_method: hsa</code>.</p>
 <div class="orange-box">
-<p>For the generated training data files (<code>training-data-files.tar.gz</code>) and the results from the simulations (<code>fit-vs-performance-results.tar.gz</code>) see <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a>.</p>
+<p>For the generated training data files (<code>training-data-files.tar.gz</code>) and the results from the simulations (<code>fit-vs-performance-results.tar.gz</code>) see <a href="https://doi.org/10.5281/zenodo.3972340"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3972340.svg" alt="DOI" /></a>.</p>
 </div>
 <p>To load the data, download the results (<code>fit-vs-performance-results.tar.gz</code>) and extract it to a directory of your choice with the following commands: <code>mkdir fit-vs-performance-results</code> and <code>tar -C fit-vs-performance-results/ -xzvf fit-vs-performance-results.tar.gz</code>.
 Then use the next <code>R</code> code to create the <code>res</code> data.frame (I have already saved the result):</p>
@@ -1126,7 +1126,7 @@ I ran these simulations 3 times, one with <strong>link operator mutations only, 
 The drabme synergy method used was <code>HSA</code>.
 For the link operator models the <code>biolqm_stable_states</code> <em>attractor_tool</em> option was used and for the other 2 parameterizations the <code>bnet_reduction_reduced</code>.
 And of course, the proper/initial observed synergies vector was used as the gold standard.</p>
-<p>First download the dataset <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a> and then extract the <code>5000sim-hsa-*-res.tar.gz</code> compressed archives in a directory.</p>
+<p>First download the dataset <a href="https://doi.org/10.5281/zenodo.3972340"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3972340.svg" alt="DOI" /></a> and then extract the <code>5000sim-hsa-*-res.tar.gz</code> compressed archives in a directory.</p>
 <p>Load the data using the following <code>R</code> code (I have already saved the results):</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co"># simulation results directories (do not add the ending path character &#39;/&#39;)</span></span>
 <span id="cb15-2"><a href="#cb15-2"></a>res_dirs =<span class="st"> </span><span class="kw">c</span>(</span>
@@ -1285,7 +1285,7 @@ So, in a way the steady state models are better in that regard (i.e. they make 
 <p>Differences are that now in the in the CASCADE 2.0 configuration file (<code>config</code>) we changed the number of simulations to <span class="math inline">\(20\)</span> for each training data file, the attractor tool used was <code>biolqm_stable_states</code> and the <code>synergy_method: bliss</code>.</p>
 <p>Also, we used the <code>run_druglogics_synergy.sh</code> script at the root of the <code>druglogics-synergy</code> (script config: {<code>2.0</code>, <code>rand</code>, <code>150</code>, <code>biolqm_stable_states</code>, <code>bliss</code>}) repo to get the ensemble results of the <strong>random (proliferative)</strong> models that we will normalize the calibrated model performance at.</p>
 <div class="orange-box">
-<p>The dataset with the simulation results (<code>fit-vs-performance-results-bliss.tar.gz</code> file) is on <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a>.</p>
+<p>The dataset with the simulation results (<code>fit-vs-performance-results-bliss.tar.gz</code> file) is on <a href="https://doi.org/10.5281/zenodo.3972340"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3972340.svg" alt="DOI" /></a>.</p>
 </div>
 <p>With the code below you can load this data (I have stored it in a <code>tibble</code> for convenience):</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a><span class="co"># random proliferative results</span></span>
