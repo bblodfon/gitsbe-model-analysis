@@ -887,7 +887,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="header">
 <h1 class="title">Fitness vs Performance Analysis (AGS paper I)</h1>
 <p class="author"><em><a href="https://github.com/bblodfon">John Zobolas</a></em></p>
-<p class="date"><em>Last updated: 03 August, 2020</em></p>
+<p class="date"><em>Last updated: 04 August, 2020</em></p>
 </div>
 <div id="intro" class="section level1 unnumbered" number="">
 <h1>Intro</h1>
@@ -1285,9 +1285,9 @@ So, in a way the steady state models are better in that regard (i.e. they make 
 <p>Differences are that now in the in the CASCADE 2.0 configuration file (<code>config</code>) we changed the number of simulations to <span class="math inline">\(20\)</span> for each training data file, the attractor tool used was <code>biolqm_stable_states</code> and the <code>synergy_method: bliss</code>.</p>
 <p>Also, we used the <code>run_druglogics_synergy.sh</code> script at the root of the <code>druglogics-synergy</code> (script config: {<code>2.0</code>, <code>rand</code>, <code>150</code>, <code>biolqm_stable_states</code>, <code>bliss</code>}) repo to get the ensemble results of the <strong>random (proliferative)</strong> models that we will normalize the calibrated model performance at.</p>
 <div class="orange-box">
-<p>The dataset with the simulation results (<code>fit-vs-performance-results-bliss.tar.gz</code> file) is on <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a>.
-With the code below you can load this data (but I have stored the data <code>tibble</code> for convenience):</p>
+<p>The dataset with the simulation results (<code>fit-vs-performance-results-bliss.tar.gz</code> file) is on <a href="https://doi.org/10.5281/zenodo.3970857"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg" alt="DOI" /></a>.</p>
 </div>
+<p>With the code below you can load this data (I have stored it in a <code>tibble</code> for convenience):</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a><span class="co"># random proliferative results</span></span>
 <span id="cb25-2"><a href="#cb25-2"></a>random_ew_synergies_file =<span class="st"> &quot;data/cascade_2.0_rand_150sim_fixpoints_bliss_ensemblewise_synergies.tab&quot;</span></span>
 <span id="cb25-3"><a href="#cb25-3"></a>random_ew_synergies_150sim =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_synergy_scores</span>(random_ew_synergies_file)</span>
@@ -1298,80 +1298,132 @@ With the code below you can load this data (but I have stored the data <code>tib
 <span id="cb25-8"><a href="#cb25-8"></a><span class="co"># get flipped training data results</span></span>
 <span id="cb25-9"><a href="#cb25-9"></a>data_dir =<span class="st"> &quot;/home/john/tmp/ags_paper_res/fit-vs-performance-results-bliss&quot;</span></span>
 <span id="cb25-10"><a href="#cb25-10"></a></span>
-<span id="cb25-11"><a href="#cb25-11"></a>data_list =<span class="st"> </span><span class="kw">list</span>()</span>
-<span id="cb25-12"><a href="#cb25-12"></a>index =<span class="st"> </span><span class="dv">1</span></span>
-<span id="cb25-13"><a href="#cb25-13"></a><span class="cf">for</span> (res_dir <span class="cf">in</span> <span class="kw">list.dirs</span>(data_dir, <span class="dt">recursive =</span> <span class="ot">FALSE</span>)) {</span>
-<span id="cb25-14"><a href="#cb25-14"></a>  ew_synergies_file =<span class="st"> </span><span class="kw">list.files</span>(<span class="dt">path =</span> res_dir, <span class="dt">pattern =</span> <span class="st">&quot;ensemblewise_synergies&quot;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb25-15"><a href="#cb25-15"></a>  ew_ss_scores =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_synergy_scores</span>(ew_synergies_file)</span>
-<span id="cb25-16"><a href="#cb25-16"></a>  </span>
-<span id="cb25-17"><a href="#cb25-17"></a>  <span class="co"># get the models stable states</span></span>
-<span id="cb25-18"><a href="#cb25-18"></a>  models_dir =<span class="st"> </span><span class="kw">paste0</span>(res_dir, <span class="st">&quot;/models&quot;</span>)</span>
-<span id="cb25-19"><a href="#cb25-19"></a>  <span class="co"># you get messages for models with {#stable states} != 1</span></span>
-<span id="cb25-20"><a href="#cb25-20"></a>  models_stable_states =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_stable_state_from_models_dir</span>(models_dir)</span>
-<span id="cb25-21"><a href="#cb25-21"></a>  </span>
-<span id="cb25-22"><a href="#cb25-22"></a>  <span class="co"># calculate models fitness to AGS steady state</span></span>
-<span id="cb25-23"><a href="#cb25-23"></a>  models_fit =<span class="st"> </span><span class="kw">apply</span>(models_stable_states[, <span class="kw">names</span>(steady_state)], <span class="dv">1</span>, </span>
-<span id="cb25-24"><a href="#cb25-24"></a>   usefun<span class="op">::</span>get_percentage_of_matches, steady_state)</span>
+<span id="cb25-11"><a href="#cb25-11"></a><span class="co"># define `beta` values for normalization</span></span>
+<span id="cb25-12"><a href="#cb25-12"></a>beta1 =<span class="st"> </span><span class="dv">-1</span></span>
+<span id="cb25-13"><a href="#cb25-13"></a>beta2 =<span class="st"> </span><span class="fl">-1.6</span></span>
+<span id="cb25-14"><a href="#cb25-14"></a></span>
+<span id="cb25-15"><a href="#cb25-15"></a>data_list =<span class="st"> </span><span class="kw">list</span>()</span>
+<span id="cb25-16"><a href="#cb25-16"></a>index =<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb25-17"><a href="#cb25-17"></a><span class="cf">for</span> (res_dir <span class="cf">in</span> <span class="kw">list.dirs</span>(data_dir, <span class="dt">recursive =</span> <span class="ot">FALSE</span>)) {</span>
+<span id="cb25-18"><a href="#cb25-18"></a>  ew_synergies_file =<span class="st"> </span><span class="kw">list.files</span>(<span class="dt">path =</span> res_dir, <span class="dt">pattern =</span> <span class="st">&quot;ensemblewise_synergies&quot;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb25-19"><a href="#cb25-19"></a>  ew_ss_scores =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_synergy_scores</span>(ew_synergies_file)</span>
+<span id="cb25-20"><a href="#cb25-20"></a>  </span>
+<span id="cb25-21"><a href="#cb25-21"></a>  <span class="co"># get the models stable states</span></span>
+<span id="cb25-22"><a href="#cb25-22"></a>  models_dir =<span class="st"> </span><span class="kw">paste0</span>(res_dir, <span class="st">&quot;/models&quot;</span>)</span>
+<span id="cb25-23"><a href="#cb25-23"></a>  <span class="co"># you get messages for models with {#stable states} != 1</span></span>
+<span id="cb25-24"><a href="#cb25-24"></a>  models_stable_states =<span class="st"> </span>emba<span class="op">::</span><span class="kw">get_stable_state_from_models_dir</span>(models_dir)</span>
 <span id="cb25-25"><a href="#cb25-25"></a>  </span>
-<span id="cb25-26"><a href="#cb25-26"></a>  <span class="co"># calculate normalized model performance (ROC-AUC)</span></span>
-<span id="cb25-27"><a href="#cb25-27"></a>  pred =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">random =</span> random_ew_synergies_150sim <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rename</span>(<span class="dt">random_score =</span> score), </span>
-<span id="cb25-28"><a href="#cb25-28"></a>    <span class="dt">ss =</span> ew_ss_scores <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(score) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rename</span>(<span class="dt">ss_score =</span> score), </span>
-<span id="cb25-29"><a href="#cb25-29"></a>    <span class="kw">as_tibble_col</span>(observed, <span class="dt">column_name =</span> <span class="st">&quot;observed&quot;</span>))</span>
-<span id="cb25-30"><a href="#cb25-30"></a>  </span>
-<span id="cb25-31"><a href="#cb25-31"></a>  pred =<span class="st"> </span>pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">combined_score =</span> ss_score <span class="op">-</span><span class="st"> </span>random_score)</span>
-<span id="cb25-32"><a href="#cb25-32"></a>  res_roc =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">roc.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
-<span id="cb25-33"><a href="#cb25-33"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
-<span id="cb25-34"><a href="#cb25-34"></a>  res_pr =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">pr.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
-<span id="cb25-35"><a href="#cb25-35"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
-<span id="cb25-36"><a href="#cb25-36"></a>  </span>
-<span id="cb25-37"><a href="#cb25-37"></a>  <span class="co"># bind all to one (OneForAll)</span></span>
-<span id="cb25-38"><a href="#cb25-38"></a>  df =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">roc_auc =</span> res_roc<span class="op">$</span>auc, <span class="dt">pr_auc =</span> res_pr<span class="op">$</span>auc.davis.goadrich, </span>
-<span id="cb25-39"><a href="#cb25-39"></a>    <span class="dt">avg_fit =</span> <span class="kw">mean</span>(models_fit), <span class="dt">median_fit =</span> <span class="kw">median</span>(models_fit))</span>
-<span id="cb25-40"><a href="#cb25-40"></a>  data_list[[index]] =<span class="st"> </span>df</span>
-<span id="cb25-41"><a href="#cb25-41"></a>  index =<span class="st"> </span>index <span class="op">+</span><span class="st"> </span><span class="dv">1</span></span>
-<span id="cb25-42"><a href="#cb25-42"></a>}</span>
-<span id="cb25-43"><a href="#cb25-43"></a></span>
-<span id="cb25-44"><a href="#cb25-44"></a>res =<span class="st"> </span><span class="kw">bind_rows</span>(data_list)</span>
-<span id="cb25-45"><a href="#cb25-45"></a><span class="kw">saveRDS</span>(res, <span class="dt">file =</span> <span class="st">&quot;data/res_fit_aucs.rds&quot;</span>)</span></code></pre></div>
+<span id="cb25-26"><a href="#cb25-26"></a>  <span class="co"># calculate models fitness to AGS steady state</span></span>
+<span id="cb25-27"><a href="#cb25-27"></a>  models_fit =<span class="st"> </span><span class="kw">apply</span>(models_stable_states[, <span class="kw">names</span>(steady_state)], <span class="dv">1</span>, </span>
+<span id="cb25-28"><a href="#cb25-28"></a>   usefun<span class="op">::</span>get_percentage_of_matches, steady_state)</span>
+<span id="cb25-29"><a href="#cb25-29"></a>  </span>
+<span id="cb25-30"><a href="#cb25-30"></a>  <span class="co"># calculate normalized model performance (ROC-AUC)</span></span>
+<span id="cb25-31"><a href="#cb25-31"></a>  pred =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">random =</span> random_ew_synergies_150sim <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rename</span>(<span class="dt">random_score =</span> score), </span>
+<span id="cb25-32"><a href="#cb25-32"></a>    <span class="dt">ss =</span> ew_ss_scores <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(score) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rename</span>(<span class="dt">ss_score =</span> score), </span>
+<span id="cb25-33"><a href="#cb25-33"></a>    <span class="kw">as_tibble_col</span>(observed, <span class="dt">column_name =</span> <span class="st">&quot;observed&quot;</span>))</span>
+<span id="cb25-34"><a href="#cb25-34"></a>  </span>
+<span id="cb25-35"><a href="#cb25-35"></a>  pred =<span class="st"> </span>pred <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb25-36"><a href="#cb25-36"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">combined_score1 =</span> ss_score <span class="op">+</span><span class="st"> </span>beta1 <span class="op">*</span><span class="st"> </span>random_score) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb25-37"><a href="#cb25-37"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">combined_score2 =</span> ss_score <span class="op">+</span><span class="st"> </span>beta2 <span class="op">*</span><span class="st"> </span>random_score)</span>
+<span id="cb25-38"><a href="#cb25-38"></a>  </span>
+<span id="cb25-39"><a href="#cb25-39"></a>  res_roc1 =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">roc.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score1) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb25-40"><a href="#cb25-40"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
+<span id="cb25-41"><a href="#cb25-41"></a>  res_pr1 =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">pr.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score1) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb25-42"><a href="#cb25-42"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
+<span id="cb25-43"><a href="#cb25-43"></a>  res_roc2 =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">roc.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score2) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb25-44"><a href="#cb25-44"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
+<span id="cb25-45"><a href="#cb25-45"></a>  res_pr2 =<span class="st"> </span>PRROC<span class="op">::</span><span class="kw">pr.curve</span>(<span class="dt">scores.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(combined_score2) <span class="op">%&gt;%</span><span class="st"> </span>(<span class="cf">function</span>(x) {<span class="op">-</span>x}), </span>
+<span id="cb25-46"><a href="#cb25-46"></a>    <span class="dt">weights.class0 =</span> pred <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(observed))</span>
+<span id="cb25-47"><a href="#cb25-47"></a>  </span>
+<span id="cb25-48"><a href="#cb25-48"></a>  <span class="co"># bind all to one (OneForAll)</span></span>
+<span id="cb25-49"><a href="#cb25-49"></a>  df =<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">bind_cols</span>(<span class="dt">roc_auc1 =</span> res_roc1<span class="op">$</span>auc, <span class="dt">pr_auc1 =</span> res_pr1<span class="op">$</span>auc.davis.goadrich,</span>
+<span id="cb25-50"><a href="#cb25-50"></a>    <span class="dt">roc_auc2 =</span> res_roc2<span class="op">$</span>auc, <span class="dt">pr_auc2 =</span> res_pr2<span class="op">$</span>auc.davis.goadrich,</span>
+<span id="cb25-51"><a href="#cb25-51"></a>    <span class="dt">avg_fit =</span> <span class="kw">mean</span>(models_fit), <span class="dt">median_fit =</span> <span class="kw">median</span>(models_fit))</span>
+<span id="cb25-52"><a href="#cb25-52"></a>  data_list[[index]] =<span class="st"> </span>df</span>
+<span id="cb25-53"><a href="#cb25-53"></a>  index =<span class="st"> </span>index <span class="op">+</span><span class="st"> </span><span class="dv">1</span></span>
+<span id="cb25-54"><a href="#cb25-54"></a>}</span>
+<span id="cb25-55"><a href="#cb25-55"></a></span>
+<span id="cb25-56"><a href="#cb25-56"></a>res =<span class="st"> </span><span class="kw">bind_rows</span>(data_list)</span>
+<span id="cb25-57"><a href="#cb25-57"></a><span class="kw">saveRDS</span>(res, <span class="dt">file =</span> <span class="st">&quot;data/res_fit_aucs.rds&quot;</span>)</span></code></pre></div>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>res =<span class="st"> </span><span class="kw">readRDS</span>(<span class="dt">file =</span> <span class="st">&quot;data/res_fit_aucs.rds&quot;</span>)</span></code></pre></div>
+<p>We have used both a <span class="math inline">\(\beta=-1\)</span> normalization (<span class="math inline">\(calibrated-random\)</span>) and a <span class="math inline">\(\beta=-1.6\)</span> (<span class="math inline">\(calibrated-1.6\times random\)</span>, which was the one that <a href="https://bblodfon.github.io/ags-paper-1/cascade-2-0-analysis-link-operator-mutations.html#auc-sensitivity-3">maximized the ROC and PR AUC</a>).
+We quickly check for <strong>correlation between the AUC values</strong> produced with the <strong>different beta parameters</strong>:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="co"># ROC AUCs</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">cor</span>(res<span class="op">$</span>roc_auc1, res<span class="op">$</span>roc_auc2)</span></code></pre></div>
+<pre><code>[1] 0.8069361</code></pre>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a><span class="co"># PR AUCs</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="kw">cor</span>(res<span class="op">$</span>pr_auc1, res<span class="op">$</span>pr_auc2)</span></code></pre></div>
+<pre><code>[1] 0.8479174</code></pre>
 <p>Some scatter plots to get a first idea (every point is one of the <span class="math inline">\(205\)</span> simulations, normalized to the random proliferative models):</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>,</span>
-<span id="cb27-2"><a href="#cb27-2"></a>  <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </span>
-<span id="cb27-3"><a href="#cb27-3"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a><span class="co"># beta = -1</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc1&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>,</span>
+<span id="cb31-3"><a href="#cb31-3"></a>  <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, <span class="dt">title =</span> <span class="st">&quot;β = -1&quot;</span>,</span>
+<span id="cb31-4"><a href="#cb31-4"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>)) <span class="op">+</span></span>
+<span id="cb31-5"><a href="#cb31-5"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
 <p><img src="index_files/figure-html/figures-8-1.png" width="2100" style="display: block; margin: auto;" /></p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>, </span>
-<span id="cb28-2"><a href="#cb28-2"></a>  <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </span>
-<span id="cb28-3"><a href="#cb28-3"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc1&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>, </span>
+<span id="cb32-2"><a href="#cb32-2"></a>  <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, <span class="dt">title =</span> <span class="st">&quot;β = -1&quot;</span>,</span>
+<span id="cb32-3"><a href="#cb32-3"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>)) <span class="op">+</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
 <p><img src="index_files/figure-html/figures-8-2.png" width="2100" style="display: block; margin: auto;" /></p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a><span class="co"># ggscatter(data = res, x = &quot;median_fit&quot;, y = &quot;roc_auc&quot;)</span></span>
-<span id="cb29-2"><a href="#cb29-2"></a><span class="co"># ggscatter(data = res, x = &quot;median_fit&quot;, y = &quot;pr_auc&quot;)</span></span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a><span class="co"># best beta (-1.6)</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc2&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>,</span>
+<span id="cb33-3"><a href="#cb33-3"></a>  <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, <span class="dt">title =</span> <span class="st">&quot;β = -1.6&quot;</span>,</span>
+<span id="cb33-4"><a href="#cb33-4"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>)) <span class="op">+</span></span>
+<span id="cb33-5"><a href="#cb33-5"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-8-3.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">ggscatter</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc2&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Average Fitness&quot;</span>, </span>
+<span id="cb34-2"><a href="#cb34-2"></a>  <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>, <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, <span class="dt">title =</span> <span class="st">&quot;β = -1.6&quot;</span>,</span>
+<span id="cb34-3"><a href="#cb34-3"></a>  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.coeff.args =</span> <span class="kw">list</span>(<span class="dt">method =</span> <span class="st">&quot;kendall&quot;</span>)) <span class="op">+</span></span>
+<span id="cb34-4"><a href="#cb34-4"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-8-4.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1"></a><span class="co"># ggscatter(data = res, x = &quot;median_fit&quot;, y = &quot;roc_auc&quot;)</span></span>
+<span id="cb35-2"><a href="#cb35-2"></a><span class="co"># ggscatter(data = res, x = &quot;median_fit&quot;, y = &quot;pr_auc&quot;)</span></span></code></pre></div>
 <p>We will split the points to <span class="math inline">\(4\)</span> <em>fitness</em> groups (higher number group means <strong>higher fitness</strong>):</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>fit_classes_num =<span class="st"> </span><span class="dv">4</span></span>
-<span id="cb30-2"><a href="#cb30-2"></a>avg_fit_res =<span class="st"> </span><span class="kw">Ckmeans.1d.dp</span>(<span class="dt">x =</span> res<span class="op">$</span>avg_fit, <span class="dt">k =</span> fit_classes_num)</span>
-<span id="cb30-3"><a href="#cb30-3"></a>median_fit_res =<span class="st"> </span><span class="kw">Ckmeans.1d.dp</span>(<span class="dt">x =</span> res<span class="op">$</span>median_fit, <span class="dt">k =</span> fit_classes_num)</span>
-<span id="cb30-4"><a href="#cb30-4"></a></span>
-<span id="cb30-5"><a href="#cb30-5"></a>res =<span class="st"> </span>res <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb30-6"><a href="#cb30-6"></a><span class="st">  </span><span class="kw">add_column</span>(<span class="dt">avg_fit_group =</span> avg_fit_res<span class="op">$</span>cluster) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb30-7"><a href="#cb30-7"></a><span class="st">  </span><span class="kw">add_column</span>(<span class="dt">median_fit_group =</span> median_fit_res<span class="op">$</span>cluster) </span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>fit_classes_num =<span class="st"> </span><span class="dv">4</span></span>
+<span id="cb36-2"><a href="#cb36-2"></a>avg_fit_res =<span class="st"> </span><span class="kw">Ckmeans.1d.dp</span>(<span class="dt">x =</span> res<span class="op">$</span>avg_fit, <span class="dt">k =</span> fit_classes_num)</span>
+<span id="cb36-3"><a href="#cb36-3"></a>median_fit_res =<span class="st"> </span><span class="kw">Ckmeans.1d.dp</span>(<span class="dt">x =</span> res<span class="op">$</span>median_fit, <span class="dt">k =</span> fit_classes_num)</span>
+<span id="cb36-4"><a href="#cb36-4"></a></span>
+<span id="cb36-5"><a href="#cb36-5"></a>res =<span class="st"> </span>res <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb36-6"><a href="#cb36-6"></a><span class="st">  </span><span class="kw">add_column</span>(<span class="dt">avg_fit_group =</span> avg_fit_res<span class="op">$</span>cluster) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb36-7"><a href="#cb36-7"></a><span class="st">  </span><span class="kw">add_column</span>(<span class="dt">median_fit_group =</span> median_fit_res<span class="op">$</span>cluster) </span></code></pre></div>
 <p>And thus, we can show the following boxplots:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a>my_comparisons =<span class="st"> </span><span class="kw">list</span>(<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>), <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">4</span>))</span>
-<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
-<span id="cb31-3"><a href="#cb31-3"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
-<span id="cb31-4"><a href="#cb31-4"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1"></a>my_comparisons =<span class="st"> </span><span class="kw">list</span>(<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>), <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">4</span>))</span>
+<span id="cb37-2"><a href="#cb37-2"></a></span>
+<span id="cb37-3"><a href="#cb37-3"></a><span class="co"># beta = -1</span></span>
+<span id="cb37-4"><a href="#cb37-4"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc1&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
+<span id="cb37-5"><a href="#cb37-5"></a>  <span class="dt">title =</span> <span class="st">&quot;β = -1&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb37-6"><a href="#cb37-6"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>) <span class="op">+</span></span>
+<span id="cb37-7"><a href="#cb37-7"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
 <p><img src="index_files/figure-html/figures-9-1.png" width="2100" style="display: block; margin: auto;" /></p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
-<span id="cb32-2"><a href="#cb32-2"></a>  <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
-<span id="cb32-3"><a href="#cb32-3"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc1&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
+<span id="cb38-2"><a href="#cb38-2"></a>  <span class="dt">title =</span> <span class="st">&quot;β = -1&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb38-3"><a href="#cb38-3"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>) <span class="op">+</span></span>
+<span id="cb38-4"><a href="#cb38-4"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
 <p><img src="index_files/figure-html/figures-9-2.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1"></a><span class="co"># best beta (-1.6)</span></span>
+<span id="cb39-2"><a href="#cb39-2"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;roc_auc2&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
+<span id="cb39-3"><a href="#cb39-3"></a>  <span class="dt">title =</span> <span class="st">&quot;β = -1.6&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;ROC AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb39-4"><a href="#cb39-4"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>) <span class="op">+</span></span>
+<span id="cb39-5"><a href="#cb39-5"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-9-3.png" width="2100" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">ggboxplot</span>(<span class="dt">data =</span> res, <span class="dt">x =</span> <span class="st">&quot;avg_fit_group&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;pr_auc2&quot;</span>, <span class="dt">fill =</span> <span class="st">&quot;avg_fit_group&quot;</span>,</span>
+<span id="cb40-2"><a href="#cb40-2"></a>  <span class="dt">title =</span> <span class="st">&quot;β = -1.6&quot;</span>, <span class="dt">xlab =</span> <span class="st">&quot;Fitness Group (Average fitness)&quot;</span>, <span class="dt">ylab =</span> <span class="st">&quot;PR AUC&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb40-3"><a href="#cb40-3"></a><span class="st">  </span><span class="kw">stat_compare_means</span>(<span class="dt">comparisons =</span> my_comparisons, <span class="dt">method =</span> <span class="st">&quot;wilcox.test&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;p.signif&quot;</span>) <span class="op">+</span></span>
+<span id="cb40-4"><a href="#cb40-4"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div>
+<p><img src="index_files/figure-html/figures-9-4.png" width="2100" style="display: block; margin: auto;" /></p>
 <div class="green-box">
-<p>There is seems to be some correlation between <strong>fitness group and AUC performance of the calibrated models normalized to the random proliferative</strong> ones.
-This manifests in <strong>better PR AUC</strong> for the higher fitness calibrated models subject to normalization.</p>
-<p>Note that PR AUC is a better indicator of performance for our imbalanced dataset than the ROC AUC.</p>
+<ul>
+<li>There is seems to be some correlation between <strong>fitness group and AUC performance of the calibrated models normalized to the random proliferative</strong> ones.
+This manifests in <strong>better PR AUC</strong> for the higher fitness calibrated models subject to normalization.
+Note also that PR AUC is a better indicator of performance for our imbalanced dataset than the ROC AUC.</li>
+<li>Comparing the two normalization cases (<span class="math inline">\(\beta=-1\)</span> and <span class="math inline">\(\beta=-1.6\)</span>) we observe that the results were in general better for <span class="math inline">\(\beta=-1.6\)</span> case (as was expected) but almost the same statistical differences and data <em>trends</em> were observed between the different fitness groups in each case.</li>
+</ul>
 </div>
 </div>
 <div id="r-session-info" class="section level1 unnumbered" number="">
 <h1>R session info</h1>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a>xfun<span class="op">::</span><span class="kw">session_info</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1"></a>xfun<span class="op">::</span><span class="kw">session_info</span>()</span></code></pre></div>
 <pre><code>R version 3.6.3 (2020-02-29)
 Platform: x86_64-pc-linux-gnu (64-bit)
 Running under: Ubuntu 18.04.4 LTS

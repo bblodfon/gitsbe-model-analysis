@@ -1,7 +1,7 @@
 ---
 title: "Fitness vs Performance Analysis (AGS paper I)"
 author: "[John Zobolas](https://github.com/bblodfon)"
-date: "Last updated: 03 August, 2020"
+date: "Last updated: 04 August, 2020"
 description: "An investigation analysis"
 url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/index.html'
 github-repo: "bblodfon/gitsbe-model-analysis"
@@ -513,9 +513,9 @@ Also, we used the `run_druglogics_synergy.sh` script at the root of the `druglog
 
 :::{.orange-box}
 The dataset with the simulation results (`fit-vs-performance-results-bliss.tar.gz` file) is on [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3970857.svg)](https://doi.org/10.5281/zenodo.3970857).
-With the code below you can load this data (but I have stored the data `tibble` for convenience):
 :::
 
+With the code below you can load this data (I have stored it in a `tibble` for convenience):
 
 ```r
 # random proliferative results
@@ -527,6 +527,10 @@ observed = sapply(random_ew_synergies_150sim$perturbation %in% observed_synergie
 
 # get flipped training data results
 data_dir = "/home/john/tmp/ags_paper_res/fit-vs-performance-results-bliss"
+
+# define `beta` values for normalization
+beta1 = -1
+beta2 = -1.6
 
 data_list = list()
 index = 1
@@ -548,14 +552,22 @@ for (res_dir in list.dirs(data_dir, recursive = FALSE)) {
     ss = ew_ss_scores %>% select(score) %>% rename(ss_score = score), 
     as_tibble_col(observed, column_name = "observed"))
   
-  pred = pred %>% mutate(combined_score = ss_score - random_score)
-  res_roc = PRROC::roc.curve(scores.class0 = pred %>% pull(combined_score) %>% (function(x) {-x}), 
+  pred = pred %>% 
+    mutate(combined_score1 = ss_score + beta1 * random_score) %>% 
+    mutate(combined_score2 = ss_score + beta2 * random_score)
+  
+  res_roc1 = PRROC::roc.curve(scores.class0 = pred %>% pull(combined_score1) %>% (function(x) {-x}), 
     weights.class0 = pred %>% pull(observed))
-  res_pr = PRROC::pr.curve(scores.class0 = pred %>% pull(combined_score) %>% (function(x) {-x}), 
+  res_pr1 = PRROC::pr.curve(scores.class0 = pred %>% pull(combined_score1) %>% (function(x) {-x}), 
+    weights.class0 = pred %>% pull(observed))
+  res_roc2 = PRROC::roc.curve(scores.class0 = pred %>% pull(combined_score2) %>% (function(x) {-x}), 
+    weights.class0 = pred %>% pull(observed))
+  res_pr2 = PRROC::pr.curve(scores.class0 = pred %>% pull(combined_score2) %>% (function(x) {-x}), 
     weights.class0 = pred %>% pull(observed))
   
   # bind all to one (OneForAll)
-  df = dplyr::bind_cols(roc_auc = res_roc$auc, pr_auc = res_pr$auc.davis.goadrich, 
+  df = dplyr::bind_cols(roc_auc1 = res_roc1$auc, pr_auc1 = res_pr1$auc.davis.goadrich,
+    roc_auc2 = res_roc2$auc, pr_auc2 = res_pr2$auc.davis.goadrich,
     avg_fit = mean(models_fit), median_fit = median(models_fit))
   data_list[[index]] = df
   index = index + 1
@@ -570,23 +582,67 @@ saveRDS(res, file = "data/res_fit_aucs.rds")
 res = readRDS(file = "data/res_fit_aucs.rds")
 ```
 
+We have used both a $\beta=-1$ normalization ($calibrated-random$) and a $\beta=-1.6$ ($calibrated-1.6\times random$, which was the one that [maximized the ROC and PR AUC](https://bblodfon.github.io/ags-paper-1/cascade-2-0-analysis-link-operator-mutations.html#auc-sensitivity-3)).
+We quickly check for **correlation between the AUC values** produced with the **different beta parameters**:
+
+```r
+# ROC AUCs
+cor(res$roc_auc1, res$roc_auc2)
+```
+
+```
+[1] 0.8069361
+```
+
+```r
+# PR AUCs
+cor(res$pr_auc1, res$pr_auc2)
+```
+
+```
+[1] 0.8479174
+```
+
+
 Some scatter plots to get a first idea (every point is one of the $205$ simulations, normalized to the random proliferative models):
 
 ```r
-ggscatter(data = res, x = "avg_fit", y = "roc_auc", xlab = "Average Fitness",
-  ylab = "ROC AUC", add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.coeff.args = list(method = "kendall"))
+# beta = -1
+ggscatter(data = res, x = "avg_fit", y = "roc_auc1", xlab = "Average Fitness",
+  ylab = "ROC AUC", add = "reg.line", conf.int = TRUE, title = "β = -1",
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall")) +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 <img src="index_files/figure-html/figures-8-1.png" width="2100" style="display: block; margin: auto;" />
 
 ```r
-ggscatter(data = res, x = "avg_fit", y = "pr_auc", xlab = "Average Fitness", 
-  ylab = "PR AUC", add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.coeff.args = list(method = "kendall"))
+ggscatter(data = res, x = "avg_fit", y = "pr_auc1", xlab = "Average Fitness", 
+  ylab = "PR AUC", add = "reg.line", conf.int = TRUE, title = "β = -1",
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall")) +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 <img src="index_files/figure-html/figures-8-2.png" width="2100" style="display: block; margin: auto;" />
+
+```r
+# best beta (-1.6)
+ggscatter(data = res, x = "avg_fit", y = "roc_auc2", xlab = "Average Fitness",
+  ylab = "ROC AUC", add = "reg.line", conf.int = TRUE, title = "β = -1.6",
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall")) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+<img src="index_files/figure-html/figures-8-3.png" width="2100" style="display: block; margin: auto;" />
+
+```r
+ggscatter(data = res, x = "avg_fit", y = "pr_auc2", xlab = "Average Fitness", 
+  ylab = "PR AUC", add = "reg.line", conf.int = TRUE, title = "β = -1.6",
+  cor.coef = TRUE, cor.coeff.args = list(method = "kendall")) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+<img src="index_files/figure-html/figures-8-4.png" width="2100" style="display: block; margin: auto;" />
 
 ```r
 # ggscatter(data = res, x = "median_fit", y = "roc_auc")
@@ -611,26 +667,49 @@ And thus, we can show the following boxplots:
 
 ```r
 my_comparisons = list(c(1,2), c(1,3), c(1,4))
-ggboxplot(data = res, x = "avg_fit_group", y = "roc_auc", fill = "avg_fit_group",
-  xlab = "Fitness Group (Average fitness)", ylab = "ROC AUC") + 
-  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+
+# beta = -1
+ggboxplot(data = res, x = "avg_fit_group", y = "roc_auc1", fill = "avg_fit_group",
+  title = "β = -1", xlab = "Fitness Group (Average fitness)", ylab = "ROC AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 <img src="index_files/figure-html/figures-9-1.png" width="2100" style="display: block; margin: auto;" />
 
 ```r
-ggboxplot(data = res, x = "avg_fit_group", y = "pr_auc", fill = "avg_fit_group",
-  xlab = "Fitness Group (Average fitness)", ylab = "PR AUC") + 
-  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif")
+ggboxplot(data = res, x = "avg_fit_group", y = "pr_auc1", fill = "avg_fit_group",
+  title = "β = -1", xlab = "Fitness Group (Average fitness)", ylab = "PR AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 <img src="index_files/figure-html/figures-9-2.png" width="2100" style="display: block; margin: auto;" />
 
-:::{.green-box}
-There is seems to be some correlation between **fitness group and AUC performance of the calibrated models normalized to the random proliferative** ones.
-This manifests in **better PR AUC** for the higher fitness calibrated models subject to normalization.
+```r
+# best beta (-1.6)
+ggboxplot(data = res, x = "avg_fit_group", y = "roc_auc2", fill = "avg_fit_group",
+  title = "β = -1.6", xlab = "Fitness Group (Average fitness)", ylab = "ROC AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
 
-Note that PR AUC is a better indicator of performance for our imbalanced dataset than the ROC AUC.
+<img src="index_files/figure-html/figures-9-3.png" width="2100" style="display: block; margin: auto;" />
+
+```r
+ggboxplot(data = res, x = "avg_fit_group", y = "pr_auc2", fill = "avg_fit_group",
+  title = "β = -1.6", xlab = "Fitness Group (Average fitness)", ylab = "PR AUC") + 
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+<img src="index_files/figure-html/figures-9-4.png" width="2100" style="display: block; margin: auto;" />
+
+:::{.green-box}
+- There is seems to be some correlation between **fitness group and AUC performance of the calibrated models normalized to the random proliferative** ones.
+This manifests in **better PR AUC** for the higher fitness calibrated models subject to normalization. 
+Note also that PR AUC is a better indicator of performance for our imbalanced dataset than the ROC AUC.
+- Comparing the two normalization cases ($\beta=-1$ and $\beta=-1.6$) we observe that the results were in general better for $\beta=-1.6$ case (as was expected) but almost the same statistical differences and data *trends* were observed between the different fitness groups in each case.
 :::
 
 # R session info {-}
