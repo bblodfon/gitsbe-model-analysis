@@ -591,6 +591,33 @@ Note also that PR AUC is a better indicator of performance for our imbalanced da
 - Comparing the two normalization cases ($\beta=-1$ and $\beta=-1.6$) we observe that the results were in general better for $\beta=-1.6$ case (as was expected) but almost the same statistical differences and data *trends* were observed between the different fitness groups in each case.
 :::
 
+```{r quick-check-random-prolif-1000sim, include=FALSE, eval=FALSE}
+data_dir = "/home/john/tmp/ags_paper_res/link-only/bliss/bootstrap"
+data_list = list()
+index = 1
+for (res_dir in list.dirs(data_dir, recursive = FALSE)) {
+  if (stringr::str_detect(string = res_dir, pattern = "cascade_2.0_rand_prolif_bliss_batch")) {
+    ew_synergies_file = list.files(path = res_dir, pattern = "ensemblewise_synergies", full.names = TRUE)
+    rand_scores = emba::get_synergy_scores(ew_synergies_file)
+    observed = sapply(rand_scores$perturbation %in% observed_synergies, as.integer)
+
+    res_roc = PRROC::roc.curve(scores.class0 = rand_scores$score %>% (function(x) {-x}),
+      weights.class0 = observed)
+    res_pr = PRROC::pr.curve(scores.class0 = rand_scores$score %>% (function(x) {-x}),
+      weights.class0 = observed)
+
+    # bind all to one (OneForAll)
+    df = dplyr::bind_cols(roc_auc = res_roc$auc, pr_auc = res_pr$auc.davis.goadrich)
+    data_list[[index]] = df
+    index = index + 1
+  }
+}
+
+res = bind_rows(data_list)
+
+ggboxplot(data = res, y = "roc_auc")
+```
+
 # R session info {-}
 
 ```{r session info, comment=""}
