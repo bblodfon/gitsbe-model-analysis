@@ -891,14 +891,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="header">
 <h1 class="title">Random model predictions (CASCADE 2.0) vs Number of Stable States</h1>
 <p class="author"><em><a href="https://github.com/bblodfon">John Zobolas</a></em></p>
-<p class="date"><em>Last updated: 07 July, 2020</em></p>
+<p class="date"><em>Last updated: 08 August, 2020</em></p>
 </div>
 <div id="intro" class="section level1 unnumbered" number="">
 <h1>Intro</h1>
 <div class="green-box">
 <p>Main question: is there a relation between <em>random</em> models <strong>stable state number</strong> and their <strong>performance</strong> as measured by AUC PR (Precision-Recall) or AUC ROC (Receiver Operatoring Characteristic)?</p>
 </div>
-<p>This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper I (see <a href="https://bblodfon.github.io/ags-paper-1/index.html">here</a>).
+<p>This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper I (see version tagged <code>v1.0</code> which included the abmlog-generated random model analysis <a href="https://github.com/bblodfon/ags-paper-1/releases/tag/v1.0">here</a>).
 In that analysis, I generated a <span class="math inline">\(3000\)</span> random model sample, and took only the models that had 1 stable state to compute their ROC performance.
 So maybe I neede to generate more models or bootstrap (re-sample) these models to get a better picture of what is going on and that’s what I am trying to do here :)</p>
 </div>
