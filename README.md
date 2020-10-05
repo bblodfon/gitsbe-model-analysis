@@ -1,5 +1,7 @@
 # gitsbe-model-analysis
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4066714.svg)](https://doi.org/10.5281/zenodo.4066714)
+
 This repo holds various boolean model datasets and the corresponding analyses performed on those. 
 The main R package used in the analyses is the [emba](https://github.com/bblodfon/emba) package.
 
