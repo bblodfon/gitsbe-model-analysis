@@ -3,8 +3,8 @@ title: "Fitness vs Performance Analysis (AGS paper I)"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 description: "An investigation analysis"
-url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/index.html'
-github-repo: "bblodfon/gitsbe-model-analysis"
+url: 'https\://druglogics.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/main.html'
+github-repo: "druglogics/gitsbe-model-analysis"
 link-citations: true
 site: bookdown::bookdown_site
 ---
@@ -63,11 +63,11 @@ pretty_print_vector_values(vec = observed_synergies, vector.values.str = "observ
 The idea here is to generate many training data files from the steady state, where some of the nodes will have their states *flipped* to the opposite state ($0$ to $1$ and vice versa).
 That way, we can train models to different steady states, ranging from ones that differ to just a few nodes states up to a steady state that is the complete *reversed* version of the one used in the simulations.
 
-Using the [gen_training_data.R](https://github.com/bblodfon/gitsbe-model-analysis/blob/master/cascade/fit-vs-performance-ags/data/gen_training_data.R) script, we first chose a few number of flips ($11$ flips) ranging from $1$ to $24$ (all nodes) in the steady state.
+Using the [gen_training_data.R](https://github.com/druglogics/gitsbe-model-analysis/blob/master/cascade/fit-vs-performance-ags/data/gen_training_data.R) script, we first chose a few number of flips ($11$ flips) ranging from $1$ to $24$ (all nodes) in the steady state.
 Then, for each such *flipping-nodes* value, we generated $20$ new steady states with a randomly chosen set of nodes whose value is going to flip.
 Thus, in total, $205$ training data files were produced ($205 = 9 \times 20 + 24 + 1$, where from the $11$ number of flips, the one flip happens for every node ($24$ different steady states) and flipping all the nodes generates $1$ completely reversed steady state). 
 
-Running the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`: `git checkout v1.2.0`), we get the simulation results for each of these training data files.
+Running the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`: `git checkout v1.2.0`), we get the simulation results for each of these training data files.
 We mainly going to use the **MCC performance score** for each model in the subsequent analyses.
 Note that in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to ($15$) for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: hsa`.
 
@@ -435,7 +435,7 @@ So, in a way the steady state models are better in that regard (i.e. they make p
 Is there any correlation between the **calibrated models fitness to the AGS steady state** and their ROC/PR AUC performance when they are **normalized to a random proliferative model ensemble**?
 :::
 
-In this section we use the same technique as in the [Flip training data analysis] section: we had already generated the flipped training data files which we now use again with the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`), to get the simulation results for each of these training data files.
+In this section we use the same technique as in the [Flip training data analysis] section: we had already generated the flipped training data files which we now use again with the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`), to get the simulation results for each of these training data files.
 
 Differences are that now in the in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to $20$ for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: bliss`.
 
@@ -510,7 +510,7 @@ saveRDS(res, file = "data/res_fit_aucs.rds")
 res = readRDS(file = "data/res_fit_aucs.rds")
 ```
 
-We have used both a $\beta=-1$ normalization ($calibrated-random$) and a $\beta=-1.6$ ($calibrated-1.6\times random$, which was the one that [maximized the ROC and PR AUC](https://bblodfon.github.io/ags-paper-1/cascade-2-0-analysis-link-operator-mutations.html#auc-sensitivity-3)).
+We have used both a $\beta=-1$ normalization ($calibrated-random$) and a $\beta=-1.6$ ($calibrated-1.6\times random$, as candidate values that maximized the ROC and PR AUC based on another analysis we done prior to this one.
 We quickly check for **correlation between the AUC values** produced with the **different beta parameters**:
 ```{r cor-check, comment=""}
 # ROC AUCs

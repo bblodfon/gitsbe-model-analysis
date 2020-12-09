@@ -1,10 +1,10 @@
 ---
 title: "Fitness vs Performance Analysis (AGS paper I)"
 author: "[John Zobolas](https://github.com/bblodfon)"
-date: "Last updated: 04 August, 2020"
+date: "Last updated: 09 December, 2020"
 description: "An investigation analysis"
-url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/index.html'
-github-repo: "bblodfon/gitsbe-model-analysis"
+url: 'https\://druglogics.github.io/gitsbe-model-analysis/cascade/fit-perf-ags/main.html'
+github-repo: "druglogics/gitsbe-model-analysis"
 link-citations: true
 site: bookdown::bookdown_site
 ---
@@ -70,11 +70,11 @@ pretty_print_vector_values(vec = observed_synergies, vector.values.str = "observ
 The idea here is to generate many training data files from the steady state, where some of the nodes will have their states *flipped* to the opposite state ($0$ to $1$ and vice versa).
 That way, we can train models to different steady states, ranging from ones that differ to just a few nodes states up to a steady state that is the complete *reversed* version of the one used in the simulations.
 
-Using the [gen_training_data.R](https://github.com/bblodfon/gitsbe-model-analysis/blob/master/cascade/fit-vs-performance-ags/data/gen_training_data.R) script, we first chose a few number of flips ($11$ flips) ranging from $1$ to $24$ (all nodes) in the steady state.
+Using the [gen_training_data.R](https://github.com/druglogics/gitsbe-model-analysis/blob/master/cascade/fit-vs-performance-ags/data/gen_training_data.R) script, we first chose a few number of flips ($11$ flips) ranging from $1$ to $24$ (all nodes) in the steady state.
 Then, for each such *flipping-nodes* value, we generated $20$ new steady states with a randomly chosen set of nodes whose value is going to flip.
 Thus, in total, $205$ training data files were produced ($205 = 9 \times 20 + 24 + 1$, where from the $11$ number of flips, the one flip happens for every node ($24$ different steady states) and flipping all the nodes generates $1$ completely reversed steady state). 
 
-Running the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`: `git checkout v1.2.0`), we get the simulation results for each of these training data files.
+Running the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`: `git checkout v1.2.0`), we get the simulation results for each of these training data files.
 We mainly going to use the **MCC performance score** for each model in the subsequent analyses.
 Note that in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to ($15$) for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: hsa`.
 
@@ -505,7 +505,7 @@ So, in a way the steady state models are better in that regard (i.e. they make p
 Is there any correlation between the **calibrated models fitness to the AGS steady state** and their ROC/PR AUC performance when they are **normalized to a random proliferative model ensemble**?
 :::
 
-In this section we use the same technique as in the [Flip training data analysis] section: we had already generated the flipped training data files which we now use again with the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`), to get the simulation results for each of these training data files.
+In this section we use the same technique as in the [Flip training data analysis] section: we had already generated the flipped training data files which we now use again with the script [run_druglogics_synergy_training.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/fit-vs-performance-ags/data/run_druglogics_synergy_training.sh) from the `druglogics-synergy` repository root (version `1.2.0`), to get the simulation results for each of these training data files.
 
 Differences are that now in the in the CASCADE 2.0 configuration file (`config`) we changed the number of simulations to $20$ for each training data file, the attractor tool used was `biolqm_stable_states` and the `synergy_method: bliss`.
 
@@ -582,7 +582,7 @@ saveRDS(res, file = "data/res_fit_aucs.rds")
 res = readRDS(file = "data/res_fit_aucs.rds")
 ```
 
-We have used both a $\beta=-1$ normalization ($calibrated-random$) and a $\beta=-1.6$ ($calibrated-1.6\times random$, which was the one that [maximized the ROC and PR AUC](https://bblodfon.github.io/ags-paper-1/cascade-2-0-analysis-link-operator-mutations.html#auc-sensitivity-3)).
+We have used both a $\beta=-1$ normalization ($calibrated-random$) and a $\beta=-1.6$ ($calibrated-1.6\times random$, as candidate values that maximized the ROC and PR AUC based on another analysis we done prior to this one.
 We quickly check for **correlation between the AUC values** produced with the **different beta parameters**:
 
 ```r
@@ -712,6 +712,8 @@ Note also that PR AUC is a better indicator of performance for our imbalanced da
 - Comparing the two normalization cases ($\beta=-1$ and $\beta=-1.6$) we observe that the results were in general better for $\beta=-1.6$ case (as was expected) but almost the same statistical differences and data *trends* were observed between the different fitness groups in each case.
 :::
 
+
+
 # R session info {-}
 
 
@@ -722,7 +724,7 @@ xfun::session_info()
 ```
 R version 3.6.3 (2020-02-29)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 18.04.4 LTS
+Running under: Ubuntu 20.04.1 LTS
 
 Locale:
   LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
@@ -733,48 +735,49 @@ Locale:
   LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 Package version:
-  abind_1.4-5         assertthat_0.2.1    backports_1.1.8    
-  base64enc_0.1.3     BH_1.72.0.3         bibtex_0.4.2.2     
-  bookdown_0.20       boot_1.3.25         broom_0.5.6        
-  callr_3.4.3         car_3.0-8           carData_3.0-4      
-  cellranger_1.1.0    Ckmeans.1d.dp_4.3.2 cli_2.0.2          
-  clipr_0.7.0         colorspace_1.4-1    compiler_3.6.3     
-  corrplot_0.84       cowplot_1.0.0       crayon_1.3.4       
-  curl_4.3            data.table_1.12.8   desc_1.2.0         
-  digest_0.6.25       dplyr_1.0.0         ellipsis_0.3.1     
-  emba_0.1.5          evaluate_0.14       fansi_0.4.1        
-  farver_2.0.3        forcats_0.5.0       foreign_0.8-75     
-  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.2      
-  ggpubr_0.4.0        ggrepel_0.8.2       ggsci_2.9          
-  ggsignif_0.6.0      glue_1.4.1          graphics_3.6.3     
-  grDevices_3.6.3     grid_3.6.3          gridExtra_2.3      
-  gtable_0.3.0        haven_2.3.1         highr_0.8          
-  hms_0.5.3           htmltools_0.5.0     htmlwidgets_1.5.1  
-  igraph_1.2.5        isoband_0.2.2       jsonlite_1.7.0     
-  knitr_1.29          labeling_0.3        lattice_0.20-41    
-  lifecycle_0.2.0     lme4_1.1.23         magrittr_1.5       
-  maptools_1.0.1      markdown_1.1        MASS_7.3.51.6      
-  Matrix_1.2.18       MatrixModels_0.4.1  methods_3.6.3      
-  mgcv_1.8.31         mime_0.9            minqa_1.2.4        
-  munsell_0.5.0       nlme_3.1-148        nloptr_1.2.2.1     
-  nnet_7.3.14         openxlsx_4.1.5      parallel_3.6.3     
-  pbkrtest_0.4.8.6    pillar_1.4.4        pkgbuild_1.0.8     
-  pkgconfig_2.0.3     pkgload_1.1.0       plyr_1.8.6         
-  polynom_1.4.0       praise_1.0.0        prettyunits_1.1.1  
-  processx_3.4.2      progress_1.2.2      PRROC_1.3.1        
-  ps_1.3.3            purrr_0.3.4         quantreg_5.55      
-  R6_2.4.1            RColorBrewer_1.1.2  Rcpp_1.0.4.6       
-  RcppEigen_0.3.3.7.0 Rdpack_1.0.0        readr_1.3.1        
-  readxl_1.3.1        rematch_1.0.1       reshape2_1.4.4     
-  rio_0.5.16          rje_1.10.16         rlang_0.4.6        
-  rmarkdown_2.3       rprojroot_1.3.2     rstatix_0.6.0      
-  rstudioapi_0.11     scales_1.1.1        sp_1.4.2           
-  SparseM_1.78        splines_3.6.3       statmod_1.4.34     
-  stats_3.6.3         stringi_1.4.6       stringr_1.4.0      
-  testthat_2.3.2      tibble_3.0.1        tidyr_1.1.0        
-  tidyselect_1.1.0    tinytex_0.24        tools_3.6.3        
-  usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
-  vctrs_0.3.1         viridisLite_0.3.0   visNetwork_2.0.9   
-  withr_2.2.0         xfun_0.15           yaml_2.2.1         
-  zip_2.0.4          
+  abind_1.4-5              assertthat_0.2.1         backports_1.1.10        
+  base64enc_0.1.3          BH_1.72.0.3              bookdown_0.21           
+  boot_1.3.25              broom_0.7.2              callr_3.5.1             
+  car_3.0-10               carData_3.0-4            cellranger_1.1.0        
+  Ckmeans.1d.dp_4.3.3      cli_2.1.0                clipr_0.7.1             
+  colorspace_1.4-1         compiler_3.6.3           conquer_1.0.2           
+  corrplot_0.84            cowplot_1.1.0            cpp11_0.2.3             
+  crayon_1.3.4             curl_4.3                 data.table_1.13.2       
+  desc_1.2.0               digest_0.6.27            dplyr_1.0.2             
+  ellipsis_0.3.1           emba_0.1.8               evaluate_0.14           
+  fansi_0.4.1              farver_2.0.3             forcats_0.5.0           
+  foreign_0.8-75           gbRd_0.4-11              generics_0.0.2          
+  ggplot2_3.3.2            ggpubr_0.4.0             ggrepel_0.8.2           
+  ggsci_2.9                ggsignif_0.6.0           glue_1.4.2              
+  graphics_3.6.3           grDevices_3.6.3          grid_3.6.3              
+  gridExtra_2.3            gtable_0.3.0             haven_2.3.1             
+  highr_0.8                hms_0.5.3                htmltools_0.5.0         
+  htmlwidgets_1.5.2        igraph_1.2.6             isoband_0.2.2           
+  jsonlite_1.7.1           knitr_1.30               labeling_0.4.2          
+  lattice_0.20.41          lifecycle_0.2.0          lme4_1.1.25             
+  magrittr_1.5             maptools_1.0.2           markdown_1.1            
+  MASS_7.3.53              Matrix_1.2.18            MatrixModels_0.4.1      
+  matrixStats_0.57.0       methods_3.6.3            mgcv_1.8.33             
+  mime_0.9                 minqa_1.2.4              munsell_0.5.0           
+  nlme_3.1.149             nloptr_1.2.2.2           nnet_7.3.14             
+  openxlsx_4.2.2           parallel_3.6.3           pbkrtest_0.4.8.6        
+  pillar_1.4.6             pkgbuild_1.1.0           pkgconfig_2.0.3         
+  pkgload_1.1.0            polynom_1.4.0            praise_1.0.0            
+  prettyunits_1.1.1        processx_3.4.4           progress_1.2.2          
+  PRROC_1.3.1              ps_1.4.0                 purrr_0.3.4             
+  quantreg_5.74            R6_2.4.1                 rbibutils_1.3           
+  RColorBrewer_1.1.2       Rcpp_1.0.5               RcppArmadillo_0.10.1.0.0
+  RcppEigen_0.3.3.7.0      Rdpack_2.0               readr_1.4.0             
+  readxl_1.3.1             rematch_1.0.1            rio_0.5.16              
+  rje_1.10.16              rlang_0.4.8              rmarkdown_2.5           
+  rprojroot_1.3.2          rstatix_0.6.0            rstudioapi_0.11         
+  scales_1.1.1             sp_1.4.4                 SparseM_1.78            
+  splines_3.6.3            statmod_1.4.35           stats_3.6.3             
+  stringi_1.5.3            stringr_1.4.0            testthat_2.3.2          
+  tibble_3.0.4             tidyr_1.1.2              tidyselect_1.1.0        
+  tinytex_0.26             tools_3.6.3              usefun_0.4.8            
+  utf8_1.1.4               utils_3.6.3              vctrs_0.3.4             
+  viridisLite_0.3.0        visNetwork_2.0.9         withr_2.3.0             
+  xfun_0.18                xml2_1.3.2               yaml_2.2.1              
+  zip_2.1.1               
 ```
