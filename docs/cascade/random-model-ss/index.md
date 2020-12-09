@@ -1,10 +1,10 @@
 ---
 title: "Random model predictions (CASCADE 2.0) vs Number of Stable States"
 author: "[John Zobolas](https://github.com/bblodfon)"
-date: "Last updated: 08 August, 2020"
+date: "Last updated: 09 December, 2020"
 description: "An investigation"
-url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/random-model-ss/index.html'
-github-repo: "bblodfon/gitsbe-model-analysis"
+url: 'https\://druglogics.github.io/gitsbe-model-analysis/cascade/random-model-ss/main.html'
+github-repo: "druglogics/gitsbe-model-analysis"
 link-citations: true
 site: bookdown::bookdown_site
 ---
@@ -15,7 +15,7 @@ site: bookdown::bookdown_site
 Main question: is there a relation between *random* models **stable state number** and their **performance** as measured by AUC PR (Precision-Recall) or AUC ROC (Receiver Operatoring Characteristic)?
 :::
 
-This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper I (see version tagged `v1.0` which included the abmlog-generated random model analysis [here](https://github.com/bblodfon/ags-paper-1/releases/tag/v1.0)).
+This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper (see version tagged `v1.0` which included the abmlog-generated random model analysis [here](https://github.com/bblodfon/ags-paper-1/releases/tag/v1.0)).
 In that analysis, I generated a $3000$ random model sample, and took only the models that had 1 stable state to compute their ROC performance. 
 So maybe I neede to generate more models or bootstrap (re-sample) these models to get a better picture of what is going on and that's what I am trying to do here :)
 
@@ -34,7 +34,7 @@ java -cp target/abmlog-1.6.0-jar-with-dependencies.jar eu.druglogics.abmlog.Rand
 
 I splitted the models to **3 groups**: those that have no 1 stable state, 2 stable states or none at all.
 There was only 1 model in $50000$ (`cascade_2_0_418669279901714.gitsbe`) that had 3 stable states and so we will not take into account models with more than 2 stable states (very rare and almost impossible to be chosen via `Gitsbe` since it indirectly penalizes models with more than 1 attractors).
-The distribution of models in each category were (use the [count_ss.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh) script):
+The distribution of models in each category were (use the [count_ss.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh) script):
 
 | #Stable states | #Models | Percentage |
 |---|---|---|
@@ -43,7 +43,7 @@ The distribution of models in each category were (use the [count_ss.sh](https://
 | 2 | 300   | 1%  |
 | 3 | 1     | less than 0.01%  |
 
-From the `ags_cascade_2.0` directory of the `druglogics-synergy` module I ran the [run.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/run.sh) script.
+From the `ags_cascade_2.0` directory of the `druglogics-synergy` module I ran the [run.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/random-model-ss/data/run.sh) script.
 This script bootstraps $50$ models ($20$ times in total) from each category and runs the Drabme with those.
 So bootstraping $50$ models $\times \text{ }20$ times with 0 stable states, $50$ models $\times \text{ }20$ times with 1 stable state, etc.
 We also try all pair-wise combinations: {($25$ models with 0 stable states) + ($25$ models with 1 stable state)} $\times\text{ }20$ times, etc.
@@ -208,7 +208,7 @@ xfun::session_info()
 ```
 R version 3.6.3 (2020-02-29)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 18.04.4 LTS
+Running under: Ubuntu 20.04.1 LTS
 
 Locale:
   LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
@@ -219,50 +219,51 @@ Locale:
   LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 Package version:
-  abind_1.4-5         assertthat_0.2.1    backports_1.1.8    
-  base64enc_0.1.3     BH_1.72.0.3         bibtex_0.4.2.2     
-  bookdown_0.20       boot_1.3.25         broom_0.5.6        
-  callr_3.4.3         car_3.0-8           carData_3.0-4      
-  cellranger_1.1.0    Ckmeans.1d.dp_4.3.2 cli_2.0.2          
-  clipr_0.7.0         colorspace_1.4-1    compiler_3.6.3     
-  corrplot_0.84       cowplot_1.0.0       crayon_1.3.4       
-  curl_4.3            data.table_1.12.8   desc_1.2.0         
-  digest_0.6.25       dplyr_1.0.0         ellipsis_0.3.1     
-  emba_0.1.5          evaluate_0.14       fansi_0.4.1        
-  farver_2.0.3        forcats_0.5.0       foreign_0.8-75     
-  gbRd_0.4-11         generics_0.0.2      ggplot2_3.3.2      
-  ggpubr_0.4.0        ggrepel_0.8.2       ggsci_2.9          
-  ggsignif_0.6.0      glue_1.4.1          graphics_3.6.3     
-  grDevices_3.6.3     grid_3.6.3          gridExtra_2.3      
-  gtable_0.3.0        haven_2.3.1         highr_0.8          
-  hms_0.5.3           htmltools_0.5.0     htmlwidgets_1.5.1  
-  igraph_1.2.5        isoband_0.2.2       jsonlite_1.7.0     
-  knitr_1.29          labeling_0.3        lattice_0.20-41    
-  lifecycle_0.2.0     lme4_1.1.23         magrittr_1.5       
-  maptools_1.0.1      markdown_1.1        MASS_7.3.51.6      
-  Matrix_1.2.18       MatrixModels_0.4.1  methods_3.6.3      
-  mgcv_1.8.31         mime_0.9            minqa_1.2.4        
-  munsell_0.5.0       nlme_3.1-148        nloptr_1.2.2.1     
-  nnet_7.3.14         openxlsx_4.1.5      parallel_3.6.3     
-  pbkrtest_0.4.8.6    pillar_1.4.4        pkgbuild_1.0.8     
-  pkgconfig_2.0.3     pkgload_1.1.0       plyr_1.8.6         
-  polynom_1.4.0       praise_1.0.0        prettyunits_1.1.1  
-  processx_3.4.2      progress_1.2.2      PRROC_1.3.1        
-  ps_1.3.3            purrr_0.3.4         quantreg_5.55      
-  R6_2.4.1            RColorBrewer_1.1.2  Rcpp_1.0.4.6       
-  RcppEigen_0.3.3.7.0 Rdpack_1.0.0        readr_1.3.1        
-  readxl_1.3.1        rematch_1.0.1       reshape2_1.4.4     
-  rio_0.5.16          rje_1.10.16         rlang_0.4.6        
-  rmarkdown_2.3       rprojroot_1.3.2     rstatix_0.6.0      
-  rstudioapi_0.11     scales_1.1.1        sp_1.4.2           
-  SparseM_1.78        splines_3.6.3       statmod_1.4.34     
-  stats_3.6.3         stringi_1.4.6       stringr_1.4.0      
-  testthat_2.3.2      tibble_3.0.1        tidyr_1.1.0        
-  tidyselect_1.1.0    tinytex_0.24        tools_3.6.3        
-  usefun_0.4.7        utf8_1.1.4          utils_3.6.3        
-  vctrs_0.3.1         viridisLite_0.3.0   visNetwork_2.0.9   
-  withr_2.2.0         xfun_0.15           yaml_2.2.1         
-  zip_2.0.4          
+  abind_1.4-5              assertthat_0.2.1         backports_1.1.10        
+  base64enc_0.1.3          BH_1.72.0.3              bookdown_0.21           
+  boot_1.3.25              broom_0.7.2              callr_3.5.1             
+  car_3.0-10               carData_3.0-4            cellranger_1.1.0        
+  Ckmeans.1d.dp_4.3.3      cli_2.1.0                clipr_0.7.1             
+  colorspace_1.4-1         compiler_3.6.3           conquer_1.0.2           
+  corrplot_0.84            cowplot_1.1.0            cpp11_0.2.3             
+  crayon_1.3.4             curl_4.3                 data.table_1.13.2       
+  desc_1.2.0               digest_0.6.27            dplyr_1.0.2             
+  ellipsis_0.3.1           emba_0.1.8               evaluate_0.14           
+  fansi_0.4.1              farver_2.0.3             forcats_0.5.0           
+  foreign_0.8-75           gbRd_0.4-11              generics_0.0.2          
+  ggplot2_3.3.2            ggpubr_0.4.0             ggrepel_0.8.2           
+  ggsci_2.9                ggsignif_0.6.0           glue_1.4.2              
+  graphics_3.6.3           grDevices_3.6.3          grid_3.6.3              
+  gridExtra_2.3            gtable_0.3.0             haven_2.3.1             
+  highr_0.8                hms_0.5.3                htmltools_0.5.0         
+  htmlwidgets_1.5.2        igraph_1.2.6             isoband_0.2.2           
+  jsonlite_1.7.1           knitr_1.30               labeling_0.4.2          
+  lattice_0.20.41          lifecycle_0.2.0          lme4_1.1.25             
+  magrittr_1.5             maptools_1.0.2           markdown_1.1            
+  MASS_7.3.53              Matrix_1.2.18            MatrixModels_0.4.1      
+  matrixStats_0.57.0       methods_3.6.3            mgcv_1.8.33             
+  mime_0.9                 minqa_1.2.4              munsell_0.5.0           
+  nlme_3.1.149             nloptr_1.2.2.2           nnet_7.3.14             
+  openxlsx_4.2.2           parallel_3.6.3           pbkrtest_0.4.8.6        
+  pillar_1.4.6             pkgbuild_1.1.0           pkgconfig_2.0.3         
+  pkgload_1.1.0            polynom_1.4.0            praise_1.0.0            
+  prettyunits_1.1.1        processx_3.4.4           progress_1.2.2          
+  PRROC_1.3.1              ps_1.4.0                 purrr_0.3.4             
+  quantreg_5.74            R6_2.4.1                 rbibutils_1.3           
+  RColorBrewer_1.1.2       Rcpp_1.0.5               RcppArmadillo_0.10.1.0.0
+  RcppEigen_0.3.3.7.0      Rdpack_2.0               readr_1.4.0             
+  readxl_1.3.1             rematch_1.0.1            rio_0.5.16              
+  rje_1.10.16              rlang_0.4.8              rmarkdown_2.5           
+  rprojroot_1.3.2          rstatix_0.6.0            rstudioapi_0.11         
+  scales_1.1.1             sp_1.4.4                 SparseM_1.78            
+  splines_3.6.3            statmod_1.4.35           stats_3.6.3             
+  stringi_1.5.3            stringr_1.4.0            testthat_2.3.2          
+  tibble_3.0.4             tidyr_1.1.2              tidyselect_1.1.0        
+  tinytex_0.26             tools_3.6.3              usefun_0.4.8            
+  utf8_1.1.4               utils_3.6.3              vctrs_0.3.4             
+  viridisLite_0.3.0        visNetwork_2.0.9         withr_2.3.0             
+  xfun_0.18                xml2_1.3.2               yaml_2.2.1              
+  zip_2.1.1               
 ```
 
 # References {-}

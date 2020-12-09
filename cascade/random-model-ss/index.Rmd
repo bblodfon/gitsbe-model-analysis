@@ -3,8 +3,8 @@ title: "Random model predictions (CASCADE 2.0) vs Number of Stable States"
 author: "[John Zobolas](https://github.com/bblodfon)"
 date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
 description: "An investigation"
-url: 'https\://bblodfon.github.io/gitsbe-model-analysis/cascade/random-model-ss/index.html'
-github-repo: "bblodfon/gitsbe-model-analysis"
+url: 'https\://druglogics.github.io/gitsbe-model-analysis/cascade/random-model-ss/main.html'
+github-repo: "druglogics/gitsbe-model-analysis"
 link-citations: true
 site: bookdown::bookdown_site
 ---
@@ -15,7 +15,7 @@ site: bookdown::bookdown_site
 Main question: is there a relation between *random* models **stable state number** and their **performance** as measured by AUC PR (Precision-Recall) or AUC ROC (Receiver Operatoring Characteristic)?
 :::
 
-This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper I (see version tagged `v1.0` which included the abmlog-generated random model analysis [here](https://github.com/bblodfon/ags-paper-1/releases/tag/v1.0)).
+This investigation can be considered as an extension of the random model ROC and PR curves (for CASCADE 2.0, link operator mutations) I created for the AGS paper (see version tagged `v1.0` which included the abmlog-generated random model analysis [here](https://github.com/bblodfon/ags-paper-1/releases/tag/v1.0)).
 In that analysis, I generated a $3000$ random model sample, and took only the models that had 1 stable state to compute their ROC performance. 
 So maybe I neede to generate more models or bootstrap (re-sample) these models to get a better picture of what is going on and that's what I am trying to do here :)
 
@@ -33,7 +33,7 @@ java -cp target/abmlog-1.6.0-jar-with-dependencies.jar eu.druglogics.abmlog.Rand
 
 I splitted the models to **3 groups**: those that have no 1 stable state, 2 stable states or none at all.
 There was only 1 model in $50000$ (`cascade_2_0_418669279901714.gitsbe`) that had 3 stable states and so we will not take into account models with more than 2 stable states (very rare and almost impossible to be chosen via `Gitsbe` since it indirectly penalizes models with more than 1 attractors).
-The distribution of models in each category were (use the [count_ss.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh) script):
+The distribution of models in each category were (use the [count_ss.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/random-model-ss/data/count_ss.sh) script):
 
 | #Stable states | #Models | Percentage |
 |---|---|---|
@@ -42,7 +42,7 @@ The distribution of models in each category were (use the [count_ss.sh](https://
 | 2 | 300   | 1%  |
 | 3 | 1     | less than 0.01%  |
 
-From the `ags_cascade_2.0` directory of the `druglogics-synergy` module I ran the [run.sh](https://raw.githubusercontent.com/bblodfon/gitsbe-model-analysis/master/cascade/random-model-ss/data/run.sh) script.
+From the `ags_cascade_2.0` directory of the `druglogics-synergy` module I ran the [run.sh](https://raw.githubusercontent.com/druglogics/gitsbe-model-analysis/master/cascade/random-model-ss/data/run.sh) script.
 This script bootstraps $50$ models ($20$ times in total) from each category and runs the Drabme with those.
 So bootstraping $50$ models $\times \text{ }20$ times with 0 stable states, $50$ models $\times \text{ }20$ times with 1 stable state, etc.
 We also try all pair-wise combinations: {($25$ models with 0 stable states) + ($25$ models with 1 stable state)} $\times\text{ }20$ times, etc.
